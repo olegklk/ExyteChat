@@ -43,17 +43,23 @@ public class SocketIOManager: ObservableObject {
     
     private func setupSocketHandlers() {
         socket?.on(clientEvent: .connect) { [weak self] data, ack in
-            self?.isConnected = true
-            self?.connectionError = nil
+            DispatchQueue.main.async {
+                self?.isConnected = true
+                self?.connectionError = nil
+            }
         }
         
         socket?.on(clientEvent: .disconnect) { [weak self] data, ack in
-            self?.isConnected = false
+            DispatchQueue.main.async {
+                self?.isConnected = false
+            }
         }
         
         socket?.on(clientEvent: .error) { [weak self] data, ack in
             if let error = data.first as? String {
-                self?.connectionError = error
+                DispatchQueue.main.async {
+                    self?.connectionError = error
+                }
             }
         }
         
@@ -129,8 +135,7 @@ public class SocketIOManager: ObservableObject {
     public func sendMessage(conversationId: String, batchId: String, text: String?, attachments: [[String: Any]]?, replyTo: String?) {
         var payload: [String: Any] = [
             "conversationId": conversationId,
-            "batchId": batchId,
-            "senderId": "" // This should be filled with actual sender ID
+            "batchId": batchId
         ]
         
         if let text = text {
