@@ -43,6 +43,32 @@ public struct ServerMessage: Codable, Identifiable, Hashable, Sendable {
         self.deletedAt = deletedAt
     }
     
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try container.decode(String.self, forKey: .id)
+        self.sender = try container.decode(SenderRef.self, forKey: .sender)
+        self.text = try container.decodeIfPresent(String.self, forKey: .text)
+        self.attachments = try container.decode([ServerAttachment].self, forKey: .attachments)
+        self.replyTo = try container.decodeIfPresent(String.self, forKey: .replyTo)
+        self.expiresAt = try container.decodeIfPresent(Date.self, forKey: .expiresAt)
+        self.createdAt = try container.decode(Date.self, forKey: .createdAt)
+        self.editedAt = try container.decodeIfPresent(Date.self, forKey: .editedAt)
+        self.deletedAt = try container.decodeIfPresent(Date.self, forKey: .deletedAt)
+    }
+    
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(sender, forKey: .sender)
+        try container.encodeIfPresent(text, forKey: .text)
+        try container.encode(attachments, forKey: .attachments)
+        try container.encodeIfPresent(replyTo, forKey: .replyTo)
+        try container.encodeIfPresent(expiresAt, forKey: .expiresAt)
+        try container.encode(createdAt, forKey: .createdAt)
+        try container.encodeIfPresent(editedAt, forKey: .editedAt)
+        try container.encodeIfPresent(deletedAt, forKey: .deletedAt)
+    }
+    
     public init?(from dict: [String: Any]) {
         guard let id = dict["_id"] as? String,
               let senderDict = dict["sender"] as? [String: Any],
@@ -77,21 +103,15 @@ extension SenderRef {
         
         self.init(userId: userId, displayName: displayName)
     }
-}
-
-extension ServerAttachment {
-    init?(from dict: [String: Any]) {
-        guard let kind = dict["kind"] as? String else {
-            return nil
-        }
-        
-        self.init(
-            kind: kind,
-            url: dict["url"] as? String,
-            href: dict["href"] as? String,
-            lat: dict["lat"] as? Double,
-            lng: dict["lng"] as? Double,
-            meta: dict["meta"] as? [String: Any]
-        )
+    
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.userId = try container.decode(String.self, forKey: .userId)
+        self.displayName = try container.decode(String.self, forKey: .displayName)
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case userId
+        case displayName
     }
 }
