@@ -1,0 +1,171 @@
+openapi: 3.0.3
+info:
+  title: Vero Chat REST API
+  version: 1.0.0
+  description: |
+    REST endpoints used by the frontend to manage batches and fetch history.
+    Auth is omitted for demo. Add security schemes (e.g., bearerAuth) as needed.
+servers:
+  - url: https://chat-back.gramatune.com
+    description: Production
+  - url: http://localhost:3001
+    description: Local
+
+tags:
+  - name: Chats
+    description: Open/close batches, patch messages in Mongo
+  - name: History
+    description: Fetch chat history snapshots (rolled-up batches)
+
+paths:
+  /chats/open/{type}/{batchId}:
+    post:
+      tags: [Chats]
+      summary: Open (or re-open) a live batch
+      parameters:
+        - name: type
+          in: path
+          required: true
+          schema: { type: string, enum: [direct, group, channel] }
+        - name: batchId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [participants]
+              properties:
+                participants:
+                  type: array
+                  items: { type: string }
+                  description: Array of userIds
+                conversationId:
+                  type: string
+                  description: Optional conversation id
+      responses:
+        '200':
+          description: Batch open accepted
+        '400':
+          description: Bad request
+
+  /chats/close/{batchId}:
+    post:
+      tags: [Chats]
+      summary: Close a live batch; snapshot state to Mongo
+      parameters:
+        - name: batchId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Closed (idempotent) }
+        '404': { description: Not found (no state in memory) }
+
+  /chats/mongo/patch:
+    patch:
+      tags: [Chats]
+      summary: Patch a single message in Mongo by batch & message id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [batchId, messageId]
+              properties:
+                batchId: { type: string }
+                messageId: { type: string }
+                newText: { type: string }
+      responses:
+        '200':
+          description: Patch result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  matched: { type: integer }
+                  modified: { type: integer }
+
+  /history/{conversationId}:
+    get:
+      tags: [History]
+      summary: Get rolled-up history batches for a conversation (latest first)
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Array of batch documents with messages
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BatchDocument'
+        '404': { description: Conversation not found }
+        '501': { description: Not implemented on server }
+
+components:
+  schemas:
+    SenderRef:
+      type: object
+      properties:
+        userId: { type: string }
+        displayName: { type: string }
+
+    Attachment:
+      type: object
+      properties:
+        kind:
+          type: string
+          enum: [gif, location, file, image]
+        url: { type: string }
+        href: { type: string }
+        lat: { type: number }
+        lng: { type: number }
+        meta: { type: object }
+
+    Message:
+      type: object
+      properties:
+        _id: { type: string }
+        sender: { $ref: '#/components/schemas/SenderRef' }
+        text: { type: string, nullable: true }
+        attachments:
+          type: array
+          items: { $ref: '#/components/schemas/Attachment' }
+        replyTo: { type: string, nullable: true }
+        expiresAt: { type: string, format: date-time, nullable: true }
+        createdAt: { type: string, format: date-time }
+        editedAt: { type: string, format: date-time, nullable: true }
+        deletedAt: { type: string, format: date-time, nullable: true }
+
+    BatchDocument:
+      type: object
+      properties:
+        _id: { type: string, description: batchId }
+        conversationId: { type: string }
+        type:
+          type: string
+          enum: [direct, group, channel]
+        participants:
+          type: array
+          items: { type: string }
+        startedAt: { type: string, format: date-time }
+        closedAt: { type: string, format: date-time, nullable: true }
+        seenBy:
+          type: array
+          items: { type: string }
+        messages:
+          type: array
+          items: { $ref: '#/components/schemas/Message' }

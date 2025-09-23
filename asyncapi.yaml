@@ -1,0 +1,328 @@
+asyncapi: '2.6.0'
+id: 'urn:com:gramatune:chat-api:1.0'
+tags:
+  - name: chat
+    description: Core chat functionality
+info:
+  title: Vero Chat Realtime API (Socket.IO)
+  version: '1.0.4'
+  description: |
+    Socket.IO realtime API for Vero Chat.
+    Each event is modeled as a separate channel. Channel/message names are normalized (underscores, no colon/slash).
+  contact:
+    name: Amin Abedi
+    email: support@gramatune.com
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+
+defaultContentType: application/json
+
+servers:
+  production:
+    url: wss://chat-back.gramatune.com
+    protocol: wss
+    description: Production Socket.IO (Engine.IO v4)
+  local:
+    url: ws://localhost:3001
+    protocol: ws
+    description: Local dev
+
+channels:
+  chat_append:
+    description: Client emits to append a message
+    publish:
+      operationId: client_chat_append
+      message:
+        $ref: '#/components/messages/MsgChatAppend'
+
+  chat_appended:
+    description: Server echoes appended message to all clients in the batch room
+    subscribe:
+      operationId: server_chat_appended
+      message:
+        $ref: '#/components/messages/MsgChatAppendedEcho'
+
+  chat_edit:
+    description: Client edits an existing message by id
+    publish:
+      operationId: client_chat_edit
+      message:
+        $ref: '#/components/messages/MsgChatEdit'
+
+  chat_edited:
+    description: Server notifies clients about an edit
+    subscribe:
+      operationId: server_chat_edited
+      message:
+        $ref: '#/components/messages/MsgChatEdited'
+
+  chat_delete:
+    description: Client deletes a message by id
+    publish:
+      operationId: client_chat_delete
+      message:
+        $ref: '#/components/messages/MsgChatDelete'
+
+  chat_deleted:
+    description: Server notifies clients about a deletion
+    subscribe:
+      operationId: server_chat_deleted
+      message:
+        $ref: '#/components/messages/MsgChatDeleted'
+
+  chat_seen:
+    description: Client marks batch as seen by a user
+    publish:
+      operationId: client_chat_seen
+      message:
+        $ref: '#/components/messages/MsgChatSeen'
+
+  chat_batch_assigned:
+    description: Server assigns a live batchId when client connects without one
+    subscribe:
+      operationId: server_chat_batch_assigned
+      message:
+        $ref: '#/components/messages/MsgBatchAssigned'
+
+  chat_conversation_assigned:
+    description: Server assigns a conversationId when missing
+    subscribe:
+      operationId: server_chat_conversation_assigned
+      message:
+        $ref: '#/components/messages/MsgConversationAssigned'
+
+  chat_unread_batches:
+    description: Server sends unread batches snapshot on connect
+    subscribe:
+      operationId: server_chat_unread_batches
+      message:
+        $ref: '#/components/messages/MsgUnreadBatches'
+
+  chat_error:
+    description: Server error payloads
+    subscribe:
+      operationId: server_chat_error
+      message:
+        $ref: '#/components/messages/MsgChatError'
+
+components:
+  schemas:
+    SenderRef:
+      type: object
+      properties:
+        userId: { type: string }
+        displayName: { type: string }
+
+    Attachment:
+      type: object
+      properties:
+        kind:
+          type: string
+          enum: [gif, location, file, image]
+        url: { type: string }
+        href: { type: string }
+        lat: { type: number }
+        lng: { type: number }
+        meta: { type: object }
+
+    ChatAppendPayload:
+      type: object
+      required: [conversationId, batchId, senderId]
+      properties:
+        conversationId: { type: string }
+        batchId: { type: string }
+        messageId:
+          type: string
+          nullable: true
+          description: Optional; server will assign if missing
+        text: { type: string, nullable: true }
+        attachments:
+          type: array
+          items: { $ref: '#/components/schemas/Attachment' }
+        replyTo: { type: string, nullable: true }
+        expiresInMs: { type: integer, nullable: true }
+        expiresAt: { type: string, format: 'date-time', nullable: true }
+        senderId: { type: string }
+        senderName: { type: string, nullable: true }
+
+    ChatEditPayload:
+      type: object
+      required: [conversationId, batchId, messageId]
+      properties:
+        conversationId: { type: string }
+        batchId: { type: string }
+        messageId: { type: string }
+        newText: { type: string, nullable: true }
+
+    ChatDeletePayload:
+      type: object
+      required: [conversationId, batchId, messageId]
+      properties:
+        conversationId: { type: string }
+        batchId: { type: string }
+        messageId: { type: string }
+
+    ChatSeenPayload:
+      type: object
+      required: [conversationId, batchId, userId]
+      properties:
+        conversationId: { type: string }
+        batchId: { type: string }
+        userId: { type: string }
+
+    BatchAssignedPayload:
+      type: object
+      required: [batchId]
+      properties:
+        batchId: { type: string, format: uuid }
+        conversationId: { type: string, nullable: true }
+
+    ConversationAssignedPayload:
+      type: object
+      required: [conversationId]
+      properties:
+        conversationId: { type: string }
+
+    UnreadBatchDoc:
+      type: object
+      properties:
+        _id: { type: string, description: "batchId" }
+        conversationId: { type: string }
+        type:
+          type: string
+          enum: [direct, group, channel]
+        participants:
+          type: array
+          items: { type: string }
+        startedAt: { type: string, format: 'date-time' }
+        messages:
+          type: array
+          items:
+            type: object
+            properties:
+              _id: { type: string }
+              text: { type: string }
+              sender: { $ref: '#/components/schemas/SenderRef' }
+              replyTo: { type: string, nullable: true }
+              attachments:
+                type: array
+                items: { $ref: '#/components/schemas/Attachment' }
+              createdAt: { type: string, format: 'date-time' }
+
+    ErrorPayload:
+      type: object
+      properties:
+        code: { type: string }
+        message: { type: string }
+
+  messages:
+    MsgChatAppend:
+      name: chat.append
+      summary: Append new message
+      title: Append Message
+      messageId: MsgChatAppend
+      payload:
+        schema:
+          $ref: '#/components/schemas/ChatAppendPayload'
+
+    MsgChatAppendedEcho:
+      name: chat.appended
+      summary: Server echo with assigned messageId
+      title: Appended Echo
+      messageId: MsgChatAppendedEcho
+      payload:
+        schema:
+          allOf:
+            - $ref: '#/components/schemas/ChatAppendPayload'
+            - type: object
+              required: [messageId]
+              properties:
+                messageId: { type: string }
+
+    MsgChatEdit:
+      name: chat.edit
+      summary: Client edit request
+      title: Edit Message
+      messageId: MsgChatEdit
+      payload:
+        schema:
+          $ref: '#/components/schemas/ChatEditPayload'
+
+    MsgChatEdited:
+      name: chat.edited
+      summary: Server edit event
+      title: Edited Message
+      messageId: MsgChatEdited
+      payload:
+        schema:
+          $ref: '#/components/schemas/ChatEditPayload'
+
+    MsgChatDelete:
+      name: chat.delete
+      summary: Client delete request
+      title: Delete Message
+      messageId: MsgChatDelete
+      payload:
+        schema:
+          $ref: '#/components/schemas/ChatDeletePayload'
+
+    MsgChatDeleted:
+      name: chat.deleted
+      summary: Server delete event
+      title: Deleted Message
+      messageId: MsgChatDeleted
+      payload:
+        schema:
+          $ref: '#/components/schemas/ChatDeletePayload' # Corrected ref
+
+    MsgChatSeen:
+      name: chat.seen
+      summary: Mark batch seen
+      title: Seen Message
+      messageId: MsgChatSeen
+      payload:
+        schema:
+          $ref: '#/components/schemas/ChatSeenPayload'
+
+    MsgBatchAssigned:
+      name: chat.batch-assigned
+      summary: Batch id assignment
+      title: Batch Assigned
+      messageId: MsgBatchAssigned
+      payload:
+        schema:
+          $ref: '#/components/schemas/BatchAssignedPayload'
+
+    MsgConversationAssigned:
+      name: chat.conversation-assigned
+      summary: Conversation id assignment
+      title: Conversation Assigned
+      messageId: MsgConversationAssigned
+      payload:
+        schema:
+          $ref: '#/components/schemas/ConversationAssignedPayload'
+
+    MsgUnreadBatches:
+      name: chat.unread-batches
+      summary: Unread batches on connect
+      title: Unread Batches
+      messageId: MsgUnreadBatches
+      payload:
+        schema:
+          type: object
+          required: [conversationId, items]
+          properties:
+            conversationId: { type: string }
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/UnreadBatchDoc' }
+
+    MsgChatError:
+      name: chat.error
+      summary: Error payload
+      title: Chat Error
+      messageId: MsgChatError
+      payload:
+        schema:
+          $ref: '#/components/schemas/ErrorPayload'
