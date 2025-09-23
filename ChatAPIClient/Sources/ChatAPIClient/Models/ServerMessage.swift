@@ -1,27 +1,37 @@
 import Foundation
 
-public struct ServerMessage: Codable, Hashable, Sendable {
+public struct ServerMessage: Codable, Identifiable, Hashable, Sendable {
     public let id: String
     public let sender: SenderRef
     public let text: String?
-    public let attachments: [ServerAttachment]?
+    public let attachments: [ServerAttachment]
     public let replyTo: String?
     public let expiresAt: Date?
     public let createdAt: Date
     public let editedAt: Date?
     public let deletedAt: Date?
     
-    public init(
-        id: String,
-        sender: SenderRef,
-        text: String? = nil,
-        attachments: [ServerAttachment]? = nil,
-        replyTo: String? = nil,
-        expiresAt: Date? = nil,
-        createdAt: Date,
-        editedAt: Date? = nil,
-        deletedAt: Date? = nil
-    ) {
+    enum CodingKeys: String, CodingKey {
+        case id = "_id"
+        case sender
+        case text
+        case attachments
+        case replyTo
+        case expiresAt
+        case createdAt
+        case editedAt
+        case deletedAt
+    }
+    
+    public init(id: String,
+                sender: SenderRef,
+                text: String?,
+                attachments: [ServerAttachment],
+                replyTo: String?,
+                expiresAt: Date?,
+                createdAt: Date,
+                editedAt: Date?,
+                deletedAt: Date?) {
         self.id = id
         self.sender = sender
         self.text = text
@@ -33,56 +43,75 @@ public struct ServerMessage: Codable, Hashable, Sendable {
         self.deletedAt = deletedAt
     }
     
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try container.decode(String.self, forKey: .id)
+        self.sender = try container.decode(SenderRef.self, forKey: .sender)
+        self.text = try container.decodeIfPresent(String.self, forKey: .text)
+        self.attachments = try container.decode([ServerAttachment].self, forKey: .attachments)
+        self.replyTo = try container.decodeIfPresent(String.self, forKey: .replyTo)
+        self.expiresAt = try container.decodeIfPresent(Date.self, forKey: .expiresAt)
+        self.createdAt = try container.decode(Date.self, forKey: .createdAt)
+        self.editedAt = try container.decodeIfPresent(Date.self, forKey: .editedAt)
+        self.deletedAt = try container.decodeIfPresent(Date.self, forKey: .deletedAt)
+    }
+    
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(sender, forKey: .sender)
+        try container.encodeIfPresent(text, forKey: .text)
+        try container.encode(attachments, forKey: .attachments)
+        try container.encodeIfPresent(replyTo, forKey: .replyTo)
+        try container.encodeIfPresent(expiresAt, forKey: .expiresAt)
+        try container.encode(createdAt, forKey: .createdAt)
+        try container.encodeIfPresent(editedAt, forKey: .editedAt)
+        try container.encodeIfPresent(deletedAt, forKey: .deletedAt)
+    }
+    
     public init?(from dict: [String: Any]) {
         guard let id = dict["_id"] as? String,
               let senderDict = dict["sender"] as? [String: Any],
-              let userId = senderDict["userId"] as? String,
-              let displayName = senderDict["displayName"] as? String,
-              let createdAtStr = dict["createdAt"] as? String else {
+              let sender = SenderRef(from: senderDict),
+              let createdAtTimestamp = dict["createdAt"] as? TimeInterval else {
             return nil
         }
         
         self.id = id
-        self.sender = SenderRef(userId: userId, displayName: displayName)
-        
+        self.sender = sender
         self.text = dict["text"] as? String
+        self.replyTo = dict["replyTo"] as? String
+        self.expiresAt = (dict["expiresAt"] as? TimeInterval).flatMap { Date(timeIntervalSince1970: $0) }
+        self.createdAt = Date(timeIntervalSince1970: createdAtTimestamp)
+        self.editedAt = (dict["editedAt"] as? TimeInterval).flatMap { Date(timeIntervalSince1970: $0) }
+        self.deletedAt = (dict["deletedAt"] as? TimeInterval).flatMap { Date(timeIntervalSince1970: $0) }
         
         if let attachmentsArray = dict["attachments"] as? [[String: Any]] {
             self.attachments = attachmentsArray.compactMap { ServerAttachment(from: $0) }
         } else {
-            self.attachments = nil
+            self.attachments = []
         }
-        
-        self.replyTo = dict["replyTo"] as? String
-        
-        // Parse dates
-        self.expiresAt = DateFormatter.iso8601.date(from: dict["expiresAt"] as? String ?? "")
-        self.createdAt = DateFormatter.iso8601.date(from: createdAtStr) ?? Date()
-        self.editedAt = DateFormatter.iso8601.date(from: dict["editedAt"] as? String ?? "")
-        self.deletedAt = DateFormatter.iso8601.date(from: dict["deletedAt"] as? String ?? "")
     }
 }
 
-extension ServerAttachment {
+extension SenderRef {
     init?(from dict: [String: Any]) {
-        guard let kindStr = dict["kind"] as? String else {
+        guard let userId = dict["userId"] as? String,
+              let displayName = dict["displayName"] as? String else {
             return nil
         }
         
-        self.kind = AttachmentKind(rawValue: kindStr) ?? .file
-        self.url = dict["url"] as? String
-        self.href = dict["href"] as? String
-        self.lat = dict["lat"] as? Double
-        self.lng = dict["lng"] as? Double
-        self.meta = dict["meta"] as? [String: Any]
+        self.init(userId: userId, displayName: displayName)
     }
-}
-
-extension DateFormatter {
-    static let iso8601: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
-        formatter.timeZone = TimeZone(secondsFromGMT: 0)
-        return formatter
-    }()
+    
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.userId = try container.decode(String.self, forKey: .userId)
+        self.displayName = try container.decode(String.self, forKey: .displayName)
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case userId
+        case displayName
+    }
 }
