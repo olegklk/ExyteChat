@@ -1,5 +1,6 @@
 import Foundation
 import SocketIO
+import ExyteChat
 
 class SocketIOManager: ObservableObject {
     static let shared = SocketIOManager()
