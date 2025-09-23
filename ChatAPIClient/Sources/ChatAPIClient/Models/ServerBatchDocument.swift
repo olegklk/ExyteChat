@@ -45,40 +45,27 @@ public struct ServerBatchDocument: Codable, Identifiable {
         self.messages = messages
     }
     
+    public init(from dict: [String: Any]) {
+        self.id = dict["_id"] as? String ?? ""
+        self.conversationId = dict["conversationId"] as? String ?? ""
+        self.type = BatchType(rawValue: dict["type"] as? String ?? "direct") ?? .direct
+        self.participants = dict["participants"] as? [String] ?? []
+        self.startedAt = Date(timeIntervalSince1970: dict["startedAt"] as? TimeInterval ?? 0)
+        self.closedAt = (dict["closedAt"] as? TimeInterval).flatMap { Date(timeIntervalSince1970: $0) }
+        self.seenBy = dict["seenBy"] as? [String] ?? []
+        self.messages = dict["messages"] as? [ServerMessage] ?? []
+    }
+    
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.id = try container.decode(String.self, forKey: .id)
         self.conversationId = try container.decode(String.self, forKey: .conversationId)
-        self.type = try container.decode(BatchType.self, forKey: .type)
+        let typeString = try container.decode(String.self, forKey: .type)
+        self.type = BatchType(rawValue: typeString) ?? .direct
         self.participants = try container.decode([String].self, forKey: .participants)
         self.startedAt = try container.decode(Date.self, forKey: .startedAt)
         self.closedAt = try container.decodeIfPresent(Date.self, forKey: .closedAt)
         self.seenBy = try container.decode([String].self, forKey: .seenBy)
         self.messages = try container.decode([ServerMessage].self, forKey: .messages)
-    }
-    
-    public init?(from dict: [String: Any]) {
-        guard let id = dict["_id"] as? String,
-              let conversationId = dict["conversationId"] as? String,
-              let typeString = dict["type"] as? String,
-              let type = BatchType(rawValue: typeString),
-              let participantIds = dict["participants"] as? [String],
-              let startedAtTimestamp = dict["startedAt"] as? TimeInterval else {
-            return nil
-        }
-        
-        self.id = id
-        self.conversationId = conversationId
-        self.type = type
-        self.participants = participantIds
-        self.startedAt = Date(timeIntervalSince1970: startedAtTimestamp)
-        self.closedAt = (dict["closedAt"] as? TimeInterval).flatMap { Date(timeIntervalSince1970: $0) }
-        self.seenBy = dict["seenBy"] as? [String] ?? []
-        
-        if let messagesArray = dict["messages"] as? [[String: Any]] {
-            self.messages = messagesArray.compactMap { ServerMessage(from: $0) }
-        } else {
-            self.messages = []
-        }
     }
 }

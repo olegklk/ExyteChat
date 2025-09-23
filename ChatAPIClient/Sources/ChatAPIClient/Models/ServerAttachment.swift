@@ -1,14 +1,21 @@
 import Foundation
 
 public struct ServerAttachment: Codable, Hashable, Sendable {
-    public let kind: String
+    public enum AttachmentKind: String, Codable {
+        case gif
+        case location
+        case file
+        case image
+    }
+    
+    public let kind: AttachmentKind
     public let url: String?
     public let href: String?
     public let lat: Double?
     public let lng: Double?
     public let meta: [String: Any]?
     
-    public init(kind: String, url: String?, href: String?, lat: Double?, lng: Double?, meta: [String: Any]?) {
+    public init(kind: AttachmentKind, url: String?, href: String?, lat: Double?, lng: Double?, meta: [String: Any]?) {
         self.kind = kind
         self.url = url
         self.href = href
@@ -17,9 +24,19 @@ public struct ServerAttachment: Codable, Hashable, Sendable {
         self.meta = meta
     }
     
+    enum CodingKeys: String, CodingKey {
+        case kind
+        case url
+        case href
+        case lat
+        case lng
+        case meta
+    }
+    
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        self.kind = try container.decode(String.self, forKey: .kind)
+        let kindString = try container.decode(String.self, forKey: .kind)
+        self.kind = AttachmentKind(rawValue: kindString) ?? .image
         self.url = try container.decodeIfPresent(String.self, forKey: .url)
         self.href = try container.decodeIfPresent(String.self, forKey: .href)
         self.lat = try container.decodeIfPresent(Double.self, forKey: .lat)
@@ -33,18 +50,9 @@ public struct ServerAttachment: Codable, Hashable, Sendable {
         }
     }
     
-    enum CodingKeys: String, CodingKey {
-        case kind
-        case url
-        case href
-        case lat
-        case lng
-        case meta
-    }
-    
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(kind, forKey: .kind)
+        try container.encode(kind.rawValue, forKey: .kind)
         try container.encodeIfPresent(url, forKey: .url)
         try container.encodeIfPresent(href, forKey: .href)
         try container.encodeIfPresent(lat, forKey: .lat)
@@ -54,6 +62,24 @@ public struct ServerAttachment: Codable, Hashable, Sendable {
 }
 
 // MARK: - Dictionary Coding Helper
+
+struct JSONCodingKeys: CodingKey {
+    var stringValue: String
+    var intValue: Int?
+
+    init(stringValue: String) {
+        self.stringValue = stringValue
+    }
+
+    init(intValue: Int) {
+        self.stringValue = "\(intValue)"
+        self.intValue = intValue
+    }
+
+    init(key: String) {
+        self.stringValue = key
+    }
+}
 
 extension KeyedDecodingContainer {
     public func decode(_ type: [String: Any].Type, forKey key: KeyedDecodingContainer<K>.Key) throws -> [String: Any] {
@@ -123,23 +149,5 @@ extension UnkeyedDecodingContainer {
     public mutating func decode(_ type: [String: Any].Type) throws -> [String: Any] {
         let container = try self.nestedContainer(keyedBy: JSONCodingKeys.self)
         return try container.decode(type)
-    }
-}
-
-struct JSONCodingKeys: CodingKey {
-    var stringValue: String
-    var intValue: Int?
-
-    init(stringValue: String) {
-        self.stringValue = stringValue
-    }
-
-    init(intValue: Int) {
-        self.stringValue = "\(intValue)"
-        self.intValue = intValue
-    }
-
-    init(key: String) {
-        self.stringValue = key
     }
 }
