@@ -49,11 +49,22 @@ final class ChatViewModel: ObservableObject {
     // Add server integration methods
     func sendServerMessage(conversationId: String, batchId: String, draft: DraftMessage) {
         // Convert draft to server format and send via SocketIO
-        // Note: This would require access to SocketIOManager which should be implemented in the project
-        /*
-        let attachments = draft.medias.compactMap { media -> ServerAttachment? in
-            // Convert media to server attachment
-            return nil // Implement conversion
+        let attachments = draft.medias.compactMap { media -> [String: Any]? in
+            // This is a simplified conversion - in practice you'd need to upload media to your server
+            switch media.type {
+            case .image:
+                return [
+                    "kind": "image",
+                    "url": "https://example.com/image.jpg" // Replace with actual URL after upload
+                ]
+            case .video:
+                return [
+                    "kind": "video",
+                    "url": "https://example.com/video.mp4" // Replace with actual URL after upload
+                ]
+            default:
+                return nil
+            }
         }
         
         SocketIOManager.shared.sendMessage(
@@ -63,41 +74,31 @@ final class ChatViewModel: ObservableObject {
             attachments: attachments,
             replyTo: draft.replyMessage?.id
         )
-        */
     }
     
     func editServerMessage(conversationId: String, batchId: String, messageId: String, newText: String) {
-        // Note: This would require access to SocketIOManager which should be implemented in the project
-        /*
         SocketIOManager.shared.editMessage(
             conversationId: conversationId,
             batchId: batchId,
             messageId: messageId,
             newText: newText
         )
-        */
     }
     
     func deleteServerMessage(conversationId: String, batchId: String, messageId: String) {
-        // Note: This would require access to SocketIOManager which should be implemented in the project
-        /*
         SocketIOManager.shared.deleteMessage(
             conversationId: conversationId,
             batchId: batchId,
             messageId: messageId
         )
-        */
     }
     
     func markMessageAsSeen(conversationId: String, batchId: String, userId: String) {
-        // Note: This would require access to SocketIOManager which should be implemented in the project
-        /*
         SocketIOManager.shared.markAsSeen(
             conversationId: conversationId,
             batchId: batchId,
             userId: userId
         )
-        */
     }
 
     func messageMenuAction() -> (Message, DefaultMessageMenuAction) -> Void {
