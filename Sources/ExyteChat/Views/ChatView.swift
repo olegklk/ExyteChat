@@ -82,6 +82,13 @@ public struct ChatView<MessageContent: View, InputViewContent: View, MenuAction:
     let didSendMessage: (DraftMessage) -> Void
     var reactionDelegate: ReactionDelegate?
 
+    // Add server-related properties
+    var conversationId: String?
+    var batchId: String?
+    var onServerMessageReceived: ((ServerMessage) -> Void)?
+    var onServerMessageEdited: ((ServerMessage) -> Void)?
+    var onServerMessageDeleted: ((String) -> Void)?
+
     // MARK: - View builders
     
     /// provide custom message view builder
@@ -151,6 +158,8 @@ public struct ChatView<MessageContent: View, InputViewContent: View, MenuAction:
     public init(messages: [Message],
                 chatType: ChatType = .conversation,
                 replyMode: ReplyMode = .quote,
+                conversationId: String? = nil,
+                batchId: String? = nil,
                 didSendMessage: @escaping (DraftMessage) -> Void,
                 reactionDelegate: ReactionDelegate? = nil,
                 messageBuilder: @escaping MessageBuilderClosure,
@@ -158,6 +167,8 @@ public struct ChatView<MessageContent: View, InputViewContent: View, MenuAction:
                 messageMenuAction: MessageMenuActionClosure?,
                 localization: ChatLocalization) {
         self.type = chatType
+        self.conversationId = conversationId
+        self.batchId = batchId
         self.didSendMessage = didSendMessage
         self.reactionDelegate = reactionDelegate
         self.sections = ChatView.mapMessages(messages, chatType: chatType, replyMode: replyMode)

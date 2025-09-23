@@ -9,6 +9,11 @@ import UIKit
 @MainActor
 final class ChatViewModel: ObservableObject {
 
+    // Add server-related properties
+    @Published var serverMessages: [Message] = []
+    @Published var isConnectedToServer = false
+    @Published var connectionError: String?
+
     @Published private(set) var fullscreenAttachmentItem: Optional<Attachment> = nil
     @Published var fullscreenAttachmentPresented = false
 
@@ -39,6 +44,60 @@ final class ChatViewModel: ObservableObject {
 
     func sendMessage(_ message: DraftMessage) {
         didSendMessage(message)
+    }
+
+    // Add server integration methods
+    func sendServerMessage(conversationId: String, batchId: String, draft: DraftMessage) {
+        // Convert draft to server format and send via SocketIO
+        // Note: This would require access to SocketIOManager which should be implemented in the project
+        /*
+        let attachments = draft.medias.compactMap { media -> ServerAttachment? in
+            // Convert media to server attachment
+            return nil // Implement conversion
+        }
+        
+        SocketIOManager.shared.sendMessage(
+            conversationId: conversationId,
+            batchId: batchId,
+            text: draft.text.isEmpty ? nil : draft.text,
+            attachments: attachments,
+            replyTo: draft.replyMessage?.id
+        )
+        */
+    }
+    
+    func editServerMessage(conversationId: String, batchId: String, messageId: String, newText: String) {
+        // Note: This would require access to SocketIOManager which should be implemented in the project
+        /*
+        SocketIOManager.shared.editMessage(
+            conversationId: conversationId,
+            batchId: batchId,
+            messageId: messageId,
+            newText: newText
+        )
+        */
+    }
+    
+    func deleteServerMessage(conversationId: String, batchId: String, messageId: String) {
+        // Note: This would require access to SocketIOManager which should be implemented in the project
+        /*
+        SocketIOManager.shared.deleteMessage(
+            conversationId: conversationId,
+            batchId: batchId,
+            messageId: messageId
+        )
+        */
+    }
+    
+    func markMessageAsSeen(conversationId: String, batchId: String, userId: String) {
+        // Note: This would require access to SocketIOManager which should be implemented in the project
+        /*
+        SocketIOManager.shared.markAsSeen(
+            conversationId: conversationId,
+            batchId: batchId,
+            userId: userId
+        )
+        */
     }
 
     func messageMenuAction() -> (Message, DefaultMessageMenuAction) -> Void {
