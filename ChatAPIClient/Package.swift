@@ -1,5 +1,3 @@
-// swift-tools-version: 5.9
-
 import PackageDescription
 
 let package = Package(
@@ -7,8 +5,27 @@ let package = Package(
     defaultLocalization: "en",
     platforms: [
         .iOS(.v17)
-    ],   
-    dependencies: [                                                                                                                                                                                                            
-    	.package(url: "https://github.com/exyte/ExyteChat.git", from: "1.0.0") // если версия отличается, измените accordingly                                                                                                 
-	] 
+    ],
+    products: [
+        .library(
+            name: "ChatAPIClient",
+            targets: ["ChatAPIClient"]),
+    ],
+    dependencies: [
+        .package(url: "https://github.com/socketio/socket.io-client-swift", from: "16.0.0")
+    ],
+    targets: [
+        .target(
+            name: "ChatAPIClient",
+            dependencies: [
+                .product(name: "SocketIO", package: "socket.io-client-swift")
+            ],
+            path: "Sources/ChatAPIClient"
+        ),
+        .testTarget(
+            name: "ChatAPIClientTests",
+            dependencies: ["ChatAPIClient"],
+            path: "Tests/ChatAPIClientTests"
+        ),
+    ]
 )

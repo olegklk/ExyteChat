@@ -26,6 +26,7 @@
 		5B0636DB2C2EA21900E54AEE /* Sequence+asyncMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B0636DA2C2EA21900E54AEE /* Sequence+asyncMap.swift */; };
 		5B6467A02D96F4FC00FFD920 /* ExyteChat in Frameworks */ = {isa = PBXBuildFile; productRef = 5B64679F2D96F4FC00FFD920 /* ExyteChat */; };
 		5B6D3A732987D85A00765148 /* Color+hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B6D3A722987D85A00765148 /* Color+hex.swift */; };
+		C3390F472E8428E400B73BF3 /* APIClientExampleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3390F462E8428E400B73BF3 /* APIClientExampleView.swift */; };
 		FF220E5D2DD9F0B700BE315E /* .editorconfig in Resources */ = {isa = PBXBuildFile; fileRef = FF220E5C2DD9F0AF00BE315E /* .editorconfig */; };
 /* End PBXBuildFile section */
 
@@ -63,6 +64,7 @@
 		5B0636D52C2E9F6100E54AEE /* CommentsExampleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommentsExampleView.swift; sourceTree = "<group>"; };
 		5B0636DA2C2EA21900E54AEE /* Sequence+asyncMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sequence+asyncMap.swift"; sourceTree = "<group>"; };
 		5B6D3A722987D85A00765148 /* Color+hex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+hex.swift"; sourceTree = "<group>"; };
+		C3390F462E8428E400B73BF3 /* APIClientExampleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClientExampleView.swift; sourceTree = "<group>"; };
 		FF220E5C2DD9F0AF00BE315E /* .editorconfig */ = {isa = PBXFileReference; lastKnownFileType = text; path = .editorconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -98,6 +100,7 @@
 		135549322864620900C9459A /* ChatExample */ = {
 			isa = PBXGroup;
 			children = (
+				C3390F462E8428E400B73BF3 /* APIClientExampleView.swift */,
 				FF220E5C2DD9F0AF00BE315E /* .editorconfig */,
 				135549332864620900C9459A /* ChatExampleApp.swift */,
 				13DF042C2864790B0043DBBC /* ContentView.swift */,
@@ -235,6 +238,7 @@
 			mainGroup = 135549272864620900C9459A;
 			packageReferences = (
 				5B64679E2D96F4FC00FFD920 /* XCLocalSwiftPackageReference "../../Chat" */,
+				C3F1286F2E842B2B00E70CB0 /* XCLocalSwiftPackageReference "../ChatAPIClient" */,
 			);
 			productRefGroup = 135549312864620900C9459A /* Products */;
 			projectDirPath = "";
@@ -271,6 +275,7 @@
 				135987BA2869F3AE006388CF /* MockMessage.swift in Sources */,
 				1376133E28782F8E00E7CF67 /* Date+Extensions.swift in Sources */,
 				13F1C0EF286AC86200D25D8A /* ChatExampleView.swift in Sources */,
+				C3390F472E8428E400B73BF3 /* APIClientExampleView.swift in Sources */,
 				135987BF2869F704006388CF /* MockChatInteractor.swift in Sources */,
 				5B0636D72C2E9F6100E54AEE /* CommentsExampleView.swift in Sources */,
 				5B0636DB2C2EA21900E54AEE /* Sequence+asyncMap.swift in Sources */,
@@ -511,6 +516,10 @@
 		5B64679E2D96F4FC00FFD920 /* XCLocalSwiftPackageReference "../../Chat" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../../Chat;
+		};
+		C3F1286F2E842B2B00E70CB0 /* XCLocalSwiftPackageReference "../ChatAPIClient" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../ChatAPIClient;
 		};
 /* End XCLocalSwiftPackageReference section */
 
