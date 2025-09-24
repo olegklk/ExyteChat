@@ -3,31 +3,49 @@
 import PackageDescription
 
 let package = Package(
-    name: "ChatAPIClient",
+    name: "Chat",
     defaultLocalization: "en",
     platforms: [
         .iOS(.v17)
     ],
     products: [
         .library(
-            name: "ChatAPIClient",
-            targets: ["ChatAPIClient"]),
+            name: "ExyteChat",
+            targets: ["ExyteChat"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/socketio/socket.io-client-swift", from: "16.0.0")
+        .package(
+            url: "https://github.com/exyte/MediaPicker.git",
+            from: "3.0.0"
+        ),
+        .package(
+            url: "https://github.com/exyte/ActivityIndicatorView",
+            from: "1.0.0"
+        ),
+        .package(
+           url: "https://github.com/Giphy/giphy-ios-sdk",
+           from: "2.2.16"
+        ),
+        .package(
+            url: "https://github.com/onevcat/Kingfisher",
+            from: "8.5.0"
+        ),
     ],
     targets: [
         .target(
-            name: "ChatAPIClient",
+            name: "ExyteChat",
             dependencies: [
-                .product(name: "SocketIO", package: "socket.io-client-swift")
+                .product(name: "ExyteMediaPicker", package: "MediaPicker"),
+                .product(name: "ActivityIndicatorView", package: "ActivityIndicatorView"),
+                .product(name: "GiphyUISDK", package: "giphy-ios-sdk"),
+                .product(name: "Kingfisher", package: "Kingfisher")
             ],
-            path: "Sources/ChatAPIClient"
+            swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency")
+            ]
         ),
         .testTarget(
-            name: "ChatAPIClientTests",
-            dependencies: ["ChatAPIClient"],
-            path: "Tests/ChatAPIClientTests"
-        ),
+            name: "ExyteChatTests",
+            dependencies: ["ExyteChat"]),
     ]
 )
