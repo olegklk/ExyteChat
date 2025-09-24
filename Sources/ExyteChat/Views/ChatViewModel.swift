@@ -5,11 +5,12 @@
 import Foundation
 import Combine
 import UIKit
+import ChatAPIClient
 
 @MainActor
 final class ChatViewModel: ObservableObject {
 
-    // Add server-related properties
+    // Server-related properties
     @Published var serverMessages: [Message] = []
     @Published var isConnectedToServer = false
     @Published var connectionError: String?
@@ -31,6 +32,11 @@ final class ChatViewModel: ObservableObject {
     var didSendMessage: (DraftMessage) -> Void = {_ in}
     var inputViewModel: InputViewModel?
     var globalFocusState: GlobalFocusState?
+    
+    // Server integration callbacks
+    var onServerMessageReceived: ((ServerMessage) -> Void)?
+    var onServerMessageEdited: ((ServerMessage) -> Void)?
+    var onServerMessageDeleted: ((String) -> Void)?
 
     func presentAttachmentFullScreen(_ attachment: Attachment) {
         fullscreenAttachmentItem = attachment
@@ -46,21 +52,20 @@ final class ChatViewModel: ObservableObject {
         didSendMessage(message)
     }
 
-    // Add server integration methods
+    // Server integration methods
     func sendServerMessage(conversationId: String, batchId: String, draft: DraftMessage) {
-        // Convert draft to server format and send via SocketIO
-        let attachments = draft.medias.compactMap { media -> [String: Any]? in
-            // This is a simplified conversion - in practice you'd need to upload media to your server
+        // Convert draft attachments to server format
+        let serverAttachments = draft.medias.compactMap { media -> [String: Any]? in
             switch media.type {
             case .image:
                 return [
                     "kind": "image",
-                    "url": "https://example.com/image.jpg" // Replace with actual URL after upload
+                    "url": "https://example.com/image.jpg" // In practice, upload media and get actual URL
                 ]
             case .video:
                 return [
                     "kind": "video",
-                    "url": "https://example.com/video.mp4" // Replace with actual URL after upload
+                    "url": "https://example.com/video.mp4" // In practice, upload media and get actual URL
                 ]
             default:
                 return nil
@@ -71,7 +76,7 @@ final class ChatViewModel: ObservableObject {
             conversationId: conversationId,
             batchId: batchId,
             text: draft.text.isEmpty ? nil : draft.text,
-            attachments: attachments,
+            attachments: serverAttachments.isEmpty ? nil : serverAttachments,
             replyTo: draft.replyMessage?.id
         )
     }
@@ -98,6 +103,62 @@ final class ChatViewModel: ObservableObject {
             conversationId: conversationId,
             batchId: batchId,
             userId: userId
+        )
+    }
+    
+    // Message conversion methods
+    func convertServerMessageToChatMessage(_ serverMessage: ServerMessage) -> Message {
+        // Convert SenderRef to User
+        let user = User(
+            id: serverMessage.sender.userId,
+            name: serverMessage.sender.displayName,
+            avatarURL: nil,
+            avatarCacheKey: nil,
+            isCurrentUser: serverMessage.sender.userId == "current-user-id" // Adjust this condition based on your current user ID
+        )
+        
+        // Convert ServerAttachment to Attachment
+        let attachments = serverMessage.attachments.compactMap { serverAttachment -> Attachment? in
+            guard let urlString = serverAttachment.url,
+                  let url = URL(string: urlString) else {
+                return nil
+            }
+            
+            let type: AttachmentType
+            switch serverAttachment.kind {
+            case .image:
+                type = .image
+            case .video:
+                type = .video
+            case .gif:
+                type = .image // Treat GIFs as images
+            case .file:
+                type = .image // Simplified for now
+            case .location:
+                type = .image // Simplified for now
+            }
+            
+            return Attachment(
+                id: UUID().uuidString,
+                url: url,
+                type: type
+            )
+        }
+        
+        return Message(
+            id: serverMessage.id,
+            user: user,
+            status: serverMessage.deletedAt != nil ? nil : .sent,
+            createdAt: serverMessage.createdAt,
+            text: serverMessage.text ?? "",
+            attachments: attachments,
+            recording: nil, // Server integration would handle this conversion
+            replyMessage: serverMessage.replyTo != nil ? ReplyMessage(
+                id: serverMessage.replyTo!,
+                user: User(id: "reply-user-id", name: "Reply User", avatarURL: nil, isCurrentUser: false),
+                createdAt: Date(),
+                text: "Reply text"
+            ) : nil
         )
     }
 

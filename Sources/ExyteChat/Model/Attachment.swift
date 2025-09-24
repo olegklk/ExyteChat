@@ -13,7 +13,7 @@ public enum AttachmentType: String, Codable, Sendable {
         switch self {
         case .image:
             return "Image"
-        default:
+        case .video:
             return "Video"
         }
     }
@@ -22,8 +22,27 @@ public enum AttachmentType: String, Codable, Sendable {
         switch mediaType {
         case .image:
             self = .image
-        default:
+        case .video:
             self = .video
+        default:
+            self = .image // Default to image for other media types
+        }
+    }
+    
+    public init(serverAttachmentKind: String) {
+        switch serverAttachmentKind {
+        case "image":
+            self = .image
+        case "video":
+            self = .video
+        case "gif":
+            self = .image // Treat GIFs as images
+        case "file":
+            self = .image // Treat files as images for now
+        case "location":
+            self = .image // Treat locations as images for now
+        default:
+            self = .image
         }
     }
 }

@@ -6,6 +6,14 @@ import Foundation
 
 public enum UserType: Int, Codable, Sendable {
     case current = 0, other, system
+    
+    public init(serverUserId: String, currentUserId: String) {
+        if serverUserId == currentUserId {
+            self = .current
+        } else {
+            self = .other
+        }
+    }
 }
 
 public struct User: Codable, Identifiable, Hashable, Sendable {
