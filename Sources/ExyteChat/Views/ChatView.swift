@@ -178,13 +178,6 @@ public struct ChatView<MessageContent: View, InputViewContent: View, MenuAction:
         self.inputViewBuilder = inputViewBuilder
         self.messageMenuAction = messageMenuAction
         self.localization = localization
-        
-        // Set up server integration if conversationId and batchId are provided
-        if let conversationId = conversationId, let batchId = batchId {
-            Task {
-                await setupServerIntegration(conversationId: conversationId, batchId: batchId)
-            }
-        }
     }
     
     public var body: some View {
