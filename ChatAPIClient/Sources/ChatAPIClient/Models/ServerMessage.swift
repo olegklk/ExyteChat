@@ -73,7 +73,8 @@ public struct ServerMessage: Codable, Identifiable, Hashable, Sendable {
         guard let id = dict["_id"] as? String,
               let senderDict = dict["sender"] as? [String: Any],
               let sender = SenderRef(from: senderDict),
-              let createdAtTimestamp = dict["createdAt"] as? TimeInterval else {
+              let createdAtString = dict["createdAt"] as? String,
+              let createdAtTimestamp = TimeInterval(createdAtString) else {
             return nil
         }
         
@@ -81,10 +82,10 @@ public struct ServerMessage: Codable, Identifiable, Hashable, Sendable {
         self.sender = sender
         self.text = dict["text"] as? String
         self.replyTo = dict["replyTo"] as? String
-        self.expiresAt = (dict["expiresAt"] as? TimeInterval).flatMap { Date(timeIntervalSince1970: $0) }
+        self.expiresAt = (dict["expiresAt"] as? String).flatMap { TimeInterval($0) }.flatMap { Date(timeIntervalSince1970: $0) }
         self.createdAt = Date(timeIntervalSince1970: createdAtTimestamp)
-        self.editedAt = (dict["editedAt"] as? TimeInterval).flatMap { Date(timeIntervalSince1970: $0) }
-        self.deletedAt = (dict["deletedAt"] as? TimeInterval).flatMap { Date(timeIntervalSince1970: $0) }
+        self.editedAt = (dict["editedAt"] as? String).flatMap { TimeInterval($0) }.flatMap { Date(timeIntervalSince1970: $0) }
+        self.deletedAt = (dict["deletedAt"] as? String).flatMap { TimeInterval($0) }.flatMap { Date(timeIntervalSince1970: $0) }
         
         if let attachmentsArray = dict["attachments"] as? [[String: Any]] {
             self.attachments = attachmentsArray.compactMap { ServerAttachment(from: $0) }
