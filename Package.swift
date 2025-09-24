@@ -30,7 +30,7 @@ let package = Package(
             url: "https://github.com/onevcat/Kingfisher",
             from: "8.5.0"
         ),
-        .package(path: "../ChatAPIClient")
+        .package(path: "./ChatAPIClient")
     ],
     targets: [
         .target(
