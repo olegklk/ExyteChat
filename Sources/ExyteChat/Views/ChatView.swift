@@ -8,6 +8,7 @@
 import SwiftUI
 import GiphyUISDK
 import ExyteMediaPicker
+import ChatAPIClient
 
 public typealias MediaPickerParameters = SelectionParamsHolder
 
