@@ -65,6 +65,10 @@ struct ContentView: View {
                                 )
                             )
                     }
+
+                    NavigationLink("Server API example") {
+                        APIClientExampleView()
+                    }
                 } header: {
                     Text("Basic examples")
                 }

@@ -28,6 +28,8 @@ final class ChatViewModel: ObservableObject {
     /// - Note: Used when launching the MessageMenu
     
     let inputFieldId = UUID()
+    private let currentUserId = "current-user-id"
+    private let currentUserName = "Current User"
 
     var didSendMessage: (DraftMessage) -> Void = {_ in}
     var inputViewModel: InputViewModel?
@@ -55,18 +57,17 @@ final class ChatViewModel: ObservableObject {
     // Server integration methods
     func sendServerMessage(conversationId: String, batchId: String, draft: DraftMessage) {
         // Convert draft attachments to server format
-        let serverAttachments = draft.medias.compactMap { media -> [String: Any]? in
+        let serverAttachments: [ServerAttachment] = draft.medias.compactMap { media in
             switch media.type {
             case .image:
-                return [
-                    "kind": "image",
-                    "url": "https://example.com/image.jpg" // In practice, upload media and get actual URL
-                ]
-            case .video:
-                return [
-                    "kind": "video",
-                    "url": "https://example.com/video.mp4" // In practice, upload media and get actual URL
-                ]
+                return ServerAttachment(
+                    kind: .image,
+                    url: "https://example.com/image.jpg", // TODO: загрузить и подставить реальный URL
+                    href: nil,
+                    lat: nil,
+                    lng: nil,
+                    meta: nil
+                )
             default:
                 return nil
             }
@@ -75,8 +76,10 @@ final class ChatViewModel: ObservableObject {
         SocketIOManager.shared.sendMessage(
             conversationId: conversationId,
             batchId: batchId,
+            senderId: currentUserId,
+            senderName: currentUserName,
             text: draft.text.isEmpty ? nil : draft.text,
-            attachments: serverAttachments.isEmpty ? nil : serverAttachments,
+            attachments: serverAttachments,
             replyTo: draft.replyMessage?.id
         )
     }
@@ -109,46 +112,33 @@ final class ChatViewModel: ObservableObject {
     // Message conversion methods
     func convertServerMessageToChatMessage(_ serverMessage: ServerMessage) -> Message {
         // Convert SenderRef to User
+        let userType: UserType = (serverMessage.sender.userId == currentUserId) ? .current : .other
         let user = User(
             id: serverMessage.sender.userId,
             name: serverMessage.sender.displayName,
             avatarURL: nil,
-            avatarCacheKey: nil,
-            isCurrentUser: serverMessage.sender.userId == "current-user-id" // Adjust this condition based on your current user ID
+            type: userType
         )
         
         // Convert ServerAttachment to Attachment
-        let attachments = serverMessage.attachments.compactMap { serverAttachment -> Attachment? in
-            guard let urlString = serverAttachment.url,
-                  let url = URL(string: urlString) else {
-                return nil
-            }
-            
-            let type: AttachmentType
-            switch serverAttachment.kind {
-            case .image:
-                type = .image
-            case .video:
-                type = .video
-            case .gif:
-                type = .image // Treat GIFs as images
-            case .file:
-                type = .image // Simplified for now
-            case .location:
-                type = .image // Simplified for now
-            }
-            
+        let attachments: [Attachment] = serverMessage.attachments.compactMap { sa in
+            guard (sa.kind == .image || sa.kind == .gif),
+                  let s = sa.url,
+                  let url = URL(string: s) else { return nil }
             return Attachment(
                 id: UUID().uuidString,
-                url: url,
-                type: type
+                thumbnail: url,
+                full: url,
+                type: .image,
+                thumbnailCacheKey: nil,
+                fullCacheKey: nil
             )
         }
         
         return Message(
             id: serverMessage.id,
             user: user,
-            status: serverMessage.deletedAt != nil ? nil : .sent,
+            status: .sent,
             createdAt: serverMessage.createdAt,
             text: serverMessage.text ?? "",
             attachments: attachments,

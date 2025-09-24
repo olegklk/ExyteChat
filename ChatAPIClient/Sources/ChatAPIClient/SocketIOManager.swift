@@ -1,9 +1,13 @@
 import Foundation
 import SocketIO
 
+@MainActor
 public class SocketIOManager: ObservableObject {
     public static let shared = SocketIOManager()
-    
+
+    public var socketURLString: String = "https://chat-back.gramatune.com"
+    public func setSocketURL(_ url: String) { self.socketURLString = url }
+
     private var manager: SocketManager?
     private var socket: SocketIOClient?
     
@@ -11,7 +15,7 @@ public class SocketIOManager: ObservableObject {
     @Published public private(set) var connectionError: String?
     
     private var messageAppendedHandler: ((ServerMessage) -> Void)?
-    private var messageEditedHandler: ((ServerMessage) -> Void)?
+    private var messageEditedHandler: ((String, String?) -> Void)?
     private var messageDeletedHandler: ((String) -> Void)?
     private var batchAssignedHandler: ((String, String?) -> Void)?
     private var conversationAssignedHandler: ((String) -> Void)?
@@ -40,6 +44,26 @@ public class SocketIOManager: ObservableObject {
         socket = nil
         isConnected = false
     }
+
+    public func connect(conversationId: String? = nil, batchId: String? = nil, userId: String? = nil, userName: String? = nil) {
+        guard let url = URL(string: socketURLString) else {
+            connectionError = "Invalid URL"
+            return
+        }
+        var cfg: SocketIOClientConfiguration = [.log(false), .compress]
+        var params: [String: String] = [:]
+        if let conversationId { params["conversationId"] = conversationId }
+        if let batchId { params["batchId"] = batchId }
+        if let userId { params["userId"] = userId }
+        if let userName { params["userName"] = userName }
+        if !params.isEmpty {
+            cfg.insert(.connectParams(params))
+        }
+        manager = SocketManager(socketURL: url, config: cfg)
+        socket = manager?.defaultSocket
+        setupSocketHandlers()
+        socket?.connect()
+    }
     
     private func setupSocketHandlers() {
         socket?.on(clientEvent: .connect) { [weak self] data, ack in
@@ -64,28 +88,40 @@ public class SocketIOManager: ObservableObject {
         }
         
         // Server events
-        socket?.on("chat.appended") { [weak self] data, ack in
+        socket?.on("chat.appended") { [weak self] data, _ in
             guard let self = self,
-                  let handler = self.messageAppendedHandler,
-                  let dict = data.first as? [String: Any],
-                  let message = ServerMessage(from: dict) else { return }
-            
-            handler(message)
+                  let dict = data.first as? [String: Any] else { return }
+
+            var m = dict
+            // нормализуем id/sender
+            if m["_id"] == nil, let mid = m["messageId"] { m["_id"] = mid }
+            if m["sender"] == nil, let sid = m["senderId"] as? String {
+                m["sender"] = ["userId": sid, "displayName": (m["senderName"] as? String) ?? ""]
+            }
+            // нормализуем createdAt в ISO (если придёт epoch/отсутствует)
+            if m["createdAt"] == nil {
+                m["createdAt"] = ISO8601DateFormatter().string(from: Date())
+            }
+
+            if let message = ServerMessage(from: m) {
+                self.messageAppendedHandler?(message)
+            }
         }
         
-        socket?.on("chat.edited") { [weak self] data, ack in
+        socket?.on("chat.edited") { [weak self] data, _ in
             guard let self = self,
                   let handler = self.messageEditedHandler,
                   let dict = data.first as? [String: Any],
-                  let message = ServerMessage(from: dict) else { return }
-            
-            handler(message)
+                  let messageId = dict["messageId"] as? String else { return }
+            let newText = dict["newText"] as? String
+            handler(messageId, newText)
         }
         
-        socket?.on("chat.deleted") { [weak self] data, ack in
+        socket?.on("chat.deleted") { [weak self] data, _ in
             guard let self = self,
                   let handler = self.messageDeletedHandler,
-                  let messageId = data.first as? String else { return }
+                  let dict = data.first as? [String: Any],
+                  let messageId = dict["messageId"] as? String else { return }
             
             handler(messageId)
         }
@@ -132,35 +168,30 @@ public class SocketIOManager: ObservableObject {
     
     // MARK: - Client Events
     
-    public func sendMessage(conversationId: String, batchId: String, text: String?, attachments: [[String: Any]]?, replyTo: String?) {
+    public func sendMessage(conversationId: String, batchId: String, senderId: String, senderName: String? = nil, text: String? = nil, attachments: [ServerAttachment] = [], replyTo: String? = nil, expiresInMs: Int? = nil, expiresAt: Date? = nil) {
         var payload: [String: Any] = [
             "conversationId": conversationId,
-            "batchId": batchId
+            "batchId": batchId,
+            "senderId": senderId
         ]
-        
-        if let text = text {
-            payload["text"] = text
+        if let senderName { payload["senderName"] = senderName }
+        if let text { payload["text"] = text }
+        if !attachments.isEmpty {
+            payload["attachments"] = attachments.map { $0.toDictionary() }
         }
-        
-        if let attachments = attachments {
-            payload["attachments"] = attachments
-        }
-        
-        if let replyTo = replyTo {
-            payload["replyTo"] = replyTo
-        }
-        
+        if let replyTo { payload["replyTo"] = replyTo }
+        if let expiresInMs { payload["expiresInMs"] = expiresInMs }
+        if let expiresAt { payload["expiresAt"] = ISO8601DateFormatter().string(from: expiresAt) }
         socket?.emit("chat.append", payload)
     }
     
-    public func editMessage(conversationId: String, batchId: String, messageId: String, newText: String) {
-        let payload: [String: Any] = [
+    public func editMessage(conversationId: String, batchId: String, messageId: String, newText: String?) {
+        var payload: [String: Any] = [
             "conversationId": conversationId,
             "batchId": batchId,
-            "messageId": messageId,
-            "newText": newText
+            "messageId": messageId
         ]
-        
+        if let newText { payload["newText"] = newText }
         socket?.emit("chat.edit", payload)
     }
     
@@ -190,7 +221,7 @@ public class SocketIOManager: ObservableObject {
         messageAppendedHandler = handler
     }
     
-    public func onMessageEdited(handler: @escaping (ServerMessage) -> Void) {
+    public func onMessageEdited(handler: @escaping (String, String?) -> Void) {
         messageEditedHandler = handler
     }
     

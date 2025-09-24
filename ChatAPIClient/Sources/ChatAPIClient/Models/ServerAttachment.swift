@@ -1,7 +1,7 @@
 import Foundation
 
 public struct ServerAttachment: Codable, Hashable, Sendable {
-    public enum AttachmentKind: String, Codable {
+    public enum AttachmentKind: String, Codable, Sendable {
         case gif
         case location
         case file
@@ -13,15 +13,24 @@ public struct ServerAttachment: Codable, Hashable, Sendable {
     public let href: String?
     public let lat: Double?
     public let lng: Double?
-    public let meta: [String: Any]?
+    public let meta: [String: JSONValue]?
     
-    public init(kind: AttachmentKind, url: String?, href: String?, lat: Double?, lng: Double?, meta: [String: Any]?) {
+    public init(kind: AttachmentKind, url: String?, href: String?, lat: Double?, lng: Double?, meta: [String: JSONValue]?) {
         self.kind = kind
         self.url = url
         self.href = href
         self.lat = lat
         self.lng = lng
         self.meta = meta
+    }
+
+    public init(kind: AttachmentKind, url: String?, href: String?, lat: Double?, lng: Double?, metaAny: [String: Any]?) {
+        self.kind = kind
+        self.url = url
+        self.href = href
+        self.lat = lat
+        self.lng = lng
+        self.meta = metaAny?.compactMapValues { JSONValue.from(any: $0) }
     }
     
     enum CodingKeys: String, CodingKey {
@@ -35,19 +44,12 @@ public struct ServerAttachment: Codable, Hashable, Sendable {
     
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        let kindString = try container.decode(String.self, forKey: .kind)
-        self.kind = AttachmentKind(rawValue: kindString) ?? .image
+        self.kind = try container.decode(AttachmentKind.self, forKey: .kind)
         self.url = try container.decodeIfPresent(String.self, forKey: .url)
         self.href = try container.decodeIfPresent(String.self, forKey: .href)
         self.lat = try container.decodeIfPresent(Double.self, forKey: .lat)
         self.lng = try container.decodeIfPresent(Double.self, forKey: .lng)
-        
-        // Handle meta dictionary decoding
-        if let metaDict = try container.decodeIfPresent([String: Any].self, forKey: .meta) {
-            self.meta = metaDict
-        } else {
-            self.meta = nil
-        }
+        self.meta = try container.decodeIfPresent([String: JSONValue].self, forKey: .meta)
     }
     
     public func encode(to encoder: Encoder) throws {
@@ -61,93 +63,30 @@ public struct ServerAttachment: Codable, Hashable, Sendable {
     }
 }
 
-// MARK: - Dictionary Coding Helper
 
-struct JSONCodingKeys: CodingKey {
-    var stringValue: String
-    var intValue: Int?
-
-    init(stringValue: String) {
-        self.stringValue = stringValue
-    }
-
-    init(intValue: Int) {
-        self.stringValue = "\(intValue)"
-        self.intValue = intValue
-    }
-
-    init(key: String) {
-        self.stringValue = key
-    }
-}
-
-extension KeyedDecodingContainer {
-    public func decode(_ type: [String: Any].Type, forKey key: KeyedDecodingContainer<K>.Key) throws -> [String: Any] {
-        let container = try self.nestedContainer(keyedBy: JSONCodingKeys.self, forKey: key)
-        return try container.decode(type)
-    }
-
-    public func decodeIfPresent(_ type: [String: Any].Type, forKey key: KeyedDecodingContainer<K>.Key) throws -> [String: Any]? {
-        guard contains(key) else { return nil }
-        let container = try self.nestedContainer(keyedBy: JSONCodingKeys.self, forKey: key)
-        return try container.decode(type)
-    }
-
-    public func decode(_ type: [Any].Type, forKey key: KeyedDecodingContainer<K>.Key) throws -> [Any] {
-        var container = try self.nestedUnkeyedContainer(forKey: key)
-        return try container.decode(type)
-    }
-
-    public func decodeIfPresent(_ type: [Any].Type, forKey key: KeyedDecodingContainer<K>.Key) throws -> [Any]? {
-        guard contains(key) else { return nil }
-        var container = try self.nestedUnkeyedContainer(forKey: key)
-        return try container.decode(type)
-    }
-    
-    public func decode(_ type: [String: Any].Type) throws -> [String: Any] {
-        var dictionary = [String: Any]()
-        for key in allKeys {
-            if let boolValue = try? decode(Bool.self, forKey: key) {
-                dictionary[key.stringValue] = boolValue
-            } else if let intValue = try? decode(Int.self, forKey: key) {
-                dictionary[key.stringValue] = intValue
-            } else if let stringValue = try? decode(String.self, forKey: key) {
-                dictionary[key.stringValue] = stringValue
-            } else if let doubleValue = try? decode(Double.self, forKey: key) {
-                dictionary[key.stringValue] = doubleValue
-            } else if let nestedDictionary = try? decode([String: Any].self, forKey: key) {
-                dictionary[key.stringValue] = nestedDictionary
-            } else if let nestedArray = try? decode([Any].self, forKey: key) {
-                dictionary[key.stringValue] = nestedArray
-            }
+extension ServerAttachment {
+    init?(dict: [String: Any]) {
+        guard let kindRaw = dict["kind"] as? String,
+              let kind = AttachmentKind(rawValue: kindRaw) else { return nil }
+        self.kind = kind
+        self.url = dict["url"] as? String
+        self.href = dict["href"] as? String
+        self.lat = dict["lat"] as? Double
+        self.lng = dict["lng"] as? Double
+        if let rawMeta = dict["meta"] as? [String: Any] {
+            self.meta = rawMeta.compactMapValues { JSONValue.from(any: $0) }
+        } else {
+            self.meta = nil
         }
-        return dictionary
     }
-}
 
-extension UnkeyedDecodingContainer {
-    public mutating func decode(_ type: [Any].Type) throws -> [Any] {
-        var array: [Any] = []
-        while isAtEnd == false {
-            if let value = try? decode(Bool.self) {
-                array.append(value)
-            } else if let value = try? decode(Int.self) {
-                array.append(value)
-            } else if let value = try? decode(String.self) {
-                array.append(value)
-            } else if let value = try? decode(Double.self) {
-                array.append(value)
-            } else if let nestedDictionary = try? decode([String: Any].self) {
-                array.append(nestedDictionary)
-            } else if let nestedArray = try? decode([Any].self) {
-                array.append(nestedArray)
-            }
-        }
-        return array
-    }
-    
-    public mutating func decode(_ type: [String: Any].Type) throws -> [String: Any] {
-        let container = try self.nestedContainer(keyedBy: JSONCodingKeys.self)
-        return try container.decode(type)
+    func toDictionary() -> [String: Any] {
+        var result: [String: Any] = ["kind": kind.rawValue]
+        if let url { result["url"] = url }
+        if let href { result["href"] = href }
+        if let lat { result["lat"] = lat }
+        if let lng { result["lng"] = lng }
+        if let meta { result["meta"] = meta.mapValues { $0.anyValue } }
+        return result
     }
 }

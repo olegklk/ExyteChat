@@ -68,27 +68,47 @@ public struct ServerMessage: Codable, Identifiable, Hashable, Sendable {
         try container.encodeIfPresent(editedAt, forKey: .editedAt)
         try container.encodeIfPresent(deletedAt, forKey: .deletedAt)
     }
-    
-    public init?(from dict: [String: Any]) {
-        guard let id = dict["_id"] as? String,
-              let senderDict = dict["sender"] as? [String: Any],
-              let sender = SenderRef(from: senderDict),
-              let createdAtString = dict["createdAt"] as? String,
-              let createdAtTimestamp = TimeInterval(createdAtString) else {
+
+    private static func parseDate(_ any: Any?) -> Date? {
+        switch any {
+        case let s as String:
+            if let t = TimeInterval(s) { return Date(timeIntervalSince1970: t) }
+            let isoFS = ISO8601DateFormatter()
+            isoFS.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            return isoFS.date(from: s) ?? ISO8601DateFormatter().date(from: s)
+        case let d as Double:
+            return Date(timeIntervalSince1970: d)
+        case let i as Int:
+            return Date(timeIntervalSince1970: TimeInterval(i))
+        default:
             return nil
         }
-        
+    }
+    
+    public init?(from dict: [String: Any]) {
+        guard let id = (dict["_id"] as? String) ?? (dict["messageId"] as? String) else { return nil }
+
+        var senderRef: SenderRef?
+        if let senderDict = dict["sender"] as? [String: Any] {
+            senderRef = SenderRef(dict: senderDict)
+        } else if let senderId = dict["senderId"] as? String {
+            senderRef = SenderRef(userId: senderId, displayName: (dict["senderName"] as? String) ?? "")
+        }
+        guard let sender = senderRef else { return nil }
+
+        guard let createdAt = Self.parseDate(dict["createdAt"]) else { return nil }
+
         self.id = id
         self.sender = sender
         self.text = dict["text"] as? String
         self.replyTo = dict["replyTo"] as? String
-        self.expiresAt = (dict["expiresAt"] as? String).flatMap { TimeInterval($0) }.flatMap { Date(timeIntervalSince1970: $0) }
-        self.createdAt = Date(timeIntervalSince1970: createdAtTimestamp)
-        self.editedAt = (dict["editedAt"] as? String).flatMap { TimeInterval($0) }.flatMap { Date(timeIntervalSince1970: $0) }
-        self.deletedAt = (dict["deletedAt"] as? String).flatMap { TimeInterval($0) }.flatMap { Date(timeIntervalSince1970: $0) }
-        
+        self.expiresAt = Self.parseDate(dict["expiresAt"])
+        self.createdAt = createdAt
+        self.editedAt = Self.parseDate(dict["editedAt"])
+        self.deletedAt = Self.parseDate(dict["deletedAt"])
+
         if let attachmentsArray = dict["attachments"] as? [[String: Any]] {
-            self.attachments = attachmentsArray.compactMap { ServerAttachment(from: $0) }
+            self.attachments = attachmentsArray.compactMap { ServerAttachment(dict: $0) }
         } else {
             self.attachments = []
         }
@@ -96,23 +116,12 @@ public struct ServerMessage: Codable, Identifiable, Hashable, Sendable {
 }
 
 extension SenderRef {
-    init?(from dict: [String: Any]) {
+    init?(dict: [String: Any]) {
         guard let userId = dict["userId"] as? String,
               let displayName = dict["displayName"] as? String else {
             return nil
         }
-        
+
         self.init(userId: userId, displayName: displayName)
-    }
-    
-    public init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        self.userId = try container.decode(String.self, forKey: .userId)
-        self.displayName = try container.decode(String.self, forKey: .displayName)
-    }
-    
-    enum CodingKeys: String, CodingKey {
-        case userId
-        case displayName
     }
 }

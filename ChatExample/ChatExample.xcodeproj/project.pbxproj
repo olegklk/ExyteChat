@@ -238,7 +238,6 @@
 			mainGroup = 135549272864620900C9459A;
 			packageReferences = (
 				5B64679E2D96F4FC00FFD920 /* XCLocalSwiftPackageReference "../../Chat" */,
-				C3F1286F2E842B2B00E70CB0 /* XCLocalSwiftPackageReference "../ChatAPIClient" */,
 			);
 			productRefGroup = 135549312864620900C9459A /* Products */;
 			projectDirPath = "";
@@ -516,10 +515,6 @@
 		5B64679E2D96F4FC00FFD920 /* XCLocalSwiftPackageReference "../../Chat" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../../Chat;
-		};
-		C3F1286F2E842B2B00E70CB0 /* XCLocalSwiftPackageReference "../ChatAPIClient" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = ../ChatAPIClient;
 		};
 /* End XCLocalSwiftPackageReference section */
 

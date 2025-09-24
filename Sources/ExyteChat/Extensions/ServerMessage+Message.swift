@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import ChatAPIClient
 
 extension ServerMessage {
     public func toMessage(currentUserId: String?) -> Message {
@@ -22,10 +23,15 @@ extension ServerMessage {
             guard let url = attachment.url, let urlObj = URL(string: url) else { return nil }
             
             switch attachment.kind {
-            case "image":
-                return Attachment(id: UUID().uuidString, url: urlObj, type: .image)
-            case "video":
-                return Attachment(id: UUID().uuidString, url: urlObj, type: .video)
+            case .image, .gif:
+                return Attachment(
+                    id: UUID().uuidString,
+                    thumbnail: urlObj,
+                    full: urlObj,
+                    type: .image,
+                    thumbnailCacheKey: nil,
+                    fullCacheKey: nil
+                )
             default:
                 return nil
             }
@@ -45,11 +51,11 @@ extension ServerMessage {
         return Message(
             id: id,
             user: user,
-            status: .sent, // Server messages are considered sent
+            status: .sent,
             createdAt: createdAt,
             text: text ?? "",
             attachments: chatAttachments,
-            reactions: [],
+            recording: nil,
             replyMessage: replyMessage
         )
     }

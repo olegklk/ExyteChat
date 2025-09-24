@@ -1,3 +1,4 @@
+// swift-tools-version: 6.0
 import PackageDescription
 
 let package = Package(
@@ -16,16 +17,10 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "ChatAPIClient",
-            dependencies: [
-                .product(name: "SocketIO", package: "socket.io-client-swift")
-            ],
-            path: "Sources/ChatAPIClient"
-        ),
-        .testTarget(
-            name: "ChatAPIClientTests",
-            dependencies: ["ChatAPIClient"],
-            path: "Tests/ChatAPIClientTests"
-        ),
+			name: "ChatAPIClient",
+			dependencies: [
+				.product(name: "SocketIO", package: "socket.io-client-swift")
+			]
+		),
     ]
 )

@@ -556,13 +556,13 @@ public struct ChatView<MessageContent: View, InputViewContent: View, MenuAction:
     private func setupServerIntegration(conversationId: String, batchId: String) async {
         // Connect to Socket.IO if not already connected
         if !SocketIOManager.shared.isConnected {
-            SocketIOManager.shared.connect()
+            SocketIOManager.shared.connect(conversationId: conversationId, batchId: batchId)
         }
         
         // Open batch for this conversation
         do {
             try await ChatAPIClient.shared.openBatch(
-                type: "direct",
+                type: .direct,
                 batchId: batchId,
                 participants: ["current-user-id", "other-user-id"]
             )
@@ -580,7 +580,7 @@ public struct ChatView<MessageContent: View, InputViewContent: View, MenuAction:
         }
         
         // Listen for edited messages
-        SocketIOManager.shared.onMessageEdited { [weak viewModel] serverMessage in
+        SocketIOManager.shared.onMessageEdited { [weak viewModel] messageId, newText in
             // Handle message edit
         }
         

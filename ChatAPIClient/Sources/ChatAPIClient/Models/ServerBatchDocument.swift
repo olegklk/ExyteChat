@@ -1,7 +1,7 @@
 import Foundation
 
-public struct ServerBatchDocument: Codable, Identifiable {
-    public enum BatchType: String, Codable {
+public struct ServerBatchDocument: Codable, Identifiable, Sendable {
+    public enum BatchType: String, Codable, Sendable {
         case direct
         case group
         case channel
@@ -46,14 +46,18 @@ public struct ServerBatchDocument: Codable, Identifiable {
     }
     
     public init(from dict: [String: Any]) {
-        self.id = dict["_id"] as? String ?? ""
-        self.conversationId = dict["conversationId"] as? String ?? ""
-        self.type = BatchType(rawValue: dict["type"] as? String ?? "direct") ?? .direct
-        self.participants = dict["participants"] as? [String] ?? []
-        self.startedAt = Date(timeIntervalSince1970: dict["startedAt"] as? TimeInterval ?? 0)
-        self.closedAt = (dict["closedAt"] as? TimeInterval).flatMap { Date(timeIntervalSince1970: $0) }
-        self.seenBy = dict["seenBy"] as? [String] ?? []
-        self.messages = dict["messages"] as? [ServerMessage] ?? []
+        self.id = (dict["_id"] as? String) ?? ""
+        self.conversationId = (dict["conversationId"] as? String) ?? ""
+        self.type = BatchType(rawValue: (dict["type"] as? String) ?? "direct") ?? .direct
+        self.participants = (dict["participants"] as? [String]) ?? []
+        self.startedAt = Self.parseDate(dict["startedAt"]) ?? Date()
+        self.closedAt = Self.parseDate(dict["closedAt"])
+        self.seenBy = (dict["seenBy"] as? [String]) ?? []
+        if let msgs = dict["messages"] as? [[String: Any]] {
+            self.messages = msgs.compactMap { ServerMessage(from: $0) }
+        } else {
+            self.messages = []
+        }
     }
     
     public init(from decoder: Decoder) throws {
@@ -67,5 +71,21 @@ public struct ServerBatchDocument: Codable, Identifiable {
         self.closedAt = try container.decodeIfPresent(Date.self, forKey: .closedAt)
         self.seenBy = try container.decode([String].self, forKey: .seenBy)
         self.messages = try container.decode([ServerMessage].self, forKey: .messages)
+    }
+
+    private static func parseDate(_ any: Any?) -> Date? {
+        switch any {
+        case let s as String:
+            if let t = TimeInterval(s) { return Date(timeIntervalSince1970: t) }
+            let isoFS = ISO8601DateFormatter()
+            isoFS.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            return isoFS.date(from: s) ?? ISO8601DateFormatter().date(from: s)
+        case let d as Double:
+            return Date(timeIntervalSince1970: d)
+        case let i as Int:
+            return Date(timeIntervalSince1970: TimeInterval(i))
+        default:
+            return nil
+        }
     }
 }

@@ -15,28 +15,22 @@ struct APIClientExampleView: View {
     var body: some View {
         ChatView(
             messages: viewModel.messages,
-            didSendMessage: viewModel.send
-        ) { draft in
-            // Handle message sending through ChatAPIClient
-            viewModel.sendServerMessage(draft)
-        }
+            didSendMessage: viewModel.handleSend
+        )
         .onAppear {
-            // Load chat history when view appears
-            Task {
-                await viewModel.loadChatHistory()
-            }
-            
-            // Set up Socket.IO listeners
-            viewModel.setupSocketListeners()
+            viewModel.onAppear()
         }
         .chatTheme(accentColor: .blue)
     }
 }
 
+@MainActor
 class APIClientExampleViewModel: ObservableObject {
     @Published var messages: [Message] = []
     private var conversationId = "example-conversation-id"
     private var batchId = "example-batch-id"
+    private let currentUserId = "current-user-id"
+    private let currentUserName = "Current User"
     
     func loadChatHistory() async {
         do {
@@ -58,11 +52,10 @@ class APIClientExampleViewModel: ObservableObject {
         }
     }
     
-    func send(_ draft: DraftMessage) {
-        // Add message to UI immediately
+    func handleSend(_ draft: DraftMessage) {
         let tempMessage = Message(
             id: draft.id ?? UUID().uuidString,
-            user: User(id: "current-user-id", name: "Current User", avatarURL: nil, isCurrentUser: true),
+            user: User(id: currentUserId, name: currentUserName, avatarURL: nil, isCurrentUser: true),
             status: .sending,
             createdAt: draft.createdAt,
             text: draft.text,
@@ -70,19 +63,40 @@ class APIClientExampleViewModel: ObservableObject {
             recording: draft.recording,
             replyMessage: draft.replyMessage
         )
-        
         self.messages.append(tempMessage)
-    }
-    
-    func sendServerMessage(_ draft: DraftMessage) {
-        // Send message through Socket.IO
+
         SocketIOManager.shared.sendMessage(
             conversationId: conversationId,
             batchId: batchId,
+            senderId: currentUserId,
+            senderName: currentUserName,
             text: draft.text.isEmpty ? nil : draft.text,
-            attachments: nil, // In a real implementation, you would convert attachments
+            attachments: [],
             replyTo: draft.replyMessage?.id
         )
+    }
+
+    func onAppear() {
+        setupSocketListeners()
+        SocketIOManager.shared.connect(
+            conversationId: conversationId,
+            batchId: batchId,
+            userId: currentUserId,
+            userName: currentUserName
+        )
+        Task { await loadChatHistory() }
+        Task {
+            do {
+                try await ChatAPIClient.shared.openBatch(
+                    type: .direct,
+                    batchId: batchId,
+                    participants: [currentUserId, "other-user-id"],
+                    conversationId: conversationId
+                )
+            } catch {
+                print("Failed to open batch: \(error)")
+            }
+        }
     }
     
     func setupSocketListeners() {
@@ -90,23 +104,20 @@ class APIClientExampleViewModel: ObservableObject {
         SocketIOManager.shared.onMessageAppended { [weak self] serverMessage in
             guard let self = self else { return }
             let chatMessage = self.convertServerMessageToChatMessage(serverMessage)
-            
             DispatchQueue.main.async {
-                // Remove any temporary messages with the same ID
                 self.messages.removeAll { $0.id == serverMessage.id }
-                // Add the confirmed message
                 self.messages.append(chatMessage)
             }
         }
-        
+
         // Listen for edited messages
-        SocketIOManager.shared.onMessageEdited { [weak self] serverMessage in
+        SocketIOManager.shared.onMessageEdited { [weak self] messageId, newText in
             guard let self = self else { return }
-            let chatMessage = self.convertServerMessageToChatMessage(serverMessage)
-            
             DispatchQueue.main.async {
-                if let index = self.messages.firstIndex(where: { $0.id == serverMessage.id }) {
-                    self.messages[index] = chatMessage
+                if let idx = self.messages.firstIndex(where: { $0.id == messageId }) {
+                    var msg = self.messages[idx]
+                    msg.text = newText ?? msg.text
+                    self.messages[idx] = msg
                 }
             }
         }
@@ -115,19 +126,6 @@ class APIClientExampleViewModel: ObservableObject {
         SocketIOManager.shared.onMessageDeleted { [weak self] messageId in
             DispatchQueue.main.async {
                 self?.messages.removeAll { $0.id == messageId }
-            }
-        }
-        
-        // Open a batch for this conversation
-        Task {
-            do {
-                try await ChatAPIClient.shared.openBatch(
-                    type: "direct",
-                    batchId: batchId,
-                    participants: ["current-user-id", "other-user-id"]
-                )
-            } catch {
-                print("Failed to open batch: \(error)")
             }
         }
     }
@@ -142,19 +140,22 @@ class APIClientExampleViewModel: ObservableObject {
         )
         
         // Convert ServerAttachment to Attachment
-        let attachments = serverMessage.attachments.map { serverAttachment in
-            // In a real implementation, you would properly convert attachments
-            Attachment(
+        let attachments: [Attachment] = serverMessage.attachments.compactMap { sa in
+            guard sa.kind == .image, let s = sa.url, let url = URL(string: s) else { return nil }
+            return Attachment(
                 id: UUID().uuidString,
-                url: URL(string: serverAttachment.url ?? "https://example.com/placeholder.jpg")!,
-                type: .image
+                thumbnail: url,
+                full: url,
+                type: .image,
+                thumbnailCacheKey: nil,
+                fullCacheKey: nil
             )
         }
-        
+
         return Message(
             id: serverMessage.id,
             user: user,
-            status: serverMessage.deletedAt != nil ? nil : .sent,
+            status: .sent,
             createdAt: serverMessage.createdAt,
             text: serverMessage.text ?? "",
             attachments: attachments,

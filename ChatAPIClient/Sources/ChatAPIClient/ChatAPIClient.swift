@@ -1,9 +1,10 @@
 import Foundation
 
-public class ChatAPIClient {
+public actor ChatAPIClient {
     public static let shared = ChatAPIClient()
-    
-    private let baseURL = "https://chat-back.gramatune.com" // Replace with your actual base URL
+
+    private var baseURL = "https://chat-back.gramatune.com"
+    public func setBaseURL(_ url: String) { self.baseURL = url }
     
     public enum Endpoint {
         case openBatch(type: String, batchId: String)
@@ -26,9 +27,14 @@ public class ChatAPIClient {
     }
     
     private init() {}
+
+    public struct PatchResult: Codable, Hashable, Sendable {
+        public let matched: Int
+        public let modified: Int
+    }
     
-    public func openBatch(type: String, batchId: String, participants: [String], conversationId: String? = nil) async throws {
-        var urlComponents = URLComponents(string: baseURL + Endpoint.openBatch(type: type, batchId: batchId).path)!
+    public func openBatch(type: ServerBatchDocument.BatchType, batchId: String, participants: [String], conversationId: String? = nil) async throws {
+        var urlComponents = URLComponents(string: baseURL + Endpoint.openBatch(type: type.rawValue, batchId: batchId).path)!
         
         var body: [String: Any] = [
             "participants": participants
@@ -46,15 +52,17 @@ public class ChatAPIClient {
         try await makeRequest(urlComponents: urlComponents, method: "POST")
     }
     
-    public func patchMessage(batchId: String, messageId: String, newText: String) async throws -> [String: Any] {
+    public func patchMessage(batchId: String, messageId: String, newText: String?) async throws -> PatchResult {
         let urlComponents = URLComponents(string: baseURL + Endpoint.patchMessage.path)!
-        let body: [String: Any] = [
+        var body: [String: Any] = [
             "batchId": batchId,
-            "messageId": messageId,
-            "newText": newText
+            "messageId": messageId
         ]
-        
-        return try await makeRequest(urlComponents: urlComponents, method: "PATCH", body: body)
+        if let newText { body["newText"] = newText }
+        let dict = try await makeRequest(urlComponents: urlComponents, method: "PATCH", body: body)
+        let matched = dict["matched"] as? Int ?? 0
+        let modified = dict["modified"] as? Int ?? 0
+        return PatchResult(matched: matched, modified: modified)
     }
     
     public func getHistory(conversationId: String) async throws -> [ServerBatchDocument] {
@@ -91,7 +99,8 @@ public class ChatAPIClient {
             throw URLError(.badServerResponse)
         }
         
-        let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] ?? [:]
-        return json
+        if data.isEmpty { return [:] }
+        let jsonObj = try JSONSerialization.jsonObject(with: data, options: [])
+        return jsonObj as? [String: Any] ?? [:]
     }
 }

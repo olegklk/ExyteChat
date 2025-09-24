@@ -6,28 +6,34 @@
 //
 
 import Foundation
+import ChatAPIClient
 
 extension Message {
     public func toServerMessage(conversationId: String, batchId: String) -> ServerMessage {
-        let sender = ServerUser(id: user.id, displayName: user.name)
+        let sender = SenderRef(userId: user.id, displayName: user.name)
         
-        let serverAttachments = attachments.map { attachment -> ServerAttachment in
-            // This is a simplified conversion - in practice you'd need the actual server URLs
+        let serverAttachments: [ServerAttachment] = attachments.compactMap { attachment in
+            guard attachment.type == .image else { return nil }
             return ServerAttachment(
-                kind: attachment.type == .image ? "image" : "video",
-                url: attachment.full.absoluteString
+                kind: .image,
+                url: attachment.full.absoluteString,
+                href: nil,
+                lat: nil,
+                lng: nil,
+                meta: nil
             )
         }
         
         return ServerMessage(
             id: id,
-            conversationId: conversationId,
-            batchId: batchId,
             sender: sender,
             text: text.isEmpty ? nil : text,
             attachments: serverAttachments,
             replyTo: replyMessage?.id,
-            createdAt: createdAt
+            expiresAt: nil,
+            createdAt: createdAt,
+            editedAt: nil,
+            deletedAt: nil
         )
     }
 }
