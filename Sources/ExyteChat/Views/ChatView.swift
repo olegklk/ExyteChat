@@ -397,8 +397,11 @@ public struct ChatView<MessageContent: View, InputViewContent: View, MenuAction:
                 }
             }
             
-            // Set up server listeners
+            // Set up server integration and listeners
             if let conversationId = conversationId, let batchId = batchId {
+                Task {
+                    await setupServerIntegration(conversationId: conversationId, batchId: batchId)
+                }
                 setupServerListeners(conversationId: conversationId, batchId: batchId)
             }
         }
