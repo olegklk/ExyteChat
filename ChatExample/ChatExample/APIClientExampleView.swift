@@ -68,17 +68,7 @@ class APIClientExampleViewModel: ObservableObject {
         )
         self.messages.append(tempMessage)
 
-        
-        SocketIOManager.shared.onMessageAppended { [weak self] serverMessage in
-            guard let self = self else { return }
-            if let idx = self.messages.firstIndex(where: { $0.id == serverMessage.id }) {
-                var msg = self.messages[idx]
-                msg.status = .sent
-                self.messages[idx] = msg
-            }
-        }
-        
-        let serverMessage = tempMessage.toServerMessage(conversationId: conversationId, batchId: batchId)
+        let serverMessage = tempMessage.toServerMessage()
         SocketIOManager.shared.sendMessage(conversationId: conversationId, batchId: batchId, message: serverMessage)
     }
 
@@ -89,15 +79,8 @@ class APIClientExampleViewModel: ObservableObject {
             "participants": [currentUserId, "u_98b2efd3"],
             "userId": currentUserId
         ])
-        SocketIOManager.shared.connect()
+        SocketIOManager.shared.connect() //connection should trigger onConversationAssigned with conversationId
         
-        SocketIOManager.shared.onConversationAssigned { [weak self] conversationId in
-            guard let self = self else { return }
-            self.conversationId = conversationId
-            Task {
-                await self.loadChatHistory()
-            }
-        }
         
 //        Task { await loadChatHistory() }
 //        Task {
@@ -117,6 +100,15 @@ class APIClientExampleViewModel: ObservableObject {
     }
     
     func setupSocketListeners() {
+        //sent after connection
+        SocketIOManager.shared.onConversationAssigned { [weak self] conversationId in
+            guard let self = self else { return }
+            self.conversationId = conversationId
+            Task {
+                await self.loadChatHistory()
+            }
+        }
+        
         // Listen for new messages
         SocketIOManager.shared.onMessageAppended { [weak self] serverMessage in
             guard let self = self else { return }
