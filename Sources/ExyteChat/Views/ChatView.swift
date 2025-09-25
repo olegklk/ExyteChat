@@ -556,7 +556,7 @@ public struct ChatView<MessageContent: View, InputViewContent: View, MenuAction:
     private func setupServerIntegration(conversationId: String, batchId: String) async {
         // Connect to Socket.IO if not already connected
         if !SocketIOManager.shared.isConnected {
-            SocketIOManager.shared.connect(conversationId: conversationId, batchId: batchId)
+            SocketIOManager.shared.connect()
         }
         
         // Open batch for this conversation

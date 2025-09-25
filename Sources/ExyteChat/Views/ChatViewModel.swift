@@ -55,35 +55,46 @@ final class ChatViewModel: ObservableObject {
     }
 
     // Server integration methods
-    func sendServerMessage(conversationId: String, batchId: String, draft: DraftMessage) {
+    func sendServerMessage(conversationId: String, batchId: String, draft: DraftMessage) async {
         // Convert draft attachments to server format
-        let serverAttachments: [ServerAttachment] = draft.medias.compactMap { media in
+        var serverAttachments: [ServerAttachment] = []
+        for media in draft.medias {
             switch media.type {
             case .image:
-                return ServerAttachment(
-                    kind: .image,
-                    url: "https://example.com/image.jpg", // TODO: загрузить и подставить реальный URL
-                    href: nil,
-                    lat: nil,
-                    lng: nil,
-                    meta: nil
-                )
+                if let urlStr = await media.getURL()?.absoluteString {
+                    serverAttachments.append(
+                        ServerAttachment(
+                            kind: .image,
+                            url: urlStr,
+                            href: nil,
+                            lat: nil,
+                            lng: nil,
+                            meta: nil
+                        )
+                    )
+                }
             default:
-                return nil
+                break
             }
         }
         
-        SocketIOManager.shared.sendMessage(
-            conversationId: conversationId,
-            batchId: batchId,
-            senderId: currentUserId,
-            senderName: currentUserName,
+        
+        let serverMessage = ServerMessage(
+            id: draft.id ?? UUID().uuidString,
+            sender: SenderRef(userId: currentUserId, displayName: currentUserName),
             text: draft.text.isEmpty ? nil : draft.text,
             attachments: serverAttachments,
-            replyTo: draft.replyMessage?.id
+            replyTo: draft.replyMessage?.id,
+            expiresAt: nil,
+            createdAt: draft.createdAt,
+            editedAt: nil,
+            deletedAt: nil
         )
+        
+        SocketIOManager.shared.sendMessage(conversationId: conversationId, batchId: batchId, message: serverMessage)
     }
     
+                                                                                                                                                           
     func editServerMessage(conversationId: String, batchId: String, messageId: String, newText: String) {
         SocketIOManager.shared.editMessage(
             conversationId: conversationId,
