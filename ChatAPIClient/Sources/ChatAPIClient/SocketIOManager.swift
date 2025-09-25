@@ -10,6 +10,7 @@ public class SocketIOManager: ObservableObject {
 
     private var manager: SocketManager?
     private var socket: SocketIOClient?
+    private var authPayload: [String: Any] = [:]
     
     @Published public private(set) var isConnected = false
     @Published public private(set) var connectionError: String?
@@ -30,12 +31,12 @@ public class SocketIOManager: ObservableObject {
             return
         }
         
-        manager = SocketManager(socketURL: url, config: [.log(true), .compress])
+        manager = SocketManager(socketURL: url, config: [.log(true), .compress, .secure(true)])
         socket = manager?.defaultSocket
         
         setupSocketHandlers()
         
-        socket?.connect()
+        socket?.connect(withPayload: authPayload.isEmpty ? nil : authPayload)
     }
     
     public func disconnect() {
@@ -43,6 +44,7 @@ public class SocketIOManager: ObservableObject {
         manager = nil
         socket = nil
         isConnected = false
+        authPayload = [:]
     }
 
     public func connect(conversationId: String? = nil, batchId: String? = nil, userId: String? = nil, userName: String? = nil) {
@@ -50,19 +52,19 @@ public class SocketIOManager: ObservableObject {
             connectionError = "Invalid URL"
             return
         }
-        var cfg: SocketIOClientConfiguration = [.log(false), .compress]
-        var params: [String: String] = [:]
-        if let conversationId { params["conversationId"] = conversationId }
-        if let batchId { params["batchId"] = batchId }
-        if let userId { params["userId"] = userId }
-        if let userName { params["userName"] = userName }
-        if !params.isEmpty {
-            cfg.insert(.connectParams(params))
-        }
+        var cfg: SocketIOClientConfiguration = [.log(false), .compress, .secure(true)]
         manager = SocketManager(socketURL: url, config: cfg)
         socket = manager?.defaultSocket
+
+        var auth: [String: Any] = [:]
+        if let conversationId { auth["conversationId"] = conversationId }
+        if let batchId { auth["batchId"] = batchId }
+        if let userId { auth["userId"] = userId }
+        if let userName { auth["userName"] = userName }
+        self.authPayload = ["auth": auth]
+
         setupSocketHandlers()
-        socket?.connect()
+        socket?.connect(withPayload: self.authPayload)
     }
     
     private func setupSocketHandlers() {
