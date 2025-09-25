@@ -27,14 +27,15 @@ struct APIClientExampleView: View {
 @MainActor
 class APIClientExampleViewModel: ObservableObject {
     @Published var messages: [Message] = []
-    private var conversationId = "81bdd94b-c8d7-47a5-ad24-ce58e0a7f533"
-    private var batchId = "6cbd16b1-5302-4f47-aa19-829ae19ab6bc"
+    private var conversationId: String? //"81bdd94b-c8d7-47a5-ad24-ce58e0a7f533"
+    private var batchId: String? //"6cbd16b1-5302-4f47-aa19-829ae19ab6bc"
     private let currentUserId = "u_98b2efd2"
     private let currentUserName = "User 113"
     
     func loadChatHistory() async {
+        guard let conversationId = conversationId else { return }
+        
         do {
-            // Fetch chat history using ChatAPIClient
             let serverBatches = try await ChatAPIClient.shared.getHistory(conversationId: conversationId)
             
             // Convert server messages to chat messages
@@ -53,6 +54,8 @@ class APIClientExampleViewModel: ObservableObject {
     }
     
     func handleSend(_ draft: DraftMessage) {
+        guard let conversationId = conversationId, let batchId = batchId else { return }
+        
         let tempMessage = Message(
             id: draft.id ?? UUID().uuidString,
             user: User(id: currentUserId, name: currentUserName, avatarURL: nil, isCurrentUser: true),
@@ -65,26 +68,38 @@ class APIClientExampleViewModel: ObservableObject {
         )
         self.messages.append(tempMessage)
 
-        SocketIOManager.shared.sendMessage(
-            conversationId: conversationId,
-            batchId: batchId,
-            senderId: currentUserId,
-            senderName: currentUserName,
-            text: draft.text.isEmpty ? nil : draft.text,
-            attachments: [],
-            replyTo: draft.replyMessage?.id
-        )
+        
+        SocketIOManager.shared.onMessageAppended { [weak self] serverMessage in
+            guard let self = self else { return }
+            if let idx = self.messages.firstIndex(where: { $0.id == serverMessage.id }) {
+                var msg = self.messages[idx]
+                msg.status = .sent
+                self.messages[idx] = msg
+            }
+        }
+        
+        let serverMessage = tempMessage.toServerMessage(conversationId: conversationId, batchId: batchId)
+        SocketIOManager.shared.sendMessage(conversationId: conversationId, batchId: batchId, message: serverMessage)
     }
 
     func onAppear() {
         setupSocketListeners()
-        SocketIOManager.shared.connect(
-            conversationId: conversationId,
-            batchId: batchId,
-            userId: currentUserId,
-            userName: currentUserName
-        )
-        Task { await loadChatHistory() }
+        SocketIOManager.shared.setAuthData([
+            "chatType": "direct",
+            "participants": [currentUserId, "u_98b2efd3"],
+            "userId": currentUserId
+        ])
+        SocketIOManager.shared.connect()
+        
+        SocketIOManager.shared.onConversationAssigned { [weak self] conversationId in
+            guard let self = self else { return }
+            self.conversationId = conversationId
+            Task {
+                await self.loadChatHistory()
+            }
+        }
+        
+//        Task { await loadChatHistory() }
 //        Task {
 //            do {
 //                try await ChatAPIClient.shared.openBatch(
@@ -97,6 +112,8 @@ class APIClientExampleViewModel: ObservableObject {
 //                print("Failed to open batch: \(error)")
 //            }
 //        }
+        
+        
     }
     
     func setupSocketListeners() {
