@@ -21,7 +21,7 @@ public actor ChatAPIClient {
             case .patchMessage:
                 return "/chats/mongo/patch"
             case .getHistory(let conversationId):
-                return "/history/\(conversationId)"
+                return "/chats/\(conversationId)/history"
             }
         }
     }
