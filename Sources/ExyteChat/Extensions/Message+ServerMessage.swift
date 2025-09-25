@@ -9,7 +9,7 @@ import Foundation
 import ChatAPIClient
 
 extension Message {
-    public func toServerMessage(conversationId: String, batchId: String) -> ServerMessage {
+    public func toServerMessage() -> ServerMessage {
         let sender = SenderRef(userId: user.id, displayName: user.name)
         
         let serverAttachments: [ServerAttachment] = attachments.compactMap { attachment in
