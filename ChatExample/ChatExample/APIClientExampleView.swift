@@ -27,10 +27,10 @@ struct APIClientExampleView: View {
 @MainActor
 class APIClientExampleViewModel: ObservableObject {
     @Published var messages: [Message] = []
-    private var conversationId = "example-conversation-id"
-    private var batchId = "example-batch-id"
-    private let currentUserId = "current-user-id"
-    private let currentUserName = "Current User"
+    private var conversationId = "81bdd94b-c8d7-47a5-ad24-ce58e0a7f533"
+    private var batchId = "6cbd16b1-5302-4f47-aa19-829ae19ab6bc"
+    private let currentUserId = "u_98b2efd2"
+    private let currentUserName = "User 113"
     
     func loadChatHistory() async {
         do {
@@ -85,18 +85,18 @@ class APIClientExampleViewModel: ObservableObject {
             userName: currentUserName
         )
         Task { await loadChatHistory() }
-        Task {
-            do {
-                try await ChatAPIClient.shared.openBatch(
-                    type: .direct,
-                    batchId: batchId,
-                    participants: [currentUserId, "other-user-id"],
-                    conversationId: conversationId
-                )
-            } catch {
-                print("Failed to open batch: \(error)")
-            }
-        }
+//        Task {
+//            do {
+//                try await ChatAPIClient.shared.openBatch(
+//                    type: .direct,
+//                    batchId: batchId,
+//                    participants: [currentUserId, "other-user-id"],
+//                    conversationId: conversationId
+//                )
+//            } catch {
+//                print("Failed to open batch: \(error)")
+//            }
+//        }
     }
     
     func setupSocketListeners() {
