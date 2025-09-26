@@ -15,62 +15,72 @@ struct ContentView: View {
         NavigationView {
             List {
                 Section {
-                    NavigationLink("Active chat example") {
+//                    NavigationLink("Active chat example") {
+//                        if !theme.isAccent, #available(iOS 18.0, *) {
+//                            ChatExampleView(
+//                                viewModel: ChatExampleViewModel(interactor: MockChatInteractor(isActive: true)),
+//                                title: "Active chat example"
+//                            )
+//                            .chatTheme(themeColor: color)
+//                        } else {
+//                            ChatExampleView(
+//                                viewModel: ChatExampleViewModel(interactor: MockChatInteractor(isActive: true)),
+//                                title: "Active chat example"
+//                            )
+//                            .chatTheme(
+//                                accentColor: color,
+//                                images: theme.images
+//                            )
+//                        }
+//                    }
+//                    
+//                    NavigationLink("Simple chat example") {
+//                        if !theme.isAccent, #available(iOS 18.0, *) {
+//                            ChatExampleView(viewModel: ChatExampleViewModel(), title: "Simple chat example")
+//                                .chatTheme(themeColor: color)
+//                        } else {
+//                            ChatExampleView(viewModel: ChatExampleViewModel(), title: "Simple chat example")
+//                                .chatTheme(
+//                                    accentColor: color,
+//                                    images: theme.images
+//                                )
+//                        }
+//                    }
+//
+//                    NavigationLink("Simple comments example") {
+//                        CommentsExampleView()
+//                            .chatTheme(.init(colors: .init(
+//                                inputSignatureBG: .white.opacity(0.5),
+//                                inputSignatureText: .black,
+//                                inputSignaturePlaceholderText: .black.opacity(0.7)
+//                            )))
+//                            .mediaPickerTheme(
+//                                main: .init(
+//                                    pickerText: .white,
+//                                    pickerBackground: Color(.examplePickerBg),
+//                                    fullscreenPhotoBackground: Color(.examplePickerBg)
+//                                ),
+//                                selection: .init(
+//                                    accent: Color(.exampleBlue)
+//                                )
+//                            )
+//                    }
+
+                    NavigationLink("Gramatune chat (demo)") {
                         if !theme.isAccent, #available(iOS 18.0, *) {
-                            ChatExampleView(
-                                viewModel: ChatExampleViewModel(interactor: MockChatInteractor(isActive: true)),
-                                title: "Active chat example"
-                            )
-                            .chatTheme(themeColor: color)
-                        } else {
-                            ChatExampleView(
-                                viewModel: ChatExampleViewModel(interactor: MockChatInteractor(isActive: true)),
-                                title: "Active chat example"
-                            )
-                            .chatTheme(
-                                accentColor: color,
-                                images: theme.images
-                            )
-                        }
-                    }
-                    
-                    NavigationLink("Simple chat example") {
-                        if !theme.isAccent, #available(iOS 18.0, *) {
-                            ChatExampleView(viewModel: ChatExampleViewModel(), title: "Simple chat example")
+                            APIClientExampleView(viewModel: APIClientExampleViewModel(), title: "Gramatune chat (demo)")
                                 .chatTheme(themeColor: color)
                         } else {
-                            ChatExampleView(viewModel: ChatExampleViewModel(), title: "Simple chat example")
+                            APIClientExampleView(viewModel: APIClientExampleViewModel(), title: "Gramatune chat (demo)")
                                 .chatTheme(
                                     accentColor: color,
                                     images: theme.images
                                 )
                         }
-                    }
-
-                    NavigationLink("Simple comments example") {
-                        CommentsExampleView()
-                            .chatTheme(.init(colors: .init(
-                                inputSignatureBG: .white.opacity(0.5),
-                                inputSignatureText: .black,
-                                inputSignaturePlaceholderText: .black.opacity(0.7)
-                            )))
-                            .mediaPickerTheme(
-                                main: .init(
-                                    pickerText: .white,
-                                    pickerBackground: Color(.examplePickerBg),
-                                    fullscreenPhotoBackground: Color(.examplePickerBg)
-                                ),
-                                selection: .init(
-                                    accent: Color(.exampleBlue)
-                                )
-                            )
-                    }
-
-                    NavigationLink("Server API example") {
-                        APIClientExampleView()
+                        
                     }
                 } header: {
-                    Text("Basic examples")
+                    Text("Chats")
                 }
             }
             .navigationTitle("Chat examples")

@@ -10,23 +10,80 @@ import ExyteChat
 import ChatAPIClient
 
 struct APIClientExampleView: View {
-    @StateObject private var viewModel = APIClientExampleViewModel()
+    @Environment(\.colorScheme) var colorScheme
+    @Environment(\.presentationMode) private var presentationMode
+    
+    @StateObject private var viewModel: APIClientExampleViewModel
+    
+    private let title: String
+    
+    init(viewModel: APIClientExampleViewModel, title: String) {
+        _viewModel = StateObject(wrappedValue: viewModel)
+        self.title = title
+    }
     
     var body: some View {
         ChatView(
             messages: viewModel.messages,
             didSendMessage: viewModel.handleSend
         )
+        .keyboardDismissMode(.interactive)
+        .navigationBarBackButtonHidden()
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button { presentationMode.wrappedValue.dismiss() } label: {
+                    Image("backArrow", bundle: .current)
+                        .renderingMode(.template)
+                        .foregroundStyle(colorScheme == .dark ? .white : .black)
+                }
+            }
+
+            ToolbarItem(placement: .navigationBarLeading) {
+                HStack {
+                    if let url = viewModel.chatCover {
+                        CachedAsyncImage(url: url) { phase in
+                            switch phase {
+                            case .success(let image):
+                                image
+                                    .resizable()
+                                    .scaledToFill()
+                            default:
+                                Rectangle().fill(Color(hex: "AFB3B8"))
+                            }
+                        }
+                        .frame(width: 35, height: 35)
+                        .clipShape(Circle())
+                    }
+
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(viewModel.chatTitle)
+                            .fontWeight(.semibold)
+                            .font(.headline)
+                            .foregroundStyle(colorScheme == .dark ? .white : .black)
+                        Text(viewModel.chatStatus)
+                            .font(.footnote)
+                            .foregroundColor(Color(hex: "AFB3B8"))
+                    }
+                    Spacer()
+                }
+                .padding(.leading, 10)
+            }
+        }
         .onAppear {
             viewModel.onAppear()
         }
-        .chatTheme(accentColor: .blue)
     }
 }
 
 @MainActor
 class APIClientExampleViewModel: ObservableObject {
     @Published var messages: [Message] = []
+    
+    @Published var chatTitle: String = ""
+    @Published var chatStatus: String = ""
+    @Published var chatCover: URL?
+    
     private var conversationId: String? //"81bdd94b-c8d7-47a5-ad24-ce58e0a7f533"
     private var batchId: String? //"6cbd16b1-5302-4f47-aa19-829ae19ab6bc"
     private let currentUserId = "u_98b2efd2"
@@ -226,6 +283,6 @@ class APIClientExampleViewModel: ObservableObject {
 
 struct APIClientExampleView_Previews: PreviewProvider {
     static var previews: some View {
-        APIClientExampleView()
+        APIClientExampleView(viewModel: APIClientExampleViewModel(), title: "Gramatune chat (demo)")
     }
 }
