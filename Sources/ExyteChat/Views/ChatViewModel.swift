@@ -28,8 +28,11 @@ final class ChatViewModel: ObservableObject {
     /// - Note: Used when launching the MessageMenu
     
     let inputFieldId = UUID()
-    private let currentUserId = "current-user-id"
-    private let currentUserName = "Current User"
+    private let defaults = UserDefaults.standard
+    private let userIdKey = "UserSettings.userId"
+    private let userNameKey = "UserSettings.userName"
+    private var currentUserId: String { defaults.string(forKey: userIdKey) ?? "" }
+    private var currentUserName: String { defaults.string(forKey: userNameKey) ?? "" }
 
     var didSendMessage: (DraftMessage) -> Void = {_ in}
     var inputViewModel: InputViewModel?

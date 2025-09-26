@@ -29,7 +29,7 @@ struct APIClientExampleView: View {
         )
         .keyboardDismissMode(.interactive)
         .navigationBarBackButtonHidden()
-        .navigationBarTitleDisplayMode(.inline)
+//        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 Button { presentationMode.wrappedValue.dismiss() } label: {
@@ -86,11 +86,13 @@ class APIClientExampleViewModel: ObservableObject {
     
     private var conversationId: String? //"81bdd94b-c8d7-47a5-ad24-ce58e0a7f533"
     private var batchId: String? //"6cbd16b1-5302-4f47-aa19-829ae19ab6bc"
-    private let currentUserId = "u_98b2efd2"
-    private let currentUserName = "User 113"
+    private var currentUserId: String { defaults.string(forKey: userIdKey) ?? "" }
+    private var currentUserName: String { defaults.string(forKey: userNameKey) ?? "" }
     private let defaults = UserDefaults.standard
     private let conversationIdKey = "APIClientExample.conversationId"
     private let batchIdKey = "APIClientExample.batchId"
+    private let userIdKey = "UserSettings.userId"
+    private let userNameKey = "UserSettings.userName"
     
     func loadChatHistory() async {
         guard let conversationId = conversationId else { return }

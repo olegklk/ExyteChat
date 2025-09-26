@@ -27,6 +27,7 @@
 		5B6467A02D96F4FC00FFD920 /* ExyteChat in Frameworks */ = {isa = PBXBuildFile; productRef = 5B64679F2D96F4FC00FFD920 /* ExyteChat */; };
 		5B6D3A732987D85A00765148 /* Color+hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B6D3A722987D85A00765148 /* Color+hex.swift */; };
 		C3390F472E8428E400B73BF3 /* APIClientExampleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3390F462E8428E400B73BF3 /* APIClientExampleView.swift */; };
+		C39952082E8728E8008EF4D4 /* UserSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C39952072E8728E8008EF4D4 /* UserSetupView.swift */; };
 		FF220E5D2DD9F0B700BE315E /* .editorconfig in Resources */ = {isa = PBXBuildFile; fileRef = FF220E5C2DD9F0AF00BE315E /* .editorconfig */; };
 /* End PBXBuildFile section */
 
@@ -65,6 +66,7 @@
 		5B0636DA2C2EA21900E54AEE /* Sequence+asyncMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sequence+asyncMap.swift"; sourceTree = "<group>"; };
 		5B6D3A722987D85A00765148 /* Color+hex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+hex.swift"; sourceTree = "<group>"; };
 		C3390F462E8428E400B73BF3 /* APIClientExampleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClientExampleView.swift; sourceTree = "<group>"; };
+		C39952072E8728E8008EF4D4 /* UserSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserSetupView.swift; sourceTree = "<group>"; };
 		FF220E5C2DD9F0AF00BE315E /* .editorconfig */ = {isa = PBXFileReference; lastKnownFileType = text; path = .editorconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -100,6 +102,7 @@
 		135549322864620900C9459A /* ChatExample */ = {
 			isa = PBXGroup;
 			children = (
+				C39952072E8728E8008EF4D4 /* UserSetupView.swift */,
 				C3390F462E8428E400B73BF3 /* APIClientExampleView.swift */,
 				FF220E5C2DD9F0AF00BE315E /* .editorconfig */,
 				135549332864620900C9459A /* ChatExampleApp.swift */,
@@ -277,6 +280,7 @@
 				C3390F472E8428E400B73BF3 /* APIClientExampleView.swift in Sources */,
 				135987BF2869F704006388CF /* MockChatInteractor.swift in Sources */,
 				5B0636D72C2E9F6100E54AEE /* CommentsExampleView.swift in Sources */,
+				C39952082E8728E8008EF4D4 /* UserSetupView.swift in Sources */,
 				5B0636DB2C2EA21900E54AEE /* Sequence+asyncMap.swift in Sources */,
 				13F1C0F2286ADD8900D25D8A /* MockAttachment.swift in Sources */,
 				135549342864620900C9459A /* ChatExampleApp.swift in Sources */,
