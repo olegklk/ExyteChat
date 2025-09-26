@@ -7,6 +7,7 @@
 
 import SwiftUI
 import ExyteChat
+import ExyteMediaPicker
 import ChatAPIClient
 
 struct APIClientExampleView: View {
@@ -25,12 +26,14 @@ struct APIClientExampleView: View {
     var body: some View {
         ChatView(
             messages: viewModel.messages,
-            didSendMessage: viewModel.handleSend
+            didSendMessage: { draft in
+                Task { await viewModel.handleSend(draft) }
+            }
         )
         .keyboardDismissMode(.interactive)
         .navigationBarBackButtonHidden()
 //        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
+        .toolbar {//
             ToolbarItem(placement: .navigationBarLeading) {
                 Button { presentationMode.wrappedValue.dismiss() } label: {
                     Image("backArrow", bundle: .current)
@@ -113,8 +116,29 @@ class APIClientExampleViewModel: ObservableObject {
         }
     }
     
-    func handleSend(_ draft: DraftMessage) {
+    func attachmentsFromDraft(_ draftMessage: DraftMessage) async -> [Attachment]? {
+        var result: [Attachment] = []
+        for media in draftMessage.medias where media.type == .image {
+            let thumb = await media.getThumbnailURL()
+            let full = await media.getURL()
+            if let thumb, let full {
+                result.append(
+                    Attachment(
+                        id: media.id.uuidString,
+                        thumbnail: thumb,
+                        full: full,
+                        type: .image
+                    )
+                )
+            }
+        }
+        return result.isEmpty ? nil : result
+    }
+    
+    func handleSend(_ draft: DraftMessage) async {
         guard let conversationId = conversationId, let batchId = batchId else { return }
+        
+         let attachment = await attachmentsFromDraft(draft) ?? []
         
         let tempMessage = Message(
             id: draft.id ?? UUID().uuidString,
@@ -122,7 +146,7 @@ class APIClientExampleViewModel: ObservableObject {
             status: .sending,
             createdAt: draft.createdAt,
             text: draft.text,
-            attachments: [],
+            attachments: attachment,
             recording: draft.recording,
             replyMessage: draft.replyMessage
         )
