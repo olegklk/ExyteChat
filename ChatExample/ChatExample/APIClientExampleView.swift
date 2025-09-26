@@ -41,12 +41,10 @@ class APIClientExampleViewModel: ObservableObject {
         do {
             let serverBatches = try await ChatAPIClient.shared.getHistory(conversationId: conversationId)
             
-            // Convert server messages to chat messages
-            let newMessages = serverBatches.flatMap { batch in
-                batch.messages.map { serverMessage in
-                    self.convertServerMessageToChatMessage(serverMessage)
-                }
-            }
+            // Convert server messages to chat messages and sort by createdAt
+            let newMessages = serverBatches
+                .flatMap { $0.messages.map(self.convertServerMessageToChatMessage) }
+                .sorted { $0.createdAt < $1.createdAt }
             
             await MainActor.run {
                 self.messages = newMessages
@@ -157,7 +155,7 @@ class APIClientExampleViewModel: ObservableObject {
             id: serverMessage.sender.userId,
             name: serverMessage.sender.displayName,
             avatarURL: nil,
-            isCurrentUser: serverMessage.sender.userId == "current-user-id"
+            isCurrentUser: serverMessage.sender.userId == currentUserId
         )
         
         // Convert ServerAttachment to Attachment
@@ -192,7 +190,8 @@ class APIClientExampleViewModel: ObservableObject {
 
     private func loadPersistedIds() {
         self.conversationId = defaults.string(forKey: conversationIdKey)
-        self.batchId = defaults.string(forKey: batchIdKey)
+        //uncomment the following only when the batches are persisted so no need to load previous ones, until then all th ebatches will be refreshed as new
+//        self.batchId = defaults.string(forKey: batchIdKey)
     }
 
     private func persistConversationId(_ id: String?) {
