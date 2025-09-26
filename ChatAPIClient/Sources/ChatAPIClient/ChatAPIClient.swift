@@ -59,7 +59,8 @@ public actor ChatAPIClient {
             "messageId": messageId
         ]
         if let newText { body["newText"] = newText }
-        let dict = try await makeRequest(urlComponents: urlComponents, method: "PATCH", body: body)
+        let payload = try await makeRequest(urlComponents: urlComponents, method: "PATCH", body: body)
+        let dict = payload as? [String: Any] ?? [:]
         let matched = dict["matched"] as? Int ?? 0
         let modified = dict["modified"] as? Int ?? 0
         return PatchResult(matched: matched, modified: modified)
@@ -67,16 +68,12 @@ public actor ChatAPIClient {
     
     public func getHistory(conversationId: String) async throws -> [ServerBatchDocument] {
         let urlComponents = URLComponents(string: baseURL + Endpoint.getHistory(conversationId: conversationId).path)!
-        let data = try await makeRequest(urlComponents: urlComponents, method: "GET")
+        let items = try await makeRequest(urlComponents: urlComponents, method: "GET") as? [[String: Any]]
         
-        guard let items = data["items"] as? [[String: Any]] else {
-            return []
-        }
-        
-        return items.compactMap { ServerBatchDocument(from: $0) }
+        return items?.compactMap { ServerBatchDocument(from: $0) } ?? []
+      
     }
-    
-    private func makeRequest(urlComponents: URLComponents, method: String, body: [String: Any]? = nil) async throws -> [String: Any] {
+    private func makeRequest(urlComponents: URLComponents, method: String, body: [String: Any]? = nil) async throws -> Any {
         guard let url = urlComponents.url else {
             throw URLError(.badURL)
         }
@@ -99,8 +96,7 @@ public actor ChatAPIClient {
             throw URLError(.badServerResponse)
         }
         
-        if data.isEmpty { return [:] }
-        let jsonObj = try JSONSerialization.jsonObject(with: data, options: [])
-        return jsonObj as? [String: Any] ?? [:] //измени эту строку так как json объект это массив (jsonObj    __NSArrayI    10 elements    0x0000600002694720) AI!
+        if data.isEmpty { return NSNull() }
+        return try JSONSerialization.jsonObject(with: data, options: [])
     }
 }
