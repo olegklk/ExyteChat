@@ -31,17 +31,9 @@ struct APIClientExampleView: View {
             }
         )
         .keyboardDismissMode(.interactive)
-        .navigationBarBackButtonHidden()
-//        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {//
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button { presentationMode.wrappedValue.dismiss() } label: {
-                    Image("backArrow", bundle: .current)
-                        .renderingMode(.template)
-                        .foregroundStyle(colorScheme == .dark ? .white : .black)
-                }
-            }
-
+//        .navigationBarBackButtonHidden()
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 HStack {
                     if let url = viewModel.chatCover {
