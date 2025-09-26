@@ -3,14 +3,14 @@ import SwiftUI
 struct UserSetupView: View {
     @State private var name: String = ""
     @State private var userId: String = ""
-    @State private var go = false
-
+    private enum Route: Hashable { case content }
+    @State private var path = NavigationPath()
     private let defaults = UserDefaults.standard
     private let userIdKey = "UserSettings.userId"
     private let userNameKey = "UserSettings.userName"
 
     var body: some View {
-        NavigationView {
+        NavigationStack(path: $path) {
             VStack(alignment: .leading, spacing: 16) {
                 TextField("Your name", text: $name)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
@@ -20,8 +20,6 @@ struct UserSetupView: View {
                     .foregroundColor(.secondary)
 
                 Spacer()
-
-                NavigationLink(destination: ContentView(), isActive: $go) { EmptyView() }
             }
             .padding()
             .navigationTitle("Enter your name")
@@ -29,9 +27,15 @@ struct UserSetupView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Go") {
                         save()
-                        go = true
+                        path.append(Route.content)
                     }
                     .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+            }
+            .navigationDestination(for: Route.self) { route in
+                switch route {
+                case .content:
+                    ContentView()
                 }
             }
         }
