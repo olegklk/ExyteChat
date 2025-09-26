@@ -22,17 +22,17 @@ public class SocketIOManager: ObservableObject {
     
     private func eventName(_ key: EventKey) -> String {
         switch key {
-        case .append: return "chat_append"
-        case .appended: return "chat_appended"
-        case .edit: return "chat_edit"
-        case .edited: return "chat_edited"
-        case .delete: return "chat_delete"
-        case .deleted: return "chat_deleted"
-        case .seen: return "chat_seen"
-        case .batchAssigned: return "chat_batch_assigned"
-        case .conversationAssigned: return "chat_conversation_assigned"
-        case .unreadBatches: return "chat_unread_batches"
-        case .error: return "chat_error"
+        case .append: return "chat:append"
+        case .appended: return "chat:appended"
+        case .edit: return "chat:edit"
+        case .edited: return "chat:edited"
+        case .delete: return "chat:delete"
+        case .deleted: return "chat:deleted"
+        case .seen: return "chat:seen"
+        case .batchAssigned: return "chat:batch-assigned"
+        case .conversationAssigned: return "chat:conversation-assigned"
+        case .unreadBatches: return "chat:unread-batches"
+        case .error: return "chat:error"
         }
     }
     
@@ -55,7 +55,7 @@ public class SocketIOManager: ObservableObject {
             return
         }
         
-        var cfg: SocketIOClientConfiguration = [.log(false), .compress, .secure(true)]
+        var cfg: SocketIOClientConfiguration = [.log(true), .compress, .secure(true)]
         manager = SocketManager(socketURL: url, config: cfg)
         socket = manager?.defaultSocket
         
@@ -148,6 +148,7 @@ public class SocketIOManager: ObservableObject {
         }
         
         let convAssigned = eventName(.conversationAssigned)
+        //почему-то этот обработчик не вызывается хотя я вижу по логам что событие "conversation-
         socket?.on(convAssigned) { [weak self] data, ack in
             guard let self = self,
                   let handler = self.conversationAssignedHandler,

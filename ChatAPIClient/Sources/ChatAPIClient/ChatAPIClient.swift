@@ -101,6 +101,6 @@ public actor ChatAPIClient {
         
         if data.isEmpty { return [:] }
         let jsonObj = try JSONSerialization.jsonObject(with: data, options: [])
-        return jsonObj as? [String: Any] ?? [:]
+        return jsonObj as? [String: Any] ?? [:] //измени эту строку так как json объект это массив (jsonObj    __NSArrayI    10 elements    0x0000600002694720) AI!
     }
 }

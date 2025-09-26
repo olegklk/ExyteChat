@@ -31,6 +31,9 @@ class APIClientExampleViewModel: ObservableObject {
     private var batchId: String? //"6cbd16b1-5302-4f47-aa19-829ae19ab6bc"
     private let currentUserId = "u_98b2efd2"
     private let currentUserName = "User 113"
+    private let defaults = UserDefaults.standard
+    private let conversationIdKey = "APIClientExample.conversationId"
+    private let batchIdKey = "APIClientExample.batchId"
     
     func loadChatHistory() async {
         guard let conversationId = conversationId else { return }
@@ -74,12 +77,9 @@ class APIClientExampleViewModel: ObservableObject {
 
     func onAppear() {
         setupSocketListeners()
-        SocketIOManager.shared.setAuthData([
-            "chatType": "direct",
-            "participants": [currentUserId, "u_98b2efd3"],
-            "userId": currentUserId
-        ])
-        SocketIOManager.shared.connect() //connection should trigger onConversationAssigned with conversationId
+        loadPersistedIds()
+        SocketIOManager.shared.setAuthData(buildAuthData())
+        SocketIOManager.shared.connect() // connection should trigger onConversationAssigned with conversationId
         
         
 //        Task { await loadChatHistory() }
@@ -104,6 +104,18 @@ class APIClientExampleViewModel: ObservableObject {
         SocketIOManager.shared.onConversationAssigned { [weak self] conversationId in
             guard let self = self else { return }
             self.conversationId = conversationId
+            self.persistConversationId(conversationId)
+            Task {
+                await self.loadChatHistory()
+            }
+        }
+        
+        SocketIOManager.shared.onBatchAssigned { [weak self] batchId, conversationId in
+            guard let self = self else { return }
+            self.conversationId = conversationId
+            self.batchId = batchId
+            self.persistConversationId(conversationId)
+            self.persistBatchId(batchId)
             Task {
                 await self.loadChatHistory()
             }
@@ -176,6 +188,40 @@ class APIClientExampleViewModel: ObservableObject {
                 text: "Reply text"
             ) : nil
         )
+    }
+
+    private func loadPersistedIds() {
+        self.conversationId = defaults.string(forKey: conversationIdKey)
+        self.batchId = defaults.string(forKey: batchIdKey)
+    }
+
+    private func persistConversationId(_ id: String?) {
+        if let id { defaults.set(id, forKey: conversationIdKey) } else { defaults.removeObject(forKey: conversationIdKey) }
+    }
+
+    private func persistBatchId(_ id: String?) {
+        if let id { defaults.set(id, forKey: batchIdKey) } else { defaults.removeObject(forKey: batchIdKey) }
+    }
+
+    private func buildAuthData() -> [String: Any] {
+        var auth: [String: Any] = [
+            "chatType": "direct",
+            "participants": [currentUserId, "u_98b2efd3"],
+            "userId": currentUserId
+        ]
+        if let conversationId { auth["conversationId"] = conversationId }
+        if let batchId { auth["batchId"] = batchId }
+        return auth
+    }
+
+    func setConversationId(_ id: String?) {
+        self.conversationId = id
+        persistConversationId(id)
+    }
+
+    func setBatchId(_ id: String?) {
+        self.batchId = id
+        persistBatchId(id)
     }
 }
 
