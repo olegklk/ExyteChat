@@ -12,17 +12,25 @@ struct UserSetupView: View {
     var body: some View {
         NavigationStack(path: $path) {
             VStack(alignment: .leading, spacing: 16) {
+                Text("Enter Your Name:")
+                    .font(.headline)
+                    .foregroundColor(.secondary)
+                    
                 TextField("Your name", text: $name)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
-
-                Text(userId.isEmpty ? "…" : "UserId: \(userId)")
-                    .font(.subheadline)
+                
+                Text("UserId:")
+                    .font(.headline)
+//                    .textSelection(.enabled)
                     .foregroundColor(.secondary)
+                
+                TextField("UserId:", text: $userId)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
 
                 Spacer()
             }
             .padding()
-            .navigationTitle("Enter your name")
+//            .navigationTitle("User Creation")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Go") {
@@ -46,7 +54,7 @@ struct UserSetupView: View {
         if let savedId = defaults.string(forKey: userIdKey) {
             userId = savedId
         } else {
-            let newId = UUID().uuidString
+            let newId = generateRandomUserId()
             userId = newId
             defaults.set(newId, forKey: userIdKey)
         }
@@ -56,8 +64,13 @@ struct UserSetupView: View {
     private func save() {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         defaults.set(trimmed, forKey: userNameKey)
-        if defaults.string(forKey: userIdKey) == nil {
-            defaults.set(userId, forKey: userIdKey)
-        }
+        defaults.set(userId, forKey: userIdKey)
+        
+    }
+
+    private func generateRandomUserId() -> String {
+        let alphabet = Array("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+        let randomPart = String((0..<8).compactMap { _ in alphabet.randomElement() })
+        return "u:" + randomPart
     }
 }
