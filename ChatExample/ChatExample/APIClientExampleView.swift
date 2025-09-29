@@ -24,49 +24,72 @@ struct APIClientExampleView: View {
     }
     
     var body: some View {
-        ChatView(
-            messages: viewModel.messages,
-            didSendMessage: { draft in
+        VStack {
+            ChatView( messages: viewModel.messages,
+                      chatType: .conversation,
+                      replyMode: .quote,
+                      didSendMessage: { draft in
                 Task { await viewModel.handleSend(draft) }
-            }
-        )
-        .keyboardDismissMode(.interactive)
-//        .navigationBarBackButtonHidden()
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                HStack {
-                    if let url = viewModel.chatCover {
-                        CachedAsyncImage(url: url) { phase in
-                            switch phase {
-                            case .success(let image):
-                                image
-                                    .resizable()
-                                    .scaledToFill()
-                            default:
-                                Rectangle().fill(Color(hex: "AFB3B8"))
-                            }
-                        }
-                        .frame(width: 35, height: 35)
-                        .clipShape(Circle())
-                    }
-
-                    VStack(alignment: .leading, spacing: 0) {
-                        Text(viewModel.chatTitle)
-                            .fontWeight(.semibold)
-                            .font(.headline)
-                            .foregroundStyle(colorScheme == .dark ? .white : .black)
-                        Text(viewModel.chatStatus)
-                            .font(.footnote)
-                            .foregroundColor(Color(hex: "AFB3B8"))
-                    }
-                    Spacer()
+            },
+                      reactionDelegate: nil,
+                      messageMenuAction: {
+                (action: DefaultMessageMenuAction, defaultActionClosure, message) in switch action {
+                    case .reply:
+                        defaultActionClosure(message, .reply)
+                    case .edit: defaultActionClosure(message, .edit { editedText in
+                        Task {await viewModel.handleEdit(message.id, editedText) }
+                        
+                    })
+                    case .copy: defaultActionClosure(message, .copy)
                 }
-                .padding(.leading, 10)
+            } )
+            .keyboardDismissMode(.interactive)
+            //        .navigationBarBackButtonHidden()
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    HStack {
+                        if let url = viewModel.chatCover {
+                            CachedAsyncImage(url: url) { phase in
+                                switch phase {
+                                    case .success(let image):
+                                        image
+                                            .resizable()
+                                            .scaledToFill()
+                                    default:
+                                        Rectangle().fill(Color(hex: "AFB3B8"))
+                                }
+                            }
+                            .frame(width: 35, height: 35)
+                            .clipShape(Circle())
+                        }
+                        
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text(viewModel.chatTitle)
+                                .fontWeight(.semibold)
+                                .font(.headline)
+                                .foregroundStyle(colorScheme == .dark ? .white : .black)
+                            Text(viewModel.chatStatus)
+                                .font(.footnote)
+                                .foregroundColor(Color(hex: "AFB3B8"))
+                        }
+                        Spacer()
+                    }
+                    .padding(.leading, 10)
+                }
+                ToolbarItem(placement: .principal) {
+                    let idString = viewModel.conversationId ?? ""
+                    Text(idString)
+                        .font(.headline)
+                        .textSelection(.enabled)
+                        .contextMenu {
+                            Button("Copy") { UIPasteboard.general.string = idString }
+                        }
+                }
             }
-        }
-        .onAppear {
-            viewModel.onAppear()
+            .onAppear {
+                viewModel.onAppear()
+            }
         }
     }
 }
@@ -79,7 +102,7 @@ class APIClientExampleViewModel: ObservableObject {
     @Published var chatStatus: String = ""
     @Published var chatCover: URL?
     
-    private var conversationId: String? //"81bdd94b-c8d7-47a5-ad24-ce58e0a7f533"
+    var conversationId: String? = "81bdd94b-c8d7-47a5-ad24-ce58e0a7f533"
     private var batchId: String? //"6cbd16b1-5302-4f47-aa19-829ae19ab6bc"
     private var currentUserId: String { defaults.string(forKey: userIdKey) ?? "" }
     private var currentUserName: String { defaults.string(forKey: userNameKey) ?? "" }
@@ -102,7 +125,7 @@ class APIClientExampleViewModel: ObservableObject {
             
             await MainActor.run {
                 self.messages = newMessages
-                // Re-init empty reply bodies 
+                // Re-init empty reply bodies
                 for i in self.messages.indices {
                     if let reply = self.messages[i].replyMessage, reply.text.isEmpty {
                         self.messages[i].replyMessage = self.makeReplyMessage(for: reply.id)
@@ -152,6 +175,12 @@ class APIClientExampleViewModel: ObservableObject {
 
         let serverMessage = tempMessage.toServerMessage()
         SocketIOManager.shared.sendMessage(conversationId: conversationId, batchId: batchId, message: serverMessage)
+    }
+    
+    func handleEdit(_ messageId: String, _ newText: String) {
+        guard let conversationId = conversationId, let batchId = batchId else { return }
+        
+        SocketIOManager.shared.editMessage(conversationId: conversationId, batchId: batchId, messageId: messageId, newText: newText)
     }
 
     func onAppear() {
@@ -265,7 +294,7 @@ class APIClientExampleViewModel: ObservableObject {
     }
 
     private func loadPersistedIds() {
-        self.conversationId = defaults.string(forKey: conversationIdKey)
+//        self.conversationId = defaults.string(forKey: conversationIdKey)
         //uncomment the following only when the batches are persisted so no need to load previous ones, until then all th ebatches will be refreshed as new
 //        self.batchId = defaults.string(forKey: batchIdKey)
     }
@@ -281,7 +310,7 @@ class APIClientExampleViewModel: ObservableObject {
     private func buildAuthData() -> [String: Any] {
         var auth: [String: Any] = [
             "chatType": "group",
-            "participants": [currentUserId, "u_98b2efd3"],
+            "participants": [currentUserId],
             "userId": currentUserId
         ]
         if let conversationId { auth["conversationId"] = conversationId }
