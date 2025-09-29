@@ -1,7 +1,3 @@
-//
-//  Created by Alex.M on 23.06.2022.
-//
-
 import SwiftUI
 import ExyteChat
 import ExyteMediaPicker
@@ -83,11 +79,14 @@ struct ContentView: View {
                     Text("Chats")
                 }
             }
-            .navigationTitle("Chat examples")
+            .navigationTitle("Theme Picker: ")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     HStack {
+                        NavigationLink(destination: NewChatView()) {
+                            Image(systemName: "plus")
+                        }
                         Button(theme.title) {
                             theme = theme.next()
                         }
