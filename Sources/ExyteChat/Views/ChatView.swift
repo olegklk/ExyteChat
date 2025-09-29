@@ -8,7 +8,6 @@
 import SwiftUI
 import GiphyUISDK
 import ExyteMediaPicker
-import ChatAPIClient
 
 public typealias MediaPickerParameters = SelectionParamsHolder
 
@@ -83,13 +82,6 @@ public struct ChatView<MessageContent: View, InputViewContent: View, MenuAction:
     let didSendMessage: (DraftMessage) -> Void
     var reactionDelegate: ReactionDelegate?
 
-    // Server integration properties
-    var conversationId: String?
-    var batchId: String?
-    var onServerMessageReceived: ((ServerMessage) -> Void)?
-    var onServerMessageEdited: ((ServerMessage) -> Void)?
-    var onServerMessageDeleted: ((String) -> Void)?
-
     // MARK: - View builders
     
     /// provide custom message view builder
@@ -159,8 +151,6 @@ public struct ChatView<MessageContent: View, InputViewContent: View, MenuAction:
     public init(messages: [Message],
                 chatType: ChatType = .conversation,
                 replyMode: ReplyMode = .quote,
-                conversationId: String? = nil,
-                batchId: String? = nil,
                 didSendMessage: @escaping (DraftMessage) -> Void,
                 reactionDelegate: ReactionDelegate? = nil,
                 messageBuilder: @escaping MessageBuilderClosure,
@@ -168,8 +158,6 @@ public struct ChatView<MessageContent: View, InputViewContent: View, MenuAction:
                 messageMenuAction: MessageMenuActionClosure?,
                 localization: ChatLocalization) {
         self.type = chatType
-        self.conversationId = conversationId
-        self.batchId = batchId
         self.didSendMessage = didSendMessage
         self.reactionDelegate = reactionDelegate
         self.sections = ChatView.mapMessages(messages, chatType: chatType, replyMode: replyMode)
@@ -396,14 +384,6 @@ public struct ChatView<MessageContent: View, InputViewContent: View, MenuAction:
                     }
                 }
             }
-            
-            // Set up server integration and listeners
-            if let conversationId = conversationId, let batchId = batchId {
-                Task {
-                    await setupServerIntegration(conversationId: conversationId, batchId: batchId)
-                }
-                setupServerListeners(conversationId: conversationId, batchId: batchId)
-            }
         }
     }
 
@@ -551,43 +531,6 @@ public struct ChatView<MessageContent: View, InputViewContent: View, MenuAction:
     
     private func isGiphyAvailable() -> Bool {
         return availableInputs.contains(AvailableInputType.giphy)
-    }
-    
-    private func setupServerIntegration(conversationId: String, batchId: String) async {
-        // Connect to Socket.IO if not already connected
-        if !SocketIOManager.shared.isConnected {
-            SocketIOManager.shared.connect()
-        }
-        
-        // Open batch for this conversation
-        do {
-            try await ChatAPIClient.shared.openBatch(
-                type: .direct,
-                batchId: batchId,
-                participants: ["current-user-id", "other-user-id"]
-            )
-        } catch {
-            print("Failed to open batch: \(error)")
-        }
-    }
-    
-    private func setupServerListeners(conversationId: String, batchId: String) {
-        // Listen for new messages
-        SocketIOManager.shared.onMessageAppended { [weak viewModel] serverMessage in
-            guard let viewModel = viewModel else { return }
-            // Convert server message to chat message and add to viewModel
-            // This would require implementing a conversion method in ChatViewModel
-        }
-        
-        // Listen for edited messages
-        SocketIOManager.shared.onMessageEdited { [weak viewModel] messageId, newText in
-            // Handle message edit
-        }
-        
-        // Listen for deleted messages
-        SocketIOManager.shared.onMessageDeleted { [weak viewModel] messageId in
-            // Handle message deletion
-        }
     }
     
     private static func createLocalization() -> ChatLocalization {
