@@ -102,6 +102,12 @@ class APIClientExampleViewModel: ObservableObject {
             
             await MainActor.run {
                 self.messages = newMessages
+                // Re-init empty reply bodies 
+                for i in self.messages.indices {
+                    if let reply = self.messages[i].replyMessage, reply.text.isEmpty {
+                        self.messages[i].replyMessage = self.makeReplyMessage(for: reply.id)
+                    }
+                }
             }
         } catch {
             print("Failed to load chat history: \(error)")
@@ -254,12 +260,7 @@ class APIClientExampleViewModel: ObservableObject {
             text: serverMessage.text ?? "",
             attachments: attachments,
             recording: nil, // In a real implementation, you would convert recordings
-            replyMessage: serverMessage.replyTo != nil ? ReplyMessage(
-                id: serverMessage.replyTo!,
-                user: User(id: "reply-user-id", name: "Reply User", avatarURL: nil, isCurrentUser: false),
-                createdAt: Date(),
-                text: "Reply text"
-            ) : nil
+            replyMessage: makeReplyMessage(for: serverMessage.replyTo)
         )
     }
 
@@ -296,6 +297,19 @@ class APIClientExampleViewModel: ObservableObject {
     func setBatchId(_ id: String?) {
         self.batchId = id
         persistBatchId(id)
+    }
+
+    private func makeReplyMessage(for replyTo: String?) -> ReplyMessage? {
+        guard let replyId = replyTo else { return nil }
+        guard let ref = messages.first(where: { $0.id == replyId }) else {
+            return ReplyMessage(
+                id: replyTo!,
+                user: User(id: "reply-user-id", name: "Reply User", avatarURL: nil, isCurrentUser: false),
+                createdAt: Date(),
+                text: ""
+            )
+        }
+        return ref.toReplyMessage()
     }
 }
 
