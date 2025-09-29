@@ -279,7 +279,7 @@ class APIClientExampleViewModel: ObservableObject {
 
     private func buildAuthData() -> [String: Any] {
         var auth: [String: Any] = [
-            "chatType": "direct",
+            "chatType": "group",
             "participants": [currentUserId, "u_98b2efd3"],
             "userId": currentUserId
         ]
