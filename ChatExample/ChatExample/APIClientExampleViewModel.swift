@@ -1,0 +1,247 @@
+//
+//  APIClientExampleViewModel.swift
+//  ChatExample
+//
+//  Created by Oleg Kolokolov on 30.09.2025.
+//
+
+import Foundation
+import ExyteChat
+import ExyteMediaPicker
+import ChatAPIClient
+
+@MainActor
+class APIClientExampleViewModel: ObservableObject {
+    @Published var messages: [Message] = []
+    
+    @Published var chatTitle: String = ""
+    @Published var chatStatus: String = ""
+    @Published var chatCover: URL?
+    
+    var conversationId: String?
+    private var batchId: String?
+    private var currentUserId: String { defaults.string(forKey: userIdKey) ?? "" }
+    private var currentUserName: String { defaults.string(forKey: userNameKey) ?? "" }
+    private let defaults = UserDefaults.standard
+    private let conversationIdKey = "UserSettings.conversationId"
+    private let batchIdKey = "APIClientExample.batchId"
+    private let userIdKey = "UserSettings.userId"
+    private let userNameKey = "UserSettings.userName"
+    
+    func loadChatHistory() async {
+        guard let conversationId = conversationId else { return }
+        
+        do {
+            let serverBatches = try await ChatAPIClient.shared.getHistory(conversationId: conversationId)
+            
+            // Convert server messages to chat messages and sort by createdAt
+            let newMessages = serverBatches
+                .flatMap { $0.messages.map(self.convertServerMessageToChatMessage) }
+                .sorted { $0.createdAt < $1.createdAt }
+            
+            await MainActor.run {
+                self.messages = newMessages
+                // Re-init empty reply bodies
+                for i in self.messages.indices {
+                    if let reply = self.messages[i].replyMessage, reply.text.isEmpty {
+                        self.messages[i].replyMessage = self.makeReplyMessage(for: reply.id)
+                    }
+                }
+            }
+        } catch {
+            print("Failed to load chat history: \(error)")
+        }
+    }
+    
+    func attachmentsFromDraft(_ draftMessage: DraftMessage) async -> [Attachment]? {
+        var result: [Attachment] = []
+        for media in draftMessage.medias where media.type == .image {
+            let thumb = await media.getThumbnailURL()
+            let full = await media.getURL()
+            if let thumb, let full {
+                result.append(
+                    Attachment(
+                        id: media.id.uuidString,
+                        thumbnail: thumb,
+                        full: full,
+                        type: .image
+                    )
+                )
+            }
+        }
+        return result.isEmpty ? nil : result
+    }
+    
+    func handleSend(_ draft: DraftMessage) async {
+        guard let conversationId = conversationId, let batchId = batchId else { return }
+        
+         let attachment = await attachmentsFromDraft(draft) ?? []
+        
+        let tempMessage = Message(
+            id: draft.id ?? UUID().uuidString,
+            user: User(id: currentUserId, name: currentUserName, avatarURL: nil, isCurrentUser: true),
+            status: .sending,
+            createdAt: draft.createdAt,
+            text: draft.text,
+            attachments: attachment,
+            recording: draft.recording,
+            replyMessage: draft.replyMessage
+        )
+        self.messages.append(tempMessage)
+
+        let serverMessage = tempMessage.toServerMessage()
+        SocketIOManager.shared.sendMessage(conversationId: conversationId, batchId: batchId, message: serverMessage)
+    }
+    
+    func handleEdit(_ messageId: String, _ newText: String) {
+        guard let conversationId = conversationId, let batchId = batchId else { return }
+        
+        SocketIOManager.shared.editMessage(conversationId: conversationId, batchId: batchId, messageId: messageId, newText: newText)
+    }
+
+    func onAppear() {
+        setupSocketListeners()
+        loadPersistedIds()
+        SocketIOManager.shared.setAuthData(buildAuthData())
+        SocketIOManager.shared.connect() // connection should trigger onConversationAssigned with conversationId
+        
+        
+//        Task { await loadChatHistory() }
+        
+        
+    }
+    
+    func setupSocketListeners() {
+        //sent after connection
+        SocketIOManager.shared.onConversationAssigned { [weak self] conversationId in
+            guard let self = self else { return }
+            self.conversationId = conversationId
+            self.persistConversationId(conversationId)
+            Task {
+                await self.loadChatHistory()
+            }
+        }
+        
+        SocketIOManager.shared.onBatchAssigned { [weak self] batchId, conversationId in
+            guard let self = self else { return }
+            self.conversationId = conversationId
+            self.batchId = batchId
+            self.persistConversationId(conversationId)
+            self.persistBatchId(batchId)
+            Task {
+                await self.loadChatHistory()
+            }
+        }
+        
+        // Listen for new messages
+        SocketIOManager.shared.onMessageAppended { [weak self] serverMessage in
+            guard let self = self else { return }
+            let chatMessage = self.convertServerMessageToChatMessage(serverMessage)
+            DispatchQueue.main.async {
+                self.messages.removeAll { $0.id == serverMessage.id }
+                self.messages.append(chatMessage)
+            }
+        }
+
+        // Listen for edited messages
+        SocketIOManager.shared.onMessageEdited { [weak self] messageId, newText in
+            guard let self = self else { return }
+            DispatchQueue.main.async {
+                if let idx = self.messages.firstIndex(where: { $0.id == messageId }) {
+                    var msg = self.messages[idx]
+                    msg.text = newText ?? msg.text
+                    self.messages[idx] = msg
+                }
+            }
+        }
+        
+        // Listen for deleted messages
+        SocketIOManager.shared.onMessageDeleted { [weak self] messageId in
+            DispatchQueue.main.async {
+                self?.messages.removeAll { $0.id == messageId }
+            }
+        }
+    }
+    
+    private func convertServerMessageToChatMessage(_ serverMessage: ServerMessage) -> Message {
+        // Convert SenderRef to User
+        let user = User(
+            id: serverMessage.sender.userId,
+            name: serverMessage.sender.displayName,
+            avatarURL: nil,
+            isCurrentUser: serverMessage.sender.userId == currentUserId
+        )
+        
+        // Convert ServerAttachment to Attachment
+        let attachments: [Attachment] = serverMessage.attachments.compactMap { sa in
+            guard sa.kind == .image, let s = sa.url, let url = URL(string: s) else { return nil }
+            return Attachment(
+                id: UUID().uuidString,
+                thumbnail: url,
+                full: url,
+                type: .image,
+                thumbnailCacheKey: nil,
+                fullCacheKey: nil
+            )
+        }
+
+        return Message(
+            id: serverMessage.id,
+            user: user,
+            status: .sent,
+            createdAt: serverMessage.createdAt,
+            text: serverMessage.text ?? "",
+            attachments: attachments,
+            recording: nil, // In a real implementation, you would convert recordings
+            replyMessage: makeReplyMessage(for: serverMessage.replyTo)
+        )
+    }
+
+    private func loadPersistedIds() {
+        self.conversationId = defaults.string(forKey: conversationIdKey)
+        //uncomment the following only when the batches are persisted so no need to load previous ones, until then all th ebatches will be refreshed as new
+//        self.batchId = defaults.string(forKey: batchIdKey)
+    }
+
+    private func persistConversationId(_ id: String?) {
+        if let id { defaults.set(id, forKey: conversationIdKey) } else { defaults.removeObject(forKey: conversationIdKey) }
+    }
+
+    private func persistBatchId(_ id: String?) {
+        if let id { defaults.set(id, forKey: batchIdKey) } else { defaults.removeObject(forKey: batchIdKey) }
+    }
+
+    private func buildAuthData() -> [String: Any] {
+        var auth: [String: Any] = [
+            "chatType": "group",
+            "participants": [currentUserId],
+            "userId": currentUserId
+        ]
+        if let conversationId { auth["conversationId"] = conversationId }
+        if let batchId { auth["batchId"] = batchId }
+        return auth
+    }
+
+    func setConversationId(_ id: String?) {
+        self.conversationId = id
+        persistConversationId(id)
+    }
+
+    func setBatchId(_ id: String?) {
+        self.batchId = id
+        persistBatchId(id)
+    }
+
+    private func makeReplyMessage(for replyTo: String?) -> ReplyMessage? {
+        guard let replyId = replyTo else { return nil }
+        guard let ref = messages.first(where: { $0.id == replyId }) else {
+            return ReplyMessage(
+                id: replyTo!,
+                user: User(id: "reply-user-id", name: "Reply User", avatarURL: nil, isCurrentUser: false),
+                createdAt: Date(),
+                text: ""
+            )
+        }
+        return ref.toReplyMessage()
+    }
+}

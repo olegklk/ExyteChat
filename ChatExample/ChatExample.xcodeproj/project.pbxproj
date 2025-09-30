@@ -30,6 +30,7 @@
 		C39952082E8728E8008EF4D4 /* UserSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C39952072E8728E8008EF4D4 /* UserSetupView.swift */; };
 		C399520A2E8AE150008EF4D4 /* NewChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C39952092E8AE150008EF4D4 /* NewChatView.swift */; };
 		C399520C2E8BDCE3008EF4D4 /* Utils.swift in Resources */ = {isa = PBXBuildFile; fileRef = C399520B2E8BDCE3008EF4D4 /* Utils.swift */; };
+		C399520E2E8BDFD8008EF4D4 /* APIClientExampleViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C399520D2E8BDFD8008EF4D4 /* APIClientExampleViewModel.swift */; };
 		FF220E5D2DD9F0B700BE315E /* .editorconfig in Resources */ = {isa = PBXBuildFile; fileRef = FF220E5C2DD9F0AF00BE315E /* .editorconfig */; };
 /* End PBXBuildFile section */
 
@@ -71,6 +72,7 @@
 		C39952072E8728E8008EF4D4 /* UserSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserSetupView.swift; sourceTree = "<group>"; };
 		C39952092E8AE150008EF4D4 /* NewChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewChatView.swift; sourceTree = "<group>"; };
 		C399520B2E8BDCE3008EF4D4 /* Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utils.swift; sourceTree = "<group>"; };
+		C399520D2E8BDFD8008EF4D4 /* APIClientExampleViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClientExampleViewModel.swift; sourceTree = "<group>"; };
 		FF220E5C2DD9F0AF00BE315E /* .editorconfig */ = {isa = PBXFileReference; lastKnownFileType = text; path = .editorconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -110,6 +112,7 @@
 				C399520B2E8BDCE3008EF4D4 /* Utils.swift */,
 				C39952072E8728E8008EF4D4 /* UserSetupView.swift */,
 				C3390F462E8428E400B73BF3 /* APIClientExampleView.swift */,
+				C399520D2E8BDFD8008EF4D4 /* APIClientExampleViewModel.swift */,
 				FF220E5C2DD9F0AF00BE315E /* .editorconfig */,
 				135549332864620900C9459A /* ChatExampleApp.swift */,
 				13DF042C2864790B0043DBBC /* ContentView.swift */,
@@ -279,6 +282,7 @@
 				13DF043228647C070043DBBC /* ChatExampleViewModel.swift in Sources */,
 				5B6D3A732987D85A00765148 /* Color+hex.swift in Sources */,
 				13E17B6F2869E983004DF140 /* MockChatData.swift in Sources */,
+				C399520E2E8BDFD8008EF4D4 /* APIClientExampleViewModel.swift in Sources */,
 				1376F7BB286472530016CD1B /* ChatError.swift in Sources */,
 				135987B82869F369006388CF /* Lorem.swift in Sources */,
 				135987BA2869F3AE006388CF /* MockMessage.swift in Sources */,
