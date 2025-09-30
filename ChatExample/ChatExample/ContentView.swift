@@ -62,12 +62,12 @@ struct ContentView: View {
 //                            )
 //                    }
 
-                    NavigationLink("Gramatune chat (demo)") {
+                    NavigationLink("Chat (demo)") {
                         if !theme.isAccent, #available(iOS 18.0, *) {
-                            APIClientExampleView(viewModel: APIClientExampleViewModel(), title: "Gramatune chat (demo)")
+                            APIClientExampleView(viewModel: APIClientExampleViewModel(), title: "Chat (demo)")
                                 .chatTheme(themeColor: color)
                         } else {
-                            APIClientExampleView(viewModel: APIClientExampleViewModel(), title: "Gramatune chat (demo)")
+                            APIClientExampleView(viewModel: APIClientExampleViewModel(), title: "Chat (demo)")
                                 .chatTheme(
                                     accentColor: color,
                                     images: theme.images
@@ -76,17 +76,17 @@ struct ContentView: View {
                         
                     }
                 } header: {
-                    Text("Chats")
+                    Text("")
                 }
             }
-            .navigationTitle("Theme Picker: ")
+            .navigationTitle("Chats ")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     HStack {
-                        NavigationLink(destination: NewChatView()) {
-                            Image(systemName: "plus")
-                        }
+//                        NavigationLink(destination: NewChatView()) {
+//                            Image(systemName: "plus")
+//                        }
                         Button(theme.title) {
                             theme = theme.next()
                         }

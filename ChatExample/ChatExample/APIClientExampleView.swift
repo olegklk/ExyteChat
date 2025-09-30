@@ -102,12 +102,12 @@ class APIClientExampleViewModel: ObservableObject {
     @Published var chatStatus: String = ""
     @Published var chatCover: URL?
     
-    var conversationId: String? = "81bdd94b-c8d7-47a5-ad24-ce58e0a7f533"
-    private var batchId: String? //"6cbd16b1-5302-4f47-aa19-829ae19ab6bc"
+    var conversationId: String?
+    private var batchId: String?
     private var currentUserId: String { defaults.string(forKey: userIdKey) ?? "" }
     private var currentUserName: String { defaults.string(forKey: userNameKey) ?? "" }
     private let defaults = UserDefaults.standard
-    private let conversationIdKey = "APIClientExample.conversationId"
+    private let conversationIdKey = "UserSettings.conversationId"
     private let batchIdKey = "APIClientExample.batchId"
     private let userIdKey = "UserSettings.userId"
     private let userNameKey = "UserSettings.userName"
@@ -191,18 +191,6 @@ class APIClientExampleViewModel: ObservableObject {
         
         
 //        Task { await loadChatHistory() }
-//        Task {
-//            do {
-//                try await ChatAPIClient.shared.openBatch(
-//                    type: .direct,
-//                    batchId: batchId,
-//                    participants: [currentUserId, "other-user-id"],
-//                    conversationId: conversationId
-//                )
-//            } catch {
-//                print("Failed to open batch: \(error)")
-//            }
-//        }
         
         
     }
@@ -294,7 +282,7 @@ class APIClientExampleViewModel: ObservableObject {
     }
 
     private func loadPersistedIds() {
-//        self.conversationId = defaults.string(forKey: conversationIdKey)
+        self.conversationId = defaults.string(forKey: conversationIdKey)
         //uncomment the following only when the batches are persisted so no need to load previous ones, until then all th ebatches will be refreshed as new
 //        self.batchId = defaults.string(forKey: batchIdKey)
     }
@@ -344,6 +332,6 @@ class APIClientExampleViewModel: ObservableObject {
 
 struct APIClientExampleView_Previews: PreviewProvider {
     static var previews: some View {
-        APIClientExampleView(viewModel: APIClientExampleViewModel(), title: "Gramatune chat (demo)")
+        APIClientExampleView(viewModel: APIClientExampleViewModel(), title: "Chat (demo)")
     }
 }
