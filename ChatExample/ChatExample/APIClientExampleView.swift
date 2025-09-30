@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Combine
 import ExyteChat
 import ExyteMediaPicker
 import ChatAPIClient
@@ -17,6 +18,7 @@ struct APIClientExampleView: View {
     @StateObject private var viewModel: APIClientExampleViewModel
     
     private let title: String
+    @State private var conversationURLText: String = Store.conversationURL()
     
     init(viewModel: APIClientExampleViewModel, title: String) {
         _viewModel = StateObject(wrappedValue: viewModel)
@@ -78,17 +80,22 @@ struct APIClientExampleView: View {
                     .padding(.leading, 10)
                 }
                 ToolbarItem(placement: .principal) {
-                    let idString = viewModel.conversationId ?? ""
-                    Text(idString)
-                        .font(.headline)
+                    Text(conversationURLText)
+                        .font(.subheadline)
                         .textSelection(.enabled)
                         .contextMenu {
-                            Button("Copy") { UIPasteboard.general.string = idString }
+                            Button("Copy") { UIPasteboard.general.string = conversationURLText }
                         }
                 }
             }
             .onAppear {
                 viewModel.onAppear()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: Store.conversationIdDidChange)) { _ in
+                conversationURLText = Store.conversationURL()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: Store.batchIdDidChange)) { _ in
+                conversationURLText = Store.conversationURL()
             }
         }
     }

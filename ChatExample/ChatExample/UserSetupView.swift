@@ -3,13 +3,15 @@ import SwiftUI
 struct UserSetupView: View {
     @State private var name: String = ""
     @State private var userId: String = ""
+    
+    @State private var conversationURL: String = ""
+    @State private var debounceTask: Task<Void, Never>?
+    
     @State private var conversationId: String = ""
+    @State private var batchId: String?
     private enum Route: Hashable { case content }
     @State private var path = NavigationPath()
     private let defaults = UserDefaults.standard
-    private let userIdKey = "UserSettings.userId"
-    private let userNameKey = "UserSettings.userName"
-    private let conversationKey = "UserSettings.conversationId"
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -29,13 +31,25 @@ struct UserSetupView: View {
                 TextField("User Id", text: $userId)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                 
-                Text("ConversationId:")
+                Text("Insert conversation URL to join:")
                     .font(.headline)
-//                    .textSelection(.enabled)
                     .foregroundColor(.secondary)
                 
-                TextField("", text: $conversationId)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
+//                TextField("", text: $conversationURL)
+//                    .textFieldStyle(RoundedBorderTextFieldStyle())
+//                    .onChange(of: conversationURL) { oldValue, newValue in
+//                        debounceConversationIdChange(newValue: newValue)
+//                                        }
+                TextEditor(text: $conversationURL)
+                                    .frame(minHeight: 40, maxHeight: 200)
+                                    .padding(4)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                                    )
+                                    .onChange(of: conversationURL) { oldValue, newValue in
+                                        debounceConversationIdChange(newValue: newValue)
+                                    }
 
                 Spacer()
             }
@@ -58,48 +72,45 @@ struct UserSetupView: View {
             }
         }
         .onAppear(perform: setup)
+        .onReceive(NotificationCenter.default.publisher(for: Store.conversationIdDidChange)) { _ in
+            conversationURL = Store.conversationURL()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: Store.batchIdDidChange)) { _ in
+            conversationURL = Store.conversationURL()
+        }
     }
-
+    
+    private func debounceConversationIdChange(newValue: String) {
+        debounceTask?.cancel()
+        debounceTask = Task {
+            try? await Task.sleep(nanoseconds: 500_000_000) // 0.5s
+                            
+            guard !Task.isCancelled else { return }
+            
+            await MainActor.run {
+                ChatUtils.persistIDsFromURLString(newValue)
+            }
+        }
+    }
+    
     private func setup() {
-        if let savedId = defaults.string(forKey: userIdKey) {
-            userId = savedId
-        } else {
-            let newId = generateRandomUserId()
-            userId = newId
-            defaults.set(newId, forKey: userIdKey)
-        }
-        name = defaults.string(forKey: userNameKey) ?? ""
         
-        if let savedCID = defaults.string(forKey: conversationKey) {
-            conversationId = savedCID
-        } else {
-            let newId = generateRandomConversationId()
-            conversationId = newId
-            defaults.set(newId, forKey: conversationKey)
+        userId = Store.userId()
+        name = Store.userName()
+        conversationId = Store.conversationId()
+        if let savedId = Store.batchId()  {
+            batchId = savedId
         }
+        conversationURL = Store.conversationURL()
+        
     }
 
     private func save() {
-        
-        defaults.set(name.trimmingCharacters(in: .whitespacesAndNewlines), forKey: userNameKey)
-        defaults.set(userId.trimmingCharacters(in: .whitespacesAndNewlines), forKey: userIdKey)
-        defaults.set(conversationId.trimmingCharacters(in: .whitespacesAndNewlines), forKey: conversationKey)
-        
-    }
 
-    private func generateRandomPart() -> String {
-        let alphabet = Array("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
-        let randomPart = String((0..<8).compactMap { _ in alphabet.randomElement() })
-        return randomPart
+        Store.persistUserName(name.trimmingCharacters(in: .whitespacesAndNewlines))
+        Store.persistUserId(userId.trimmingCharacters(in: .whitespacesAndNewlines))
+        Store.persistConversationId(conversationId.trimmingCharacters(in: .whitespacesAndNewlines))
+
     }
-    
-    private func generateRandomUserId() -> String {
-        return "u:" + generateRandomPart()
-    }
-    
-    private func generateRandomConversationId() -> String {
-        return UUID().uuidString
-    }
-    
     
 }

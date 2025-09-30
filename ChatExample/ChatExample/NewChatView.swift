@@ -14,7 +14,6 @@ struct NewChatView: View {
             Section {
                 NavigationLink(destination: {
                     let vm = APIClientExampleViewModel()
-                    vm.setConversationId(conversationId)
                     return APIClientExampleView(viewModel: vm, title: "Gramatune chat (demo)")
                 }()) {
                     Text("Start chat")

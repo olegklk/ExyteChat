@@ -18,18 +18,12 @@ class APIClientExampleViewModel: ObservableObject {
     @Published var chatStatus: String = ""
     @Published var chatCover: URL?
     
-    var conversationId: String?
-    private var batchId: String?
-    private var currentUserId: String { defaults.string(forKey: userIdKey) ?? "" }
-    private var currentUserName: String { defaults.string(forKey: userNameKey) ?? "" }
-    private let defaults = UserDefaults.standard
-    private let conversationIdKey = "UserSettings.conversationId"
-    private let batchIdKey = "APIClientExample.batchId"
-    private let userIdKey = "UserSettings.userId"
-    private let userNameKey = "UserSettings.userName"
+    private var conversationId: String = Store.conversationId()
+    private var batchId: String? = Store.batchId()
+    private var currentUserId: String { Store.userId() }
+    private var currentUserName: String { Store.userName() }
     
     func loadChatHistory() async {
-        guard let conversationId = conversationId else { return }
         
         do {
             let serverBatches = try await ChatAPIClient.shared.getHistory(conversationId: conversationId)
@@ -73,7 +67,7 @@ class APIClientExampleViewModel: ObservableObject {
     }
     
     func handleSend(_ draft: DraftMessage) async {
-        guard let conversationId = conversationId, let batchId = batchId else { return }
+        guard let batchId = batchId else { return }
         
          let attachment = await attachmentsFromDraft(draft) ?? []
         
@@ -94,7 +88,7 @@ class APIClientExampleViewModel: ObservableObject {
     }
     
     func handleEdit(_ messageId: String, _ newText: String) {
-        guard let conversationId = conversationId, let batchId = batchId else { return }
+        guard let batchId = batchId else { return }
         
         SocketIOManager.shared.editMessage(conversationId: conversationId, batchId: batchId, messageId: messageId, newText: newText)
     }
@@ -116,7 +110,7 @@ class APIClientExampleViewModel: ObservableObject {
         SocketIOManager.shared.onConversationAssigned { [weak self] conversationId in
             guard let self = self else { return }
             self.conversationId = conversationId
-            self.persistConversationId(conversationId)
+            Store.persistConversationId(conversationId)
             Task {
                 await self.loadChatHistory()
             }
@@ -124,13 +118,15 @@ class APIClientExampleViewModel: ObservableObject {
         
         SocketIOManager.shared.onBatchAssigned { [weak self] batchId, conversationId in
             guard let self = self else { return }
-            self.conversationId = conversationId
-            self.batchId = batchId
-            self.persistConversationId(conversationId)
-            self.persistBatchId(batchId)
-            Task {
-                await self.loadChatHistory()
+            if let conversationId  {
+                self.conversationId = conversationId
             }
+            self.batchId = batchId
+            Store.persistConversationId(conversationId)
+            Store.setBatchId(batchId)
+//            Task {
+//                await self.loadChatHistory()
+//            }
         }
         
         // Listen for new messages
@@ -198,18 +194,11 @@ class APIClientExampleViewModel: ObservableObject {
     }
 
     private func loadPersistedIds() {
-        self.conversationId = defaults.string(forKey: conversationIdKey)
-        //uncomment the following only when the batches are persisted so no need to load previous ones, until then all th ebatches will be refreshed as new
-//        self.batchId = defaults.string(forKey: batchIdKey)
+        self.conversationId = Store.conversationId()
+        self.batchId = Store.batchId()
     }
 
-    private func persistConversationId(_ id: String?) {
-        if let id { defaults.set(id, forKey: conversationIdKey) } else { defaults.removeObject(forKey: conversationIdKey) }
-    }
-
-    private func persistBatchId(_ id: String?) {
-        if let id { defaults.set(id, forKey: batchIdKey) } else { defaults.removeObject(forKey: batchIdKey) }
-    }
+    
 
     private func buildAuthData() -> [String: Any] {
         var auth: [String: Any] = [
@@ -217,19 +206,9 @@ class APIClientExampleViewModel: ObservableObject {
             "participants": [currentUserId],
             "userId": currentUserId
         ]
-        if let conversationId { auth["conversationId"] = conversationId }
+        auth["conversationId"] = conversationId
         if let batchId { auth["batchId"] = batchId }
         return auth
-    }
-
-    func setConversationId(_ id: String?) {
-        self.conversationId = id
-        persistConversationId(id)
-    }
-
-    func setBatchId(_ id: String?) {
-        self.batchId = id
-        persistBatchId(id)
     }
 
     private func makeReplyMessage(for replyTo: String?) -> ReplyMessage? {
