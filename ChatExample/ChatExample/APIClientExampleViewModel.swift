@@ -139,15 +139,13 @@ class APIClientExampleViewModel: ObservableObject {
             }
         }
         
-        //Cannot pass function of type '([ServerBatchDocument]) async -> Void' to parameter expecting synchronous function type Ai!
-        SocketIOManager.shared.onUnreadBatches { batches in
+        SocketIOManager.shared.onUnreadBatches { [weak self] batches in
             guard let self = self else { return }
             
-            // Convert server messages to chat messages and sort by createdAt
             let newMessages = batches
                 .flatMap { $0.messages.map(self.convertServerMessageToChatMessage) }
             
-            await MainActor.run {
+            Task { @MainActor in
                 // merge newMessages into messages, replacing items with the same id
                 for msg in newMessages {
                     if let idx = self.messages.firstIndex(where: { $0.id == msg.id }) {
@@ -157,7 +155,7 @@ class APIClientExampleViewModel: ObservableObject {
                     }
                 }
                 
-                self.messages =  self.messages.sorted { $0.createdAt < $1.createdAt }
+                self.messages.sort { $0.createdAt < $1.createdAt }
                 
                 // Re-init empty reply bodies
                 for i in self.messages.indices {
@@ -166,7 +164,6 @@ class APIClientExampleViewModel: ObservableObject {
                     }
                 }
             }
-           
         }
 
         // Listen for edited messages
