@@ -148,11 +148,14 @@ class APIClientExampleViewModel: ObservableObject {
 //                .sorted { $0.createdAt < $1.createdAt }
             
             await MainActor.run {
-                
-                
-                //добавь newMessages в массив messages с заменой элементов имеющих такой же message.id AI!
-                
-                self.messages = newMessages
+                // merge newMessages into messages, replacing items with the same id
+                for msg in newMessages {
+                    if let idx = self.messages.firstIndex(where: { $0.id == msg.id }) {
+                        self.messages[idx] = msg
+                    } else {
+                        self.messages.append(msg)
+                    }
+                }
                 
                 // Re-init empty reply bodies
                 for i in self.messages.indices {
