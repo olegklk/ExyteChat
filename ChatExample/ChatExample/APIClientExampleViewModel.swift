@@ -138,6 +138,36 @@ class APIClientExampleViewModel: ObservableObject {
                 self.messages.append(chatMessage)
             }
         }
+        
+        SocketIOManager.shared.onUnreadBatches { batches in
+            guard let self = self else { return }
+            
+            // Convert server messages to chat messages and sort by createdAt
+            let newMessages = batches
+                .flatMap { $0.messages.map(self.convertServerMessageToChatMessage) }
+//                .sorted { $0.createdAt < $1.createdAt }
+            
+            await MainActor.run {
+                
+                
+                //добавь newMessages в массив messages с заменой элементов имеющих такой же message.id AI!
+                
+                self.messages = newMessages
+                
+                // Re-init empty reply bodies
+                for i in self.messages.indices {
+                    if let reply = self.messages[i].replyMessage, reply.text.isEmpty {
+                        self.messages[i].replyMessage = self.makeReplyMessage(for: reply.id)
+                    }
+                }
+            }
+            
+            let chatMessage = self.convertServerMessageToChatMessage(serverMessage)
+            DispatchQueue.main.async {
+                self.messages.removeAll { $0.id == serverMessage.id }
+                self.messages.append(chatMessage)
+            }
+        }
 
         // Listen for edited messages
         SocketIOManager.shared.onMessageEdited { [weak self] messageId, newText in
