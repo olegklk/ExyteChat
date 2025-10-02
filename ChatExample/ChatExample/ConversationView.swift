@@ -105,6 +105,7 @@ struct ConversationView: View {
 
 struct APIClientExampleView_Previews: PreviewProvider {
     static var previews: some View {
-        ConversationView(viewModel: ConversationViewModel(), title: "Chat (demo)")
+        let conversationid = Store.activeConversationId() ?? ChatUtils.generateRandomConversationId()
+        ConversationView(viewModel: ConversationViewModel(conversationId: conversationid), title: "Chat (demo)")
     }
 }

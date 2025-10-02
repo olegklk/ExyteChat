@@ -13,8 +13,9 @@ struct NewChatView: View {
 
             Section {
                 NavigationLink(destination: {
-                    let vm = ConversationViewModel()
-                    return ConversationView(viewModel: vm, title: "Gramatune chat (demo)")
+                    let conversationId =  ChatUtils.generateRandomConversationId()
+                    let vm = ConversationViewModel(conversationId: conversationId)
+                    return ConversationView(viewModel: vm, title: "New chat (demo)")
                 }()) {
                     Text("Start chat")
                         .frame(maxWidth: .infinity, alignment: .center)

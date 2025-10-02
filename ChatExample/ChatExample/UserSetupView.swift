@@ -7,7 +7,7 @@ struct UserSetupView: View {
     @State private var conversationURL: String = ""
     @State private var debounceTask: Task<Void, Never>?
     
-    @State private var conversationId: String = ""
+    @State private var conversationId: String?
     @State private var batchId: String?
     private enum Route: Hashable { case content }
     @State private var path = NavigationPath()
@@ -97,7 +97,7 @@ struct UserSetupView: View {
         
         userId = Store.userId()
         name = Store.userName()
-        conversationId = Store.conversationId()
+        conversationId = Store.activeConversationId()
         if let savedId = Store.batchId()  {
             batchId = savedId
         }
@@ -109,7 +109,9 @@ struct UserSetupView: View {
 
         Store.persistUserName(name.trimmingCharacters(in: .whitespacesAndNewlines))
         Store.persistUserId(userId.trimmingCharacters(in: .whitespacesAndNewlines))
-        Store.persistConversationId(conversationId.trimmingCharacters(in: .whitespacesAndNewlines))
+        if let convId = conversationId {
+            Store.setActiveConversationId(convId.trimmingCharacters(in: .whitespacesAndNewlines))
+        }
 
     }
     

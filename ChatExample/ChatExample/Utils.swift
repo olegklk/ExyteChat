@@ -40,7 +40,7 @@ public final class ChatUtils {
             batchId = dict["batch"] ?? dict["batchId"] ?? dict["b"]
         }
     
-        if conversationId != nil { Store.persistConversationId(conversationId) }
+        if conversationId != nil { Store.setActiveConversationId(conversationId) }
         if batchId != nil { Store.setBatchId(batchId) }
     }
     

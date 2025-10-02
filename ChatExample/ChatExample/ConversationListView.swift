@@ -3,7 +3,7 @@ import ExyteChat
 
 struct ConversationListView: View {
     
-    @StateObject private var viewModel = ConversationListViewModel()
+    @StateObject private var viewModel : ConversationListViewModel = ConversationListViewModel()
     
     @State private var theme: ExampleThemeState = .accent
     @State private var color = Color(.exampleBlue)
@@ -17,80 +17,24 @@ struct ConversationListView: View {
                         id: \.conversationId
                     ) { item in
                         HStack {
-                            Text(String(item.conversationId.prefix(10)))
+                            NavigationLink(String(item.conversationId.prefix(10))) {
+                                if !theme.isAccent, #available(iOS 18.0, *) {
+                                    ConversationView(viewModel: ConversationViewModel(conversationId: item.conversationId), title: String(item.conversationId.prefix(10)))
+                                        .chatTheme(themeColor: color)
+                                } else {
+                                    ConversationView(viewModel: ConversationViewModel(conversationId: item.conversationId), title: String(item.conversationId.prefix(10)))
+                                        .chatTheme(
+                                            accentColor: color,
+                                            images: theme.images
+                                        )
+                                }
+                                
+                            }
                             Spacer()
                             Text("\(item.unreadCount)")
                                 .foregroundColor(.secondary)
                         }
                     }
-                }
-                Section {
-//                    NavigationLink("Active chat example") {
-//                        if !theme.isAccent, #available(iOS 18.0, *) {
-//                            ChatExampleView(
-//                                viewModel: ChatExampleViewModel(interactor: MockChatInteractor(isActive: true)),
-//                                title: "Active chat example"
-//                            )
-//                            .chatTheme(themeColor: color)
-//                        } else {
-//                            ChatExampleView(
-//                                viewModel: ChatExampleViewModel(interactor: MockChatInteractor(isActive: true)),
-//                                title: "Active chat example"
-//                            )
-//                            .chatTheme(
-//                                accentColor: color,
-//                                images: theme.images
-//                            )
-//                        }
-//                    }
-//                    
-//                    NavigationLink("Simple chat example") {
-//                        if !theme.isAccent, #available(iOS 18.0, *) {
-//                            ChatExampleView(viewModel: ChatExampleViewModel(), title: "Simple chat example")
-//                                .chatTheme(themeColor: color)
-//                        } else {
-//                            ChatExampleView(viewModel: ChatExampleViewModel(), title: "Simple chat example")
-//                                .chatTheme(
-//                                    accentColor: color,
-//                                    images: theme.images
-//                                )
-//                        }
-//                    }
-//
-//                    NavigationLink("Simple comments example") {
-//                        CommentsExampleView()
-//                            .chatTheme(.init(colors: .init(
-//                                inputSignatureBG: .white.opacity(0.5),
-//                                inputSignatureText: .black,
-//                                inputSignaturePlaceholderText: .black.opacity(0.7)
-//                            )))
-//                            .mediaPickerTheme(
-//                                main: .init(
-//                                    pickerText: .white,
-//                                    pickerBackground: Color(.examplePickerBg),
-//                                    fullscreenPhotoBackground: Color(.examplePickerBg)
-//                                ),
-//                                selection: .init(
-//                                    accent: Color(.exampleBlue)
-//                                )
-//                            )
-//                    }
-
-                    NavigationLink("Chat (demo)") {
-                        if !theme.isAccent, #available(iOS 18.0, *) {
-                            ConversationView(viewModel: ConversationViewModel(), title: "Chat (demo)")
-                                .chatTheme(themeColor: color)
-                        } else {
-                            ConversationView(viewModel: ConversationViewModel(), title: "Chat (demo)")
-                                .chatTheme(
-                                    accentColor: color,
-                                    images: theme.images
-                                )
-                        }
-                        
-                    }
-                } header: {
-                    Text("")
                 }
             }
             .navigationTitle("Chats ")

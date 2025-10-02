@@ -18,10 +18,14 @@ class ConversationViewModel: ObservableObject {
     @Published var chatStatus: String = ""
     @Published var chatCover: URL?
     
-    private var conversationId: String = Store.activeConversationId() ?? ChatUtils.generateRandomConversationId()
+    private var conversationId: String 
     private var batchId: String? = Store.batchId()
     private var currentUserId: String { Store.userId() }
     private var currentUserName: String { Store.userName() }
+    
+    init(conversationId: String) {
+        self.conversationId = conversationId
+    }
     
     func loadChatHistory() async {
         
@@ -222,7 +226,6 @@ class ConversationViewModel: ObservableObject {
     }
 
     private func loadPersistedIds() {
-        self.conversationId = Store.conversationId()
         self.batchId = Store.batchId()
     }
 
