@@ -13,7 +13,7 @@ import ChatAPIClient
 
 @MainActor
 class ConversationListViewModel: ObservableObject {
-    @Published private var conversationItems: [ServerConversationListItem]?
+    @Published var conversationItems: [ServerConversationListItem] = []
         
     func loadConversationList() async {
         

@@ -3,9 +3,7 @@ import ExyteChat
 
 struct ConversationListView: View {
     
-    //перепиши этот класс так на onAppear запускался метод viewModel.onAppear и чтобы внути List отображались объекты viewModel.conversationItems (в качестве title - первые 10 символов от их свойства conversationId и справа число unreadCount). Элементы в списке должны быть отсортированы по свойству latestUnreadStartedAt AI!
-    
-    private var viewModel: ConversationListViewModel = ConversationListViewModel()
+    @StateObject private var viewModel = ConversationListViewModel()
     
     @State private var theme: ExampleThemeState = .accent
     @State private var color = Color(.exampleBlue)
@@ -13,6 +11,19 @@ struct ConversationListView: View {
     var body: some View {
         NavigationView {
             List {
+                Section {
+                    ForEach(
+                        viewModel.conversationItems.sorted { $0.latestUnreadStartedAt > $1.latestUnreadStartedAt },
+                        id: \.conversationId
+                    ) { item in
+                        HStack {
+                            Text(String(item.conversationId.prefix(10)))
+                            Spacer()
+                            Text("\(item.unreadCount)")
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                }
                 Section {
 //                    NavigationLink("Active chat example") {
 //                        if !theme.isAccent, #available(iOS 18.0, *) {
