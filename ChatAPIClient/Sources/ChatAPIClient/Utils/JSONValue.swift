@@ -61,4 +61,21 @@ public enum JSONValue: Codable, Hashable, Sendable {
         case .null:          return NSNull()
         }
     }
+    
+    static func parseDate(_ any: Any?) -> Date? {
+        //доработай этот метод так чтобы можно было распарсить значение даты в формате "2025-10-02T11:49:40.088Z" и если потребуется использовать dateFormatter - то использовать один статический для всех случаев, а не создавать его каждый раз поскольку это реусурсоемкая операция AI!
+        switch any {
+        case let s as String:
+            if let t = TimeInterval(s) { return Date(timeIntervalSince1970: t) }
+            let isoFS = ISO8601DateFormatter()
+            isoFS.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            return isoFS.date(from: s) ?? ISO8601DateFormatter().date(from: s)
+        case let d as Double:
+            return Date(timeIntervalSince1970: d)
+        case let i as Int:
+            return Date(timeIntervalSince1970: TimeInterval(i))
+        default:
+            return nil
+        }
+    }
 }
