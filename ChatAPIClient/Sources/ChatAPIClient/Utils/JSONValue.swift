@@ -31,6 +31,18 @@ public enum JSONValue: Codable, Hashable, Sendable {
         }
     }
 
+    private static let iso8601WithFractionalSeconds: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return f
+    }()
+
+    private static let iso8601NoFraction: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime]
+        return f
+    }()
+
     static func from(any: Any) -> JSONValue? {
         switch any {
         case let v as String: return .string(v)
@@ -63,13 +75,12 @@ public enum JSONValue: Codable, Hashable, Sendable {
     }
     
     static func parseDate(_ any: Any?) -> Date? {
-        //доработай этот метод так чтобы можно было распарсить значение даты в формате "2025-10-02T11:49:40.088Z" и если потребуется использовать dateFormatter - то использовать один статический для всех случаев, а не создавать его каждый раз поскольку это реусурсоемкая операция AI!
         switch any {
         case let s as String:
             if let t = TimeInterval(s) { return Date(timeIntervalSince1970: t) }
-            let isoFS = ISO8601DateFormatter()
-            isoFS.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-            return isoFS.date(from: s) ?? ISO8601DateFormatter().date(from: s)
+            if let d = Self.iso8601WithFractionalSeconds.date(from: s) { return d }
+            if let d = Self.iso8601NoFraction.date(from: s) { return d }
+            return nil
         case let d as Double:
             return Date(timeIntervalSince1970: d)
         case let i as Int:
