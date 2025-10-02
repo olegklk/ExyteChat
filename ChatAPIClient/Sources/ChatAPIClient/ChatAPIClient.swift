@@ -11,6 +11,8 @@ public actor ChatAPIClient {
         case closeBatch(batchId: String)
         case patchMessage
         case getHistory(conversationId: String)
+        case getConversations(userId: String)
+        case getUnreadBatches(conversationId: String)
         
         var path: String {
             switch self {
@@ -22,6 +24,10 @@ public actor ChatAPIClient {
                 return "/chats/mongo/patch"
             case .getHistory(let conversationId):
                 return "/chats/\(conversationId)/history"
+            case .getConversations(let userId):
+                return "/chats/unread/by-user/\(userId)"
+            case .getUnreadBatches(let conversationId):
+                return "/chats/\(conversationId)/unread"
             }
         }
     }
@@ -73,6 +79,17 @@ public actor ChatAPIClient {
         return items?.compactMap { ServerBatchDocument(from: $0) } ?? []
       
     }
+    
+    public func getConversations(userId: String, limit: Int = 50, perConv: Int = 10) async throws -> [ServerConversationListItem] {
+        
+        //измени создание запроса так чтобы использовать limit и perConv как query параметры AI!
+        let urlComponents = URLComponents(string: baseURL + Endpoint.getConversations(userId: userId).path)!
+        let items = try await makeRequest(urlComponents: urlComponents, method: "GET") as? [[String: Any]]
+        
+        return items?.compactMap{ ServerConversationListItem(from: $0) } ?? []
+      
+    }
+    
     private func makeRequest(urlComponents: URLComponents, method: String, body: [String: Any]? = nil) async throws -> Any {
         guard let url = urlComponents.url else {
             throw URLError(.badURL)
