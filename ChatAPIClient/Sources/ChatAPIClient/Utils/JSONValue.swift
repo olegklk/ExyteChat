@@ -31,18 +31,24 @@ public enum JSONValue: Codable, Hashable, Sendable {
         }
     }
 
-    //Static property 'iso8601WithFractionalSeconds' is not concurrency-safe because non-'Sendable' type 'ISO8601DateFormatter' may have shared mutable state AI!
-    private static let iso8601WithFractionalSeconds: ISO8601DateFormatter = {
+    // thread-local formatters to avoid shared mutable state across concurrency domains
+    private static var iso8601WithFractionalSeconds: ISO8601DateFormatter {
+        let key = "JSONValue.iso8601WithFractionalSeconds"
+        if let f = Thread.current.threadDictionary[key] as? ISO8601DateFormatter { return f }
         let f = ISO8601DateFormatter()
         f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        Thread.current.threadDictionary[key] = f
         return f
-    }()
+    }
 
-    private static let iso8601NoFraction: ISO8601DateFormatter = {
+    private static var iso8601NoFraction: ISO8601DateFormatter {
+        let key = "JSONValue.iso8601NoFraction"
+        if let f = Thread.current.threadDictionary[key] as? ISO8601DateFormatter { return f }
         let f = ISO8601DateFormatter()
         f.formatOptions = [.withInternetDateTime]
+        Thread.current.threadDictionary[key] = f
         return f
-    }()
+    }
 
     static func from(any: Any) -> JSONValue? {
         switch any {
