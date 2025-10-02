@@ -50,8 +50,8 @@ public struct ServerBatchDocument: Codable, Identifiable, Sendable {
         self.conversationId = (dict["conversationId"] as? String) ?? ""
         self.type = BatchType(rawValue: (dict["type"] as? String) ?? "direct") ?? .direct
         self.participants = (dict["participants"] as? [String]) ?? []
-        self.startedAt = Self.parseDate(dict["startedAt"]) ?? Date()
-        self.closedAt = Self.parseDate(dict["closedAt"])
+        self.startedAt = JSONValue.parseDate(dict["startedAt"]) ?? Date()
+        self.closedAt = JSONValue.parseDate(dict["closedAt"])
         self.seenBy = (dict["seenBy"] as? [String]) ?? []
         if let msgs = dict["messages"] as? [[String: Any]] {
             self.messages = msgs.compactMap { ServerMessage(from: $0) }
@@ -73,19 +73,4 @@ public struct ServerBatchDocument: Codable, Identifiable, Sendable {
         self.messages = try container.decode([ServerMessage].self, forKey: .messages)
     }
 
-    private static func parseDate(_ any: Any?) -> Date? {
-        switch any {
-        case let s as String:
-            if let t = TimeInterval(s) { return Date(timeIntervalSince1970: t) }
-            let isoFS = ISO8601DateFormatter()
-            isoFS.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-            return isoFS.date(from: s) ?? ISO8601DateFormatter().date(from: s)
-        case let d as Double:
-            return Date(timeIntervalSince1970: d)
-        case let i as Int:
-            return Date(timeIntervalSince1970: TimeInterval(i))
-        default:
-            return nil
-        }
-    }
 }

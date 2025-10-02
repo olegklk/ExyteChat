@@ -72,8 +72,12 @@ public actor ChatAPIClient {
         return PatchResult(matched: matched, modified: modified)
     }
     
-    public func getHistory(conversationId: String) async throws -> [ServerBatchDocument] {
-        let urlComponents = URLComponents(string: baseURL + Endpoint.getHistory(conversationId: conversationId).path)!
+    //month - string($YYYY-MM)
+    public func getHistory(conversationId: String, month: String?) async throws -> [ServerBatchDocument] {
+        var urlComponents = URLComponents(string: baseURL + Endpoint.getHistory(conversationId: conversationId).path)!
+        var q: [URLQueryItem] = []
+        if let month { q.append(URLQueryItem(name: "month", value: month)) }
+        urlComponents.queryItems = q.isEmpty ? nil : q
         let items = try await makeRequest(urlComponents: urlComponents, method: "GET") as? [[String: Any]]
         
         return items?.compactMap { ServerBatchDocument(from: $0) } ?? []

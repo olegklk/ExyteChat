@@ -1,5 +1,5 @@
 //
-//  APIClientExampleView.swift
+//  ConversationView.swift
 //  ChatExample
 //
 //  Created by [Your Name] on [Date].
@@ -11,16 +11,16 @@ import ExyteChat
 import ExyteMediaPicker
 import ChatAPIClient
 
-struct APIClientExampleView: View {
+struct ConversationView: View {
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.presentationMode) private var presentationMode
     
-    @StateObject private var viewModel: APIClientExampleViewModel
+    @StateObject private var viewModel: ConversationViewModel
     
     private let title: String
     @State private var conversationURLText: String = Store.conversationURL()
     
-    init(viewModel: APIClientExampleViewModel, title: String) {
+    init(viewModel: ConversationViewModel, title: String) {
         _viewModel = StateObject(wrappedValue: viewModel)
         self.title = title
     }
@@ -105,6 +105,6 @@ struct APIClientExampleView: View {
 
 struct APIClientExampleView_Previews: PreviewProvider {
     static var previews: some View {
-        APIClientExampleView(viewModel: APIClientExampleViewModel(), title: "Chat (demo)")
+        ConversationView(viewModel: ConversationViewModel(), title: "Chat (demo)")
     }
 }

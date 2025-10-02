@@ -13,8 +13,8 @@ struct NewChatView: View {
 
             Section {
                 NavigationLink(destination: {
-                    let vm = APIClientExampleViewModel()
-                    return APIClientExampleView(viewModel: vm, title: "Gramatune chat (demo)")
+                    let vm = ConversationViewModel()
+                    return ConversationView(viewModel: vm, title: "Gramatune chat (demo)")
                 }()) {
                     Text("Start chat")
                         .frame(maxWidth: .infinity, alignment: .center)

@@ -44,7 +44,7 @@ public class SocketIOManager: ObservableObject {
     private var messageDeletedHandler: ((String) -> Void)?
     private var batchAssignedHandler: ((String, String?) -> Void)?
     private var conversationAssignedHandler: ((String) -> Void)?
-    private var unreadBatchesHandler: (([ServerBatchDocument]) -> Void)?
+    private var unreadBatchesHandler: (([ServerBatchDocument], String?) -> Void)?
     private var errorHandler: ((String, String) -> Void)?
     
     private init() {}
@@ -164,9 +164,11 @@ public class SocketIOManager: ObservableObject {
                   let handler = self.unreadBatchesHandler,
                   let dict = data.first as? [String: Any],
                   let items = dict["items"] as? [[String: Any]] else { return }
+                  
+            let cId = dict["conversationId"] as? String
 
             let batches = items.compactMap { ServerBatchDocument(from: $0) }
-            handler(batches)
+            handler(batches, cId)
         }
         
         let errEv = eventName(.error)
@@ -255,7 +257,7 @@ public class SocketIOManager: ObservableObject {
         conversationAssignedHandler = handler
     }
     
-    public func onUnreadBatches(handler: @escaping ([ServerBatchDocument]) -> Void) {
+    public func onUnreadBatches(handler: @escaping ([ServerBatchDocument], String?) -> Void) {
         unreadBatchesHandler = handler
     }
     

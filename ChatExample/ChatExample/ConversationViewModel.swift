@@ -1,5 +1,5 @@
 //
-//  APIClientExampleViewModel.swift
+//  ConversationViewModel.swift
 //  ChatExample
 //
 //  Created by Oleg Kolokolov on 30.09.2025.
@@ -11,14 +11,14 @@ import ExyteMediaPicker
 import ChatAPIClient
 
 @MainActor
-class APIClientExampleViewModel: ObservableObject {
+class ConversationViewModel: ObservableObject {
     @Published var messages: [Message] = []
     
     @Published var chatTitle: String = ""
     @Published var chatStatus: String = ""
     @Published var chatCover: URL?
     
-    private var conversationId: String = Store.conversationId()
+    private var conversationId: String = Store.activeConversationId() ?? ChatUtils.generateRandomConversationId()
     private var batchId: String? = Store.batchId()
     private var currentUserId: String { Store.userId() }
     private var currentUserName: String { Store.userName() }
@@ -26,7 +26,7 @@ class APIClientExampleViewModel: ObservableObject {
     func loadChatHistory() async {
         
         do {
-            let serverBatches = try await ChatAPIClient.shared.getHistory(conversationId: conversationId)
+            let serverBatches = try await ChatAPIClient.shared.getHistory(conversationId: conversationId, month: nil)
             
             // Convert server messages to chat messages and sort by createdAt
             let newMessages = serverBatches
@@ -110,7 +110,7 @@ class APIClientExampleViewModel: ObservableObject {
         SocketIOManager.shared.onConversationAssigned { [weak self] conversationId in
             guard let self = self else { return }
             self.conversationId = conversationId
-            Store.persistConversationId(conversationId)
+            Store.setActiveConversationId(conversationId)
             Task {
                 await self.loadChatHistory()
             }
@@ -122,7 +122,7 @@ class APIClientExampleViewModel: ObservableObject {
                 self.conversationId = conversationId
             }
             self.batchId = batchId
-            Store.persistConversationId(conversationId)
+            Store.setActiveConversationId(conversationId)
             Store.setBatchId(batchId)
 //            Task {
 //                await self.loadChatHistory()
@@ -139,8 +139,9 @@ class APIClientExampleViewModel: ObservableObject {
             }
         }
         
-        SocketIOManager.shared.onUnreadBatches { [weak self] batches in
-            guard let self = self else { return }
+        SocketIOManager.shared.onUnreadBatches { [weak self] batches, cId in
+            guard let self = self,
+            cId == self.conversationId else { return }
             
             let newMessages = batches
                 .flatMap { $0.messages.map(self.convertServerMessageToChatMessage) }

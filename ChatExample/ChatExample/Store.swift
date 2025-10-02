@@ -21,13 +21,9 @@ public final class Store {
         NotificationCenter.default.post(name: Store.batchIdDidChange, object: nil)
     }
     
-    public static func persistConversationId(_ id: String?) {
+    public static func setActiveConversationId(_ id: String?) {
         _activeConversationId = id
         NotificationCenter.default.post(name: Store.conversationIdDidChange, object: nil)
-    }
-    
-    public static func setActiveConversationId(_ id: String?) {
-        persistConversationId(id)
     }
     
     public static func activeConversationId() -> String? {
@@ -76,19 +72,9 @@ public final class Store {
         return newId
     }
     
-    public static func conversationId() -> String {
-        if let id = _activeConversationId {
-            return id
-        }
-        let newId = ChatUtils.generateRandomConversationId()
-        _activeConversationId = newId
-        NotificationCenter.default.post(name: Store.conversationIdDidChange, object: nil)
-        return newId
-    }
-    
     public static func conversationURL() -> String {
-        let convId = conversationId()
-        if let batchId = _batchId {
+        if let convId = _activeConversationId,
+        let batchId = _batchId {
             //https://chat.gramatune.com/#conversation=07DDC757-797C-4A1F-BB82-0268BB078231&batch=f9f45e7a-8a44-477d-9b89-e972cc210a94
             return "https://chat.gramatune.com/#conversation=\(convId)&batch=\(batchId)"
         }

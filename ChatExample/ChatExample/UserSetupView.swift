@@ -67,7 +67,7 @@ struct UserSetupView: View {
             .navigationDestination(for: Route.self) { route in
                 switch route {
                 case .content:
-                    ContentView()
+                    ConversationListView()
                 }
             }
         }
