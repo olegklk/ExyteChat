@@ -6,13 +6,15 @@
 //
 
 import Foundation
+import ChatAPIClient
 
 @MainActor
 public final class Store {
     
-    //переработай этот класс чтобы он хранил в памяти список объектов типа Conversation доступных по ключу convesationId, а также текущий активный conversationId и активный batchId. Нужен метод возвращающий список всех Convesation  для построения List внутри View. Persisted only userId и userName AI!
     public static let conversationIdDidChange = Notification.Name("Store.conversationIdDidChange")
     public static let batchIdDidChange = Notification.Name("Store.batchIdDidChange")
+    private static var conversationsById: [String: Conversation] = [:]
+    private static var _activeConversationId: String?
     private static var _batchId: String?
     public static func setBatchId(_ id: String?) {
         _batchId = id
@@ -20,8 +22,7 @@ public final class Store {
     }
     
     public static func persistConversationId(_ id: String?) {
-        let defaults = UserDefaults.standard
-        if let id { defaults.set(id, forKey: AppKeys.UserDefaults.conversationId) } else { defaults.removeObject(forKey: AppKeys.UserDefaults.conversationId) }
+        _activeConversationId = id
         NotificationCenter.default.post(name: Store.conversationIdDidChange, object: nil)
     }
     
@@ -52,12 +53,12 @@ public final class Store {
     }
     
     public static func conversationId() -> String {
-        if let savedId = UserDefaults.standard.string(forKey: AppKeys.UserDefaults.conversationId) {
-            return savedId
+        if let id = _activeConversationId {
+            return id
         }
-        
         let newId = ChatUtils.generateRandomConversationId()
-        persistConversationId(newId)
+        _activeConversationId = newId
+        NotificationCenter.default.post(name: Store.conversationIdDidChange, object: nil)
         return newId
     }
     
