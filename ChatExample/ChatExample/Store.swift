@@ -26,6 +26,30 @@ public final class Store {
         NotificationCenter.default.post(name: Store.conversationIdDidChange, object: nil)
     }
     
+    public static func setActiveConversationId(_ id: String?) {
+        persistConversationId(id)
+    }
+    
+    public static func activeConversationId() -> String? {
+        _activeConversationId
+    }
+    
+    public static func upsertConversation(_ conversation: Conversation) {
+        conversationsById[conversation.id] = conversation
+    }
+    
+    public static func upsertConversations(_ list: [Conversation]) {
+        for c in list { conversationsById[c.id] = c }
+    }
+    
+    public static func conversation(for id: String) -> Conversation? {
+        conversationsById[id]
+    }
+    
+    public static func conversations() -> [Conversation] {
+        Array(conversationsById.values)
+    }
+    
     public static func batchId() -> String? { _batchId }
     
     public static func persistUserId(_ id: String?) {
