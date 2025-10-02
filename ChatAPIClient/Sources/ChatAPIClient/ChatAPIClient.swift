@@ -82,11 +82,10 @@ public actor ChatAPIClient {
     
     public func getConversations(userId: String, limit: Int?, perConv: Int?) async throws -> [ServerConversationListItem] {
         var urlComponents = URLComponents(string: baseURL + Endpoint.getConversations(userId: userId).path)!
-        //доработай этот код для случая когда limit и perConv - опциональны AI!
-        urlComponents.queryItems = [
-            URLQueryItem(name: "limit", value: String(limit)),
-            URLQueryItem(name: "perConv", value: String(perConv))
-        ]
+        var q: [URLQueryItem] = []
+        if let limit { q.append(URLQueryItem(name: "limit", value: String(limit))) }
+        if let perConv { q.append(URLQueryItem(name: "perConv", value: String(perConv))) }
+        urlComponents.queryItems = q.isEmpty ? nil : q
         let items = try await makeRequest(urlComponents: urlComponents, method: "GET") as? [[String: Any]]
         return items?.compactMap { ServerConversationListItem(from: $0) } ?? []
     }
