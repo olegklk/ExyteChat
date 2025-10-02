@@ -9,6 +9,8 @@ import Foundation
 
 @MainActor
 public final class Store {
+    
+    //переработай этот класс чтобы он хранил в памяти список объектов типа Conversation доступных по ключу convesationId, а также текущий активный conversationId и активный batchId. Нужен метод возвращающий список всех Convesation  для построения List внутри View. Persisted only userId и userName AI!
     public static let conversationIdDidChange = Notification.Name("Store.conversationIdDidChange")
     public static let batchIdDidChange = Notification.Name("Store.batchIdDidChange")
     private static var _batchId: String?
