@@ -31,6 +31,7 @@ public enum JSONValue: Codable, Hashable, Sendable {
         }
     }
 
+    //Static property 'iso8601WithFractionalSeconds' is not concurrency-safe because non-'Sendable' type 'ISO8601DateFormatter' may have shared mutable state AI!
     private static let iso8601WithFractionalSeconds: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter()
         f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
