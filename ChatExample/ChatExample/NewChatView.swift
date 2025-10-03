@@ -4,12 +4,14 @@ struct NewChatView: View {
     @State private var conversationId: String = ""
     @State private var chatType: String = "direct"
 
+    //добавь в интерфейс еще одну группу настроек - выбор участников. Это должно быть текстовое поле ввода в котором будет placeholder "Insert participant Id" и при вводе нового userId активируется кнопка добавить, после чего новый userId появляется ниже в виде List. При этом каждый элемент в этом List имеет кнопку с иконкой trash can при нажатии на которую элемент удаляется из списка AI!
+    
     var body: some View {
         Form {
-            Section(header: Text("Create new chat")) {
-                TextField("Conversation ID", text: $conversationId)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled(true)
+            Section(header: Text("Chat Type")) {
+//                TextField("Conversation ID", text: $conversationId)
+//                    .textInputAutocapitalization(.never)
+//                    .autocorrectionDisabled(true)
 
                 Picker("Chat type", selection: $chatType) {
                     Text("direct").tag("direct")
