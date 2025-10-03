@@ -43,12 +43,18 @@ struct ConversationListView: View {
                         )
                                             
                         NavigationLink(String("Join conversation")) {
+                            //упрости этот блок или вынеси его в отдельную функцию для упрощения задачи компилятору AI!
                             if let convId = conversationId {
+                                let viewModel = ConversationViewModel(conversationId: convId)
+                                
+                                if let batchId { viewModel.batchId = batchId
+                                }
+                                                
                                 if !theme.isAccent, #available(iOS 18.0, *) {
-                                    ConversationView(viewModel: ConversationViewModel(conversationId: convId), title: String(convId.prefix(10)))
+                                    ConversationView(viewModel: viewModel, title: String(convId.prefix(10)))
                                         .chatTheme(themeColor: color)
                                 } else {
-                                    ConversationView(viewModel: ConversationViewModel(conversationId: convId), title: String(convId.prefix(10)))
+                                        ConversationView(viewModel: viewModel, title: String(convId.prefix(10)))
                                         .chatTheme(
                                             accentColor: color,
                                             images: theme.images
@@ -120,8 +126,6 @@ struct ConversationListView: View {
     private func setup() {
         
         viewModel.onAppear()
-        conversationId = Store.activeConversationId()
-        batchId = Store.batchId()
         
     }
     
