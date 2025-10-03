@@ -9,7 +9,7 @@ struct NewChatView: View {
     @State private var chatType: ChatType = .direct
     @State private var participantInput: String = ""
     @State private var participants: [String] = []
-    
+    //проверь body ниже на предмет корректности потому что я вижу ошибку компилятора The compiler is unable to type-check this expression in reasonable time; try breaking up the expression into distinct sub-expressions нет ли там видимых проблем AI!
     var body: some View {
         Form {
             Section(header: Text("Chat Type")) {
@@ -74,7 +74,7 @@ struct NewChatView: View {
                     Text("Start chat")
                         .frame(maxWidth: .infinity, alignment: .center)
                 }
-                .disabled(conversationId.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .disabled(participants.isEmpty)
             }
         }
         .navigationTitle("New Chat")
