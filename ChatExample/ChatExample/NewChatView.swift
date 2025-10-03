@@ -6,8 +6,6 @@ struct NewChatView: View {
     @State private var participantInput: String = ""
     @State private var participants: [String] = []
     
-    //давай сделаем так чтобы если participants содержит более одного элемента то тип чата автоматически становится "group" AI!
-    
     var body: some View {
         Form {
             Section(header: Text("Chat Type")) {
