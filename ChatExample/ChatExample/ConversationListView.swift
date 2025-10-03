@@ -22,17 +22,25 @@ struct ConversationListView: View {
                         Text("Insert conversation URL to join:")
                             .font(.headline)
                             .foregroundColor(.secondary)
-                        //добавиь placeholder к TextEditor со значением "http://.." AI!
-                        TextEditor(text: $conversationURL)
-                                            .frame(minHeight: 40, maxHeight: 200)
-                                            .padding(4)
-                                            .overlay(
-                                                RoundedRectangle(cornerRadius: 8)
-                                                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                                            )
-                                            .onChange(of: conversationURL) { oldValue, newValue in
-                                                debounceConversationIdChange(newValue: newValue)
-                                            }
+                        ZStack(alignment: .topLeading) {
+                            TextEditor(text: $conversationURL)
+                                .frame(minHeight: 40, maxHeight: 200)
+                                .padding(4)
+                                .onChange(of: conversationURL) { oldValue, newValue in
+                                    debounceConversationIdChange(newValue: newValue)
+                                }
+                            
+                            if conversationURL.isEmpty {
+                                Text("http://..")
+                                    .foregroundColor(.secondary)
+                                    .padding(12)
+                                    .allowsHitTesting(false)
+                            }
+                        }
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                        )
                                             
                         NavigationLink(String("Join conversation")) {
                             if let convId = conversationId {
