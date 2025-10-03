@@ -3,8 +3,8 @@ import SwiftUI
 struct NewChatView: View {
     @State private var conversationId: String = ""
     @State private var chatType: String = "direct"
-
-    //добавь в интерфейс еще одну группу настроек - выбор участников. Это должно быть текстовое поле ввода в котором будет placeholder "Insert participant Id" и при вводе нового userId активируется кнопка добавить, после чего новый userId появляется ниже в виде List. При этом каждый элемент в этом List имеет кнопку с иконкой trash can при нажатии на которую элемент удаляется из списка AI!
+    @State private var participantInput: String = ""
+    @State private var participants: [String] = []
     
     var body: some View {
         Form {
@@ -18,6 +18,42 @@ struct NewChatView: View {
                     Text("group").tag("group")
                 }
                 .pickerStyle(.segmented)
+            }
+
+            Section(header: Text("Participants")) {
+                HStack {
+                    TextField("Insert participant Id", text: $participantInput)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled(true)
+                    Button {
+                        let pid = participantInput.trimmingCharacters(in: .whitespacesAndNewlines)
+                        guard !pid.isEmpty else { return }
+                        if !participants.contains(pid) {
+                            participants.append(pid)
+                        }
+                        participantInput = ""
+                    } label: {
+                        Image(systemName: "plus.circle.fill")
+                    }
+                    .disabled({
+                        let pid = participantInput.trimmingCharacters(in: .whitespacesAndNewlines)
+                        return pid.isEmpty || participants.contains(pid)
+                    }())
+                }
+                
+                ForEach(participants, id: \.self) { pid in
+                    HStack {
+                        Text(pid)
+                        Spacer()
+                        Button {
+                            participants.removeAll { $0 == pid }
+                        } label: {
+                            Image(systemName: "trash")
+                                .foregroundColor(.red)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
             }
 
             Section {
