@@ -18,15 +18,19 @@ class ConversationViewModel: ObservableObject {
     @Published var chatStatus: String = ""
     @Published var chatCover: URL?
     
-    private var conversationId: String 
-    private var batchId: String?
+    private var conversation: Conversation?
+    private var conversationId: String
+    public var batchId: String?
     private var currentUserId: String { Store.userId() }
     private var currentUserName: String { Store.userName() }
     
     private var isHistoryLoaded: Bool = false
     
-    init(conversationId: String) {
+    init(conversationId: String, batchId: String?) {
         self.conversationId = conversationId
+        if let batchId {self.batchId = batchId}
+        
+        self.conversation = Store.conversation(for: conversationId)
     }
     
     func loadChatHistory() async {
@@ -229,9 +233,11 @@ class ConversationViewModel: ObservableObject {
     }
 
     private func buildAuthData() -> [String: Any] {
+        
+        
         var auth: [String: Any] = [
-            "chatType": "group",
-            "participants": [currentUserId],
+            "chatType": conversation?.type ?? "direct",
+            "participants": conversation?.participants ?? [currentUserId],
             "userId": currentUserId
         ]
         auth["conversationId"] = conversationId

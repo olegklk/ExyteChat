@@ -43,8 +43,8 @@ struct ConversationListView: View {
                         )
                                             
                         NavigationLink(String("Join conversation")) {
-                            if let convId = conversationId {
-                                destinationView(for: convId)
+                            if let conversationId, let batchId {
+                                destinationViewToJoin(for: conversationId, batchId: batchId)
                             }
                         }.disabled(conversationId == nil || conversationURL.isEmpty)
                     }
@@ -70,10 +70,10 @@ struct ConversationListView: View {
                         HStack {
                             NavigationLink(String(item.conversationId.prefix(10))) {
                                 if !theme.isAccent, #available(iOS 18.0, *) {
-                                    ConversationView(viewModel: ConversationViewModel(conversationId: item.conversationId), title: String(item.conversationId.prefix(10)))
+                                    ConversationView(viewModel: ConversationViewModel(conversationId: item.conversationId, batchId: nil), title: String(item.conversationId.prefix(10)))
                                         .chatTheme(themeColor: color)
                                 } else {
-                                    ConversationView(viewModel: ConversationViewModel(conversationId: item.conversationId), title: String(item.conversationId.prefix(10)))
+                                    ConversationView(viewModel: ConversationViewModel(conversationId: item.conversationId, batchId: nil), title: String(item.conversationId.prefix(10)))
                                         .chatTheme(
                                             accentColor: color,
                                             images: theme.images
@@ -109,9 +109,8 @@ struct ConversationListView: View {
     }
     
     @ViewBuilder
-    private func destinationView(for convId: String) -> some View {
-        let vm = ConversationViewModel(conversationId: convId)
-        if let batchId { vm.batchId = batchId }
+    private func destinationViewToJoin(for convId: String, batchId: String) -> some View {
+        let vm = ConversationViewModel(conversationId: convId, batchId: batchId)
         let title = String(convId.prefix(10))
         if !theme.isAccent, #available(iOS 18.0, *) {
             ConversationView(viewModel: vm, title: title)

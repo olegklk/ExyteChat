@@ -90,15 +90,7 @@ struct NewChatView: View {
 
     @ViewBuilder
     private func startChatDestination() -> some View {
-        let id = ChatUtils.generateRandomConversationId()
-        Store.ensureConversation(id)
-        var conversation = Store.conversation(for: id)
-        conversation.type = chatType.rawValue
-        conversation.participants = participants
-        Store.upsertConversation(conversation)
-        
-        let vm = ConversationViewModel(conversationId: id)
-        let title = conversation.title.isEmpty ? String(id.prefix(10)) : conversation.title
-        ConversationView(viewModel: vm, title: title)
+        let conversation = Store.createConversation(type: chatType.rawValue, participants: participants, title: nil)
+        ConversationView(viewModel: ConversationViewModel(conversationId: conversation.id, batchId: nil), title: conversation.title)
     }
 }
