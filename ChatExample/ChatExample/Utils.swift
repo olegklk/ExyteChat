@@ -9,7 +9,7 @@ import Foundation
 
 public final class ChatUtils {
     
-    @MainActor public static func persistIDsFromURLString(_ urlString: String) {
+    @MainActor public static func idsFromURLString(_ urlString: String) -> (String?, String?){
         var conversationId: String?
         var batchId: String?
     
@@ -40,8 +40,9 @@ public final class ChatUtils {
             batchId = dict["batch"] ?? dict["batchId"] ?? dict["b"]
         }
     
-        if conversationId != nil { Store.setActiveConversationId(conversationId) }
-        if batchId != nil { Store.setBatchId(batchId) }
+        
+        return (conversationId, batchId)
+        
     }
     
     private static func parseQuery(_ s: String) -> [String: String] {

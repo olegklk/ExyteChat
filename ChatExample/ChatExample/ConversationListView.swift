@@ -55,7 +55,7 @@ struct ConversationListView: View {
                                         )
                                 }
                             }
-                        }.disabled(conversationId == nil)
+                        }.disabled(conversationId == nil || conversationURL.isEmpty)
                     }
                 } header: {
                     Text("Join by URL")
