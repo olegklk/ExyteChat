@@ -34,7 +34,9 @@ public final class Store {
     public static func ensureConversation(_ id: String?) {
         guard let id = id, !id.isEmpty else { return }
         if conversationsById[id] == nil {
-            conversationsById[id] = Conversation(id: id, title: "")
+            var conversation = Conversation(id: id, title: "")
+            conversation.participants = [userId()]
+            conversationsById[id] = conversation
         }
     }
     
