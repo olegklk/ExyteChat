@@ -9,7 +9,6 @@ struct NewChatView: View {
     @State private var chatType: ChatType = .direct
     @State private var participantInput: String = ""
     @State private var participants: [String] = []
-    //проверь body ниже на предмет корректности потому что я вижу ошибку компилятора The compiler is unable to type-check this expression in reasonable time; try breaking up the expression into distinct sub-expressions нет ли там видимых проблем AI!
     var body: some View {
         Form {
             Section(header: Text("Chat Type")) {
@@ -39,10 +38,7 @@ struct NewChatView: View {
                     } label: {
                         Image(systemName: "plus.circle.fill")
                     }
-                    .disabled({
-                        let pid = participantInput.trimmingCharacters(in: .whitespacesAndNewlines)
-                        return pid.isEmpty || participants.contains(pid)
-                    }())
+                    .disabled(disableAddParticipant)
                 }
                 
                 ForEach(participants, id: \.self) { pid in
@@ -61,16 +57,7 @@ struct NewChatView: View {
             }
 
             Section {
-                NavigationLink(destination: {
-                    let conversationId =  ChatUtils.generateRandomConversationId()
-                    
-                    Store.ensureConversation(conversationId)
-                    var conversation = Store.conversation(for: conversationId)
-                    conversation.type = chatType.rawValue
-                    
-                    let vm = ConversationViewModel(conversationId: conversationId)
-                    return ConversationView(viewModel: vm, title: "")
-                }()) {
+                NavigationLink(destination: startChatDestination()) {
                     Text("Start chat")
                         .frame(maxWidth: .infinity, alignment: .center)
                 }
@@ -94,5 +81,24 @@ struct NewChatView: View {
         let alphabet = Array("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
         let randomPart = String((0..<10).compactMap { _ in alphabet.randomElement() })
         return "c:\(randomPart)"
+    }
+
+    private var disableAddParticipant: Bool {
+        let pid = participantInput.trimmingCharacters(in: .whitespacesAndNewlines)
+        return pid.isEmpty || participants.contains(pid)
+    }
+
+    @ViewBuilder
+    private func startChatDestination() -> some View {
+        let id = ChatUtils.generateRandomConversationId()
+        Store.ensureConversation(id)
+        var conversation = Store.conversation(for: id)
+        conversation.type = chatType.rawValue
+        conversation.participants = participants
+        Store.upsertConversation(conversation)
+        
+        let vm = ConversationViewModel(conversationId: id)
+        let title = conversation.title.isEmpty ? String(id.prefix(10)) : conversation.title
+        ConversationView(viewModel: vm, title: title)
     }
 }
