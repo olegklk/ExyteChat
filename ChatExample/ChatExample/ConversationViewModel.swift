@@ -19,9 +19,11 @@ class ConversationViewModel: ObservableObject {
     @Published var chatCover: URL?
     
     private var conversationId: String 
-    private var batchId: String? = Store.batchId()
+    private var batchId: String?
     private var currentUserId: String { Store.userId() }
     private var currentUserName: String { Store.userName() }
+    
+    private var isHistoryLoaded: Bool = false
     
     init(conversationId: String) {
         self.conversationId = conversationId
@@ -30,7 +32,7 @@ class ConversationViewModel: ObservableObject {
     func loadChatHistory() async {
         
         do {
-            let serverBatches = try await ChatAPIClient.shared.getHistory(conversationId: conversationId, month: nil)
+            let serverBatches = try await ChatAPIClient.shared.getHistory(conversationId: conversationId, month: nil) //current month by default
             
             // Convert server messages to chat messages and sort by createdAt
             let newMessages = serverBatches
@@ -99,13 +101,10 @@ class ConversationViewModel: ObservableObject {
 
     func onAppear() {
         setupSocketListeners()
-        loadPersistedIds()
         SocketIOManager.shared.setAuthData(buildAuthData())
         SocketIOManager.shared.connect() // connection should trigger onConversationAssigned with conversationId
-        
-        
+                
 //        Task { await loadChatHistory() }
-        
         
     }
     
@@ -115,8 +114,10 @@ class ConversationViewModel: ObservableObject {
             guard let self = self else { return }
             self.conversationId = conversationId
             Store.setActiveConversationId(conversationId)
-            Task {
-                await self.loadChatHistory()
+            if !isHistoryLoaded {
+                Task {
+                    await self.loadChatHistory()
+                }
             }
         }
         
@@ -128,9 +129,11 @@ class ConversationViewModel: ObservableObject {
             self.batchId = batchId
             Store.setActiveConversationId(conversationId)
             Store.setBatchId(batchId)
-//            Task {
-//                await self.loadChatHistory()
-//            }
+            if !isHistoryLoaded {
+                Task {
+                    await self.loadChatHistory()
+                }
+            }
         }
         
         // Listen for new messages
@@ -224,12 +227,6 @@ class ConversationViewModel: ObservableObject {
             replyMessage: makeReplyMessage(for: serverMessage.replyTo)
         )
     }
-
-    private func loadPersistedIds() {
-        self.batchId = Store.batchId()
-    }
-
-    
 
     private func buildAuthData() -> [String: Any] {
         var auth: [String: Any] = [

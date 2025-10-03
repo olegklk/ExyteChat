@@ -46,22 +46,6 @@ public struct Conversation: Codable, Identifiable, Hashable, Sendable {
         try container.encode(messages, forKey: .messages)
         try container.encode(seenBy, forKey: .seenBy)
     }
-
-    private static func parseDate(_ any: Any?) -> Date? {
-        switch any {
-        case let s as String:
-            if let t = TimeInterval(s) { return Date(timeIntervalSince1970: t) }
-            let isoFS = ISO8601DateFormatter()
-            isoFS.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-            return isoFS.date(from: s) ?? ISO8601DateFormatter().date(from: s)
-        case let d as Double:
-            return Date(timeIntervalSince1970: d)
-        case let i as Int:
-            return Date(timeIntervalSince1970: TimeInterval(i))
-        default:
-            return nil
-        }
-    }
         
 }
 

@@ -31,27 +31,20 @@ public final class Store {
         _activeConversationId
     }
     
-    public static func upsertConversation(_ conversation: Conversation) {
-        conversationsById[conversation.id] = conversation
-    }
-    
-    public static func upsertConversations(_ list: [Conversation]) {
-        for c in list { conversationsById[c.id] = c }
-    }
-    
-    private static func ensureConversation(_ id: String?) {
+    public static func ensureConversation(_ id: String?) {
         guard let id = id, !id.isEmpty else { return }
         if conversationsById[id] == nil {
             conversationsById[id] = Conversation(id: id, title: "")
         }
     }
     
-    public static func conversation(for id: String) -> Conversation? {
-        conversationsById[id]
+    public static func conversation(for id: String) -> Conversation {
+        ensureConversation(id)
+        return conversationsById[id]!
     }
     
-    public static func conversations() -> [Conversation] {
-        Array(conversationsById.values)
+    public static func upsertConversation(_ conversation: Conversation) {
+        conversationsById[conversation.id] = conversation
     }
     
     public static func batchId() -> String? { _batchId }
