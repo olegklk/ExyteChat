@@ -43,23 +43,8 @@ struct ConversationListView: View {
                         )
                                             
                         NavigationLink(String("Join conversation")) {
-                            //упрости этот блок или вынеси его в отдельную функцию для упрощения задачи компилятору AI!
                             if let convId = conversationId {
-                                let viewModel = ConversationViewModel(conversationId: convId)
-                                
-                                if let batchId { viewModel.batchId = batchId
-                                }
-                                                
-                                if !theme.isAccent, #available(iOS 18.0, *) {
-                                    ConversationView(viewModel: viewModel, title: String(convId.prefix(10)))
-                                        .chatTheme(themeColor: color)
-                                } else {
-                                        ConversationView(viewModel: viewModel, title: String(convId.prefix(10)))
-                                        .chatTheme(
-                                            accentColor: color,
-                                            images: theme.images
-                                        )
-                                }
+                                destinationView(for: convId)
                             }
                         }.disabled(conversationId == nil || conversationURL.isEmpty)
                     }
@@ -121,6 +106,23 @@ struct ConversationListView: View {
             
         }
         .navigationViewStyle(.stack)
+    }
+    
+    @ViewBuilder
+    private func destinationView(for convId: String) -> some View {
+        let vm = ConversationViewModel(conversationId: convId)
+        if let batchId { vm.batchId = batchId }
+        let title = String(convId.prefix(10))
+        if !theme.isAccent, #available(iOS 18.0, *) {
+            ConversationView(viewModel: vm, title: title)
+                .chatTheme(themeColor: color)
+        } else {
+            ConversationView(viewModel: vm, title: title)
+                .chatTheme(
+                    accentColor: color,
+                    images: theme.images
+                )
+        }
     }
     
     private func setup() {
