@@ -38,6 +38,20 @@ public final class Store {
         }
     }
     
+    public static func createConversation(type: String, participants: [String], title: String?) -> Conversation {
+        
+        //добавь userId в массив participants AI!
+        
+        
+        let id = ChatUtils.generateRandomConversationId()
+        
+        var conversation = Conversation(id:id, title: title ?? String(id.prefix(10)))
+        conversation.type = type
+        conversation.participants = participants
+        upsertConversation(conversation)
+        return conversation
+    }
+    
     public static func conversation(for id: String) -> Conversation {
         ensureConversation(id)
         return conversationsById[id]!
