@@ -81,6 +81,11 @@ struct NewChatView: View {
                 conversationId = generateConversationId()
             }
         }
+        .onChange(of: participants) { newValue in
+            if newValue.count > 1 {
+                chatType = "group"
+            }
+        }
     }
 
     private func generateConversationId() -> String {
