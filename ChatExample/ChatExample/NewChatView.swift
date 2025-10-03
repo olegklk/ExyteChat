@@ -2,6 +2,8 @@ import SwiftUI
 
 struct NewChatView: View {
     @State private var conversationId: String = ""
+    
+    //нужно чтобы в интерфейсе появилась опция выбора типа чата - нужен выбор из двух вариантов "direct" либо "group" сохранять в переменной chatType AI!
 
     var body: some View {
         Form {
@@ -14,8 +16,13 @@ struct NewChatView: View {
             Section {
                 NavigationLink(destination: {
                     let conversationId =  ChatUtils.generateRandomConversationId()
+                    
+                    Store.ensureConversation(conversationId)
+                    var conversation = Store.conversation(for: conversationId)
+                    conversation.type = chatType
+                    
                     let vm = ConversationViewModel(conversationId: conversationId)
-                    return ConversationView(viewModel: vm, title: "New chat (demo)")
+                    return ConversationView(viewModel: vm, title: "")
                 }()) {
                     Text("Start chat")
                         .frame(maxWidth: .infinity, alignment: .center)
