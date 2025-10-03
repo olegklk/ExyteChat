@@ -20,7 +20,9 @@ class ConversationListViewModel: ObservableObject {
         do {
             conversationItems = try await ChatAPIClient.shared.getConversations(userId: Store.userId(), limit: nil, perConv: nil)
             
-            //для каждого элемента в массиве conversationItems нужно вызвать метод Store.ensureConversation(id) AI!
+            for item in conversationItems {
+                Store.ensureConversation(item.conversationId)
+            }
             
         } catch {
             print("Failed to load conversation list: \(error)")
