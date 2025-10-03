@@ -2,8 +2,7 @@ import SwiftUI
 
 struct NewChatView: View {
     @State private var conversationId: String = ""
-    
-    //нужно чтобы в интерфейсе появилась опция выбора типа чата - нужен выбор из двух вариантов "direct" либо "group" сохранять в переменной chatType AI!
+    @State private var chatType: String = "direct"
 
     var body: some View {
         Form {
@@ -11,6 +10,12 @@ struct NewChatView: View {
                 TextField("Conversation ID", text: $conversationId)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled(true)
+
+                Picker("Chat type", selection: $chatType) {
+                    Text("direct").tag("direct")
+                    Text("group").tag("group")
+                }
+                .pickerStyle(.segmented)
             }
 
             Section {
