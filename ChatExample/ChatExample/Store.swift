@@ -23,6 +23,7 @@ public final class Store {
     
     public static func setActiveConversationId(_ id: String?) {
         _activeConversationId = id
+        ensureConversation(id) //создай этот метод, нужно чтобы был persisted словарь объектов типа Conversation (доступных по ключу "conversationId"), и в этом методе нужно убедиться что соответствующий элемент создан и сохранен, если нет создать его AI!
         NotificationCenter.default.post(name: Store.conversationIdDidChange, object: nil)
     }
     
