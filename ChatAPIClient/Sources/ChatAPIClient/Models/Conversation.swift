@@ -23,6 +23,7 @@ public struct Conversation: Codable, Identifiable, Hashable, Sendable {
                 title: String) {
         self.id = id
         self.title = title
+        
     }
     
     public init(from decoder: Decoder) throws {
@@ -44,7 +45,7 @@ public struct Conversation: Codable, Identifiable, Hashable, Sendable {
         try container.encode(type, forKey: .type)
         try container.encode(unreadCount, forKey: .unreadCount)
         try container.encode(participants, forKey: .participants)
-        try container.encode(messages, forKey: .messages)        
+        try container.encode(messages, forKey: .messages)
     }
         
 }

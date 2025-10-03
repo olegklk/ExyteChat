@@ -34,7 +34,9 @@ class ConversationViewModel: ObservableObject {
     }
     
     func loadChatHistory() async {
+        guard isHistoryLoaded == false else {return}
         
+        isHistoryLoaded = true
         do {
             let serverBatches = try await ChatAPIClient.shared.getHistory(conversationId: conversationId, month: nil) //current month by default
             
@@ -52,6 +54,7 @@ class ConversationViewModel: ObservableObject {
                     }
                 }
             }
+                        
         } catch {
             print("Failed to load chat history: \(error)")
         }
@@ -116,12 +119,11 @@ class ConversationViewModel: ObservableObject {
         //sent after connection
         SocketIOManager.shared.onConversationAssigned { [weak self] conversationId in
             guard let self = self else { return }
+            
             self.conversationId = conversationId
-            Store.setActiveConversationId(conversationId)
-            if !isHistoryLoaded {
-                Task {
-                    await self.loadChatHistory()
-                }
+                        
+            Task {
+                await self.loadChatHistory()
             }
         }
         
@@ -131,12 +133,9 @@ class ConversationViewModel: ObservableObject {
                 self.conversationId = conversationId
             }
             self.batchId = batchId
-            Store.setActiveConversationId(conversationId)
-            Store.setBatchId(batchId)
-            if !isHistoryLoaded {
-                Task {
-                    await self.loadChatHistory()
-                }
+            
+            Task {
+                await self.loadChatHistory()
             }
         }
         
@@ -156,6 +155,7 @@ class ConversationViewModel: ObservableObject {
             
             let newMessages = batches
                 .flatMap { $0.messages.map(self.convertServerMessageToChatMessage) }
+            
             
             Task { @MainActor in
                 // merge newMessages into messages, replacing items with the same id
