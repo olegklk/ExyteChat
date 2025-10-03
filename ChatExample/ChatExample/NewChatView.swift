@@ -1,8 +1,12 @@
 import SwiftUI
 
 struct NewChatView: View {
+    private enum ChatType: String, CaseIterable {
+        case direct = "direct"
+        case group = "group"
+    }
     @State private var conversationId: String = ""
-    @State private var chatType: String = "direct"
+    @State private var chatType: ChatType = .direct
     @State private var participantInput: String = ""
     @State private var participants: [String] = []
     
@@ -14,8 +18,8 @@ struct NewChatView: View {
 //                    .autocorrectionDisabled(true)
 
                 Picker("Chat type", selection: $chatType) {
-                    Text("direct").tag("direct")
-                    Text("group").tag("group")
+                    Text("direct").tag(ChatType.direct)
+                    Text("group").tag(ChatType.group)
                 }
                 .pickerStyle(.segmented)
             }
@@ -62,7 +66,7 @@ struct NewChatView: View {
                     
                     Store.ensureConversation(conversationId)
                     var conversation = Store.conversation(for: conversationId)
-                    conversation.type = chatType
+                    conversation.type = chatType.rawValue
                     
                     let vm = ConversationViewModel(conversationId: conversationId)
                     return ConversationView(viewModel: vm, title: "")
@@ -81,8 +85,8 @@ struct NewChatView: View {
         }
         .onChange(of: participants) { newValue in
             if newValue.count > 1 {
-                chatType = "group"
-            }//давай избавитмся от магических строковых переменных заменим их константами для "direct" и "group" AI!
+                chatType = .group
+            }
         }
     }
 
