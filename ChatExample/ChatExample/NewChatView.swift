@@ -82,7 +82,7 @@ struct NewChatView: View {
         .onChange(of: participants) { newValue in
             if newValue.count > 1 {
                 chatType = "group"
-            }
+            }//давай избавитмся от магических строковых переменных заменим их константами для "direct" и "group" AI!
         }
     }
 
