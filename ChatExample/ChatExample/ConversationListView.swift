@@ -8,9 +8,61 @@ struct ConversationListView: View {
     @State private var theme: ExampleThemeState = .accent
     @State private var color = Color(.exampleBlue)
     
+    @State private var conversationURL: String = ""
+    @State private var debounceTask: Task<Void, Never>?
+    
+    @State private var conversationId: String?
+    @State private var batchId: String?
+    
     var body: some View {
         NavigationView {
             List {
+                Section {
+                    VStack {
+                        Text("Insert conversation URL to join:")
+                            .font(.headline)
+                            .foregroundColor(.secondary)
+                        //добавиь placeholder к TextEditor со значением "http://.." AI!
+                        TextEditor(text: $conversationURL)
+                                            .frame(minHeight: 40, maxHeight: 200)
+                                            .padding(4)
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 8)
+                                                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                                            )
+                                            .onChange(of: conversationURL) { oldValue, newValue in
+                                                debounceConversationIdChange(newValue: newValue)
+                                            }
+                                            
+                        NavigationLink(String("Join conversation")) {
+                            if let convId = conversationId {
+                                if !theme.isAccent, #available(iOS 18.0, *) {
+                                    ConversationView(viewModel: ConversationViewModel(conversationId: convId), title: String(convId.prefix(10)))
+                                        .chatTheme(themeColor: color)
+                                } else {
+                                    ConversationView(viewModel: ConversationViewModel(conversationId: convId), title: String(convId.prefix(10)))
+                                        .chatTheme(
+                                            accentColor: color,
+                                            images: theme.images
+                                        )
+                                }
+                            }
+                        }.disabled(conversationId == nil)
+                    }
+                } header: {
+                    Text("Join by URL")
+                }
+
+                Section {
+                    VStack {
+                        NavigationLink(destination: NewChatView()) {
+//                            Image(systemName: "plus")
+                            Text("Create New Chat")
+                        }
+                    }
+                } header: {
+                    Text("")
+                }
                 Section {
                     ForEach(
                         viewModel.conversationItems.sorted { $0.latestUnreadStartedAt > $1.latestUnreadStartedAt },
@@ -35,6 +87,8 @@ struct ConversationListView: View {
                                 .foregroundColor(.secondary)
                         }
                     }
+                } header: {
+                    Text("Chats")
                 }
             }
             .navigationTitle("Chats ")
@@ -42,9 +96,6 @@ struct ConversationListView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     HStack {
-//                        NavigationLink(destination: NewChatView()) {
-//                            Image(systemName: "plus")
-//                        }
                         Button(theme.title) {
                             theme = theme.next()
                         }
@@ -52,11 +103,33 @@ struct ConversationListView: View {
                     }
                 }
             }
-            .onAppear {
-                viewModel.onAppear()
-            }
+            .onAppear(perform: setup)
+            
         }
         .navigationViewStyle(.stack)
+    }
+    
+    private func setup() {
+        
+        viewModel.onAppear()
+        conversationId = Store.activeConversationId()
+        batchId = Store.batchId()
+        
+    }
+    
+    private func debounceConversationIdChange(newValue: String) {
+        debounceTask?.cancel()
+        debounceTask = Task {
+            try? await Task.sleep(nanoseconds: 500_000_000) // 0.5s
+                            
+            guard !Task.isCancelled else { return }
+            
+            await MainActor.run {
+                let (convId, bId) = ChatUtils.idsFromURLString(newValue)
+                if convId != nil {conversationId = convId}
+                if bId != nil {batchId = bId}
+            }
+        }
     }
 }
 
