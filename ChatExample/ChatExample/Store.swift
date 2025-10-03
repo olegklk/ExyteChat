@@ -23,7 +23,7 @@ public final class Store {
     
     public static func setActiveConversationId(_ id: String?) {
         _activeConversationId = id
-        ensureConversation(id) //создай этот метод, нужно чтобы был persisted словарь объектов типа Conversation (доступных по ключу "conversationId"), и в этом методе нужно убедиться что соответствующий элемент создан и сохранен, если нет создать его AI!
+        ensureConversation(id)
         NotificationCenter.default.post(name: Store.conversationIdDidChange, object: nil)
     }
     
@@ -37,6 +37,13 @@ public final class Store {
     
     public static func upsertConversations(_ list: [Conversation]) {
         for c in list { conversationsById[c.id] = c }
+    }
+    
+    private static func ensureConversation(_ id: String?) {
+        guard let id = id, !id.isEmpty else { return }
+        if conversationsById[id] == nil {
+            conversationsById[id] = Conversation(id: id, title: "")
+        }
     }
     
     public static func conversation(for id: String) -> Conversation? {
