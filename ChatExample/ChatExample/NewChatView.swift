@@ -14,9 +14,10 @@ struct NewChatView: View {
     var body: some View {
         Form {
             Section(header: Text("Chat Type")) {
-                //нужно добавить сюла блокировку опции "direct" если participants.count >2 AI!
                 Picker("Chat type", selection: $chatType) {
-                    Text("direct").tag(ChatType.direct)
+                    if participants.count <= 2 {
+                        Text("direct").tag(ChatType.direct)
+                    }
                     Text("group").tag(ChatType.group)
                 }
                 .pickerStyle(.segmented)
