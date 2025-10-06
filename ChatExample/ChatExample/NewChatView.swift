@@ -5,18 +5,16 @@ struct NewChatView: View {
         case direct = "direct"
         case group = "group"
     }
-    @State private var conversationId: String = ""
+    
     @State private var chatType: ChatType = .direct
     @State private var participantInput: String = ""
-    @State private var participants: [String] = []
     private var currentUserId: String { Store.userId() }
+    @State private var participants: [String] = [Store.userId()]
+    private var currentUserName: String { Store.userName() }
     var body: some View {
         Form {
             Section(header: Text("Chat Type")) {
-//                TextField("Conversation ID", text: $conversationId)
-//                    .textInputAutocapitalization(.never)
-//                    .autocorrectionDisabled(true)
-
+                //нужно добавить сюла блокировку опции "direct" если participants.count >2 AI!
                 Picker("Chat type", selection: $chatType) {
                     Text("direct").tag(ChatType.direct)
                     Text("group").tag(ChatType.group)
@@ -32,7 +30,7 @@ struct NewChatView: View {
                     Button {
                         let pid = participantInput.trimmingCharacters(in: .whitespacesAndNewlines)
                         guard !pid.isEmpty else { return }
-                        if pid != currentUserId && !participants.contains(pid) {
+                        if !participants.contains(pid) {
                             participants.append(pid)
                         }
                         participantInput = ""
@@ -42,23 +40,24 @@ struct NewChatView: View {
                     .disabled(disableAddParticipant)
                 }
                 
-                // Non-removable current user row
-                HStack {
-                    Text("You (\(currentUserId))")
-                    Spacer()
-                }
-                
                 ForEach(participants, id: \.self) { pid in
-                    HStack {
-                        Text(pid)
-                        Spacer()
-                        Button {
-                            participants.removeAll { $0 == pid }
-                        } label: {
-                            Image(systemName: "trash")
-                                .foregroundColor(.red)
+                    if pid == currentUserId {
+                        HStack {// Non-removable current user row
+                            Text("You (\(currentUserName) \(currentUserId))")
+                            Spacer()
                         }
-                        .buttonStyle(.plain)
+                    } else {
+                        HStack {
+                            Text(pid)
+                            Spacer()
+                            Button {
+                                participants.removeAll { $0 == pid }
+                            } label: {
+                                Image(systemName: "trash")
+                                    .foregroundColor(.red)
+                            }
+                            .buttonStyle(.plain)
+                        }
                     }
                 }
             }
@@ -68,26 +67,18 @@ struct NewChatView: View {
                     Text("Start chat")
                         .frame(maxWidth: .infinity, alignment: .center)
                 }
-                .disabled(participants.isEmpty)
+                .disabled(participants.count < 2)
             }
         }
         .navigationTitle("New Chat")
         .onAppear {
-            if conversationId.isEmpty {
-                conversationId = generateConversationId()
-            }
+            
         }
         .onChange(of: participants) { newValue in
-            if newValue.count > 1 {
+            if newValue.count > 2 {
                 chatType = .group
             }
         }
-    }
-
-    private func generateConversationId() -> String {
-        let alphabet = Array("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
-        let randomPart = String((0..<10).compactMap { _ in alphabet.randomElement() })
-        return "c:\(randomPart)"
     }
 
     private var disableAddParticipant: Bool {
@@ -98,7 +89,6 @@ struct NewChatView: View {
     @ViewBuilder
     private func startChatDestination() -> some View {
         let allParticipants = Array(Set([currentUserId] + participants))
-        let conversation = Store.createConversation(type: chatType.rawValue, participants: allParticipants, title: nil)
-        ConversationView(viewModel: ConversationViewModel(conversationId: conversation.id, batchId: nil), title: conversation.title)
+        ConversationView(viewModel: ConversationViewModel(conversationId: nil, batchId: nil, participants: allParticipants), title: conversation.title)
     }
 }
