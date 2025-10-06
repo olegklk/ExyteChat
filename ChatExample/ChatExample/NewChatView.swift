@@ -9,6 +9,7 @@ struct NewChatView: View {
     @State private var chatType: ChatType = .direct
     @State private var participantInput: String = ""
     @State private var participants: [String] = []
+    private var currentUserId: String { Store.userId() }
     var body: some View {
         Form {
             Section(header: Text("Chat Type")) {
@@ -25,14 +26,13 @@ struct NewChatView: View {
 
             Section(header: Text("Participants")) {
                 HStack {
-                    //добавь первым элементом в списке участников неудаляемый элемент - который будет изображать текущего игрока. Обозначь его "You (здесь помести значение из Store.userId())" AI!
                     TextField("Insert participant Id", text: $participantInput)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled(true)
                     Button {
                         let pid = participantInput.trimmingCharacters(in: .whitespacesAndNewlines)
                         guard !pid.isEmpty else { return }
-                        if !participants.contains(pid) {
+                        if pid != currentUserId && !participants.contains(pid) {
                             participants.append(pid)
                         }
                         participantInput = ""
@@ -40,6 +40,12 @@ struct NewChatView: View {
                         Image(systemName: "plus.circle.fill")
                     }
                     .disabled(disableAddParticipant)
+                }
+                
+                // Non-removable current user row
+                HStack {
+                    Text("You (\(currentUserId))")
+                    Spacer()
                 }
                 
                 ForEach(participants, id: \.self) { pid in
@@ -86,12 +92,13 @@ struct NewChatView: View {
 
     private var disableAddParticipant: Bool {
         let pid = participantInput.trimmingCharacters(in: .whitespacesAndNewlines)
-        return pid.isEmpty || participants.contains(pid)
+        return pid.isEmpty || pid == currentUserId || participants.contains(pid)
     }
 
     @ViewBuilder
     private func startChatDestination() -> some View {
-        let conversation = Store.createConversation(type: chatType.rawValue, participants: participants, title: nil)
+        let allParticipants = Array(Set([currentUserId] + participants))
+        let conversation = Store.createConversation(type: chatType.rawValue, participants: allParticipants, title: nil)
         ConversationView(viewModel: ConversationViewModel(conversationId: conversation.id, batchId: nil), title: conversation.title)
     }
 }
