@@ -17,7 +17,7 @@ struct ConversationListView: View {
     var body: some View {
         NavigationView {
             List {
-                Section {
+                Section { //выдели эту секцию в отдельный View класс который будет в отдельном файле и будет подгружаться сюда вроде модуля AI!
                     VStack {
                         Text("Insert conversation URL to join:")
                             .font(.headline)
@@ -70,10 +70,10 @@ struct ConversationListView: View {
                         HStack {
                             NavigationLink(String(item.conversationId.prefix(10))) {
                                 if !theme.isAccent, #available(iOS 18.0, *) {
-                                    ConversationView(viewModel: ConversationViewModel(conversationId: item.conversationId, batchId: nil), title: String(item.conversationId.prefix(10)))
+                                    ConversationView(viewModel: ConversationViewModel(conversationId: item.conversationId, batchId: nil), title: String(item.conversationId.prefix(8)))
                                         .chatTheme(themeColor: color)
                                 } else {
-                                    ConversationView(viewModel: ConversationViewModel(conversationId: item.conversationId, batchId: nil), title: String(item.conversationId.prefix(10)))
+                                    ConversationView(viewModel: ConversationViewModel(conversationId: item.conversationId, batchId: nil), title: String(item.conversationId.prefix(8)))
                                         .chatTheme(
                                             accentColor: color,
                                             images: theme.images
@@ -110,7 +110,7 @@ struct ConversationListView: View {
     
     @ViewBuilder
     private func destinationViewToJoin(for convId: String, batchId: String) -> some View {
-        let vm = ConversationViewModel(conversationId: convId, batchId: batchId)
+        let vm = ConversationViewModel(conversationId: convId, batchId: batchId, chatType: )
         let title = String(convId.prefix(10))
         if !theme.isAccent, #available(iOS 18.0, *) {
             ConversationView(viewModel: vm, title: title)
