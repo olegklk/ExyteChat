@@ -25,6 +25,7 @@ struct NewChatView: View {
 
             Section(header: Text("Participants")) {
                 HStack {
+                    //добавь первым элементом в списке участников неудаляемый элемент - который будет изображать текущего игрока. Обозначь его "You (здесь помести значение из Store.userId())" AI!
                     TextField("Insert participant Id", text: $participantInput)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled(true)
