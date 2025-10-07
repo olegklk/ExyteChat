@@ -79,7 +79,7 @@ struct ConversationView: View {
 //                    .padding(.leading, 10)
 //                }
                 ToolbarItem(placement: .principal) {
-                    Text(viewModel.conversationURL ?? "")
+                    Text(viewModel.conversationURL ?? "") //будет ли меняться значение этого поле после изменения conversationURL внутри viewModel? AI!
                         
                         .font(.subheadline)
                         .textSelection(.enabled)
