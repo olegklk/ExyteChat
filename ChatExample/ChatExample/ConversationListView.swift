@@ -102,7 +102,7 @@ struct ConversationListView: View {
             }
             .navigationTitle("Chats ")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {//Ambiguous use of 'toolbar(content:)' AI!
+            .toolbar(content: {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     HStack {
                         Button(theme.title) {
@@ -111,7 +111,7 @@ struct ConversationListView: View {
                         ColorPicker("", selection: $color)
                     }
                 }
-            }
+            })
             .onAppear(perform: setup)
             
         }
