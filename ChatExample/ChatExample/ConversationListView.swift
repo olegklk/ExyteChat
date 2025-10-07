@@ -67,21 +67,22 @@ struct ConversationListView: View {
                         viewModel.conversationItems.sorted { $0.latestStartedAt > $1.latestStartedAt },
                         id: \.conversationId
                     ) { item in
-                        //перепиши правильно этот блок так чтобы максимально упростить его для компилятора AI!
-                        if let conversation  = Store.conversation(for: item.conversationId) {
+                        if let conversation = Store.conversation(for: item.conversationId) {
+                            let vm = ConversationViewModel(conversationId: conversation.id, batchId: conversation.batchId)
+                            let destination: AnyView
+                            if !theme.isAccent, #available(iOS 18.0, *) {
+                                destination = AnyView(
+                                    ConversationView(viewModel: vm, title: conversation.title)
+                                        .chatTheme(themeColor: color)
+                                )
+                            } else {
+                                destination = AnyView(
+                                    ConversationView(viewModel: vm, title: conversation.title)
+                                        .chatTheme(accentColor: color, images: theme.images)
+                                )
+                            }
                             HStack {
-                                NavigationLink(conversation.title) {
-                                    if !theme.isAccent, #available(iOS 18.0, *) {
-                                        ConversationView(viewModel: ConversationViewModel(conversationId: conversation.id, batchId: conversation.batchId), title: conversation.title)
-                                            .chatTheme(themeColor: color)
-                                    } else {
-                                        ConversationView(viewModel: ConversationViewModel(conversationId: conversation.id, batchId: conversation.batchId), title: conversation.title)
-                                            .chatTheme(
-                                                accentColor: color,
-                                                images: theme.images
-                                            )
-                                    }
-                                }
+                                NavigationLink(conversation.title) { destination }
                                 Spacer()
                                 Text("\(item.unreadCount)")
                                     .foregroundColor(.secondary)
