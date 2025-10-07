@@ -47,7 +47,7 @@ struct ConversationView: View {
             .keyboardDismissMode(.interactive)
             //        .navigationBarBackButtonHidden()
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {//что за ошибка здесь Trailing closure passed to parameter of type 'Visibility' that does not accept a closure AI!
+            .toolbar(content: {
                 ToolbarItem(placement: .navigationBarLeading) {
                     HStack {
                         if let url = viewModel.conversation().coverURL {
@@ -87,7 +87,7 @@ struct ConversationView: View {
                             Button("Copy") { UIPasteboard.general.string = viewModel.conversationURL }
                         }
                 }
-            }
+            })
             .onAppear {
                 viewModel.onAppear()
             }
