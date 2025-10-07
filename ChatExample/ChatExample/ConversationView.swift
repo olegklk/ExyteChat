@@ -50,7 +50,7 @@ struct ConversationView: View {
             .toolbar(content: {
                 ToolbarItem(placement: .navigationBarLeading) {
                     HStack {
-                        if let url = viewModel.conversation().coverURL {
+                        if let url = viewModel.conversation.coverURL {
                             CachedAsyncImage(url: url) { phase in
                                 switch phase {
                                     case .success(let image):
@@ -66,13 +66,10 @@ struct ConversationView: View {
                         }
                         
                         VStack(alignment: .leading, spacing: 0) {
-                            Text(viewModel.chatTitle)
+                            Text(viewModel.conversation.title)
                                 .fontWeight(.semibold)
                                 .font(.headline)
                                 .foregroundStyle(colorScheme == .dark ? .white : .black)
-                            Text(viewModel.chatStatus)
-                                .font(.footnote)
-                                .foregroundColor(Color(hex: "AFB3B8"))
                         }
                         Spacer()
                     }

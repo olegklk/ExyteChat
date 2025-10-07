@@ -102,7 +102,7 @@ struct ConversationListView: View {
             }
             .navigationTitle("Chats ")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar(content: {
+            .toolbar(content: {/u/
                 ToolbarItem(placement: .navigationBarTrailing) {
                     HStack {
                         Button(theme.title) {

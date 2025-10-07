@@ -2,46 +2,52 @@ import Foundation
 
 public struct ServerConversationListItem: Codable, Hashable, Sendable {
     public let conversationId: String
-    public let unreadBatchIds: [String]
+    public let batchIds: [String]
+    public let totalBatches: Int
     public let unreadCount: Int
-    public let latestUnreadStartedAt: Date
+    public let latestStartedAt: Date
     
     enum CodingKeys: String, CodingKey {
         case conversationId
-        case unreadBatchIds
+        case batchIds
+        case totalBatches
         case unreadCount
-        case latestUnreadStartedAt
+        case latestStartedAt
     }
     
     public init(conversationId: String,
-                unreadBatchIds: [String],
+                batchIds: [String],
+                totalBatches: Int,
                 unreadCount: Int,
-                latestUnreadStartedAt: Date
+                latestStartedAt: Date
     ) {
         self.conversationId = conversationId
-        self.unreadBatchIds = unreadBatchIds
+        self.batchIds = batchIds
+        self.totalBatches = totalBatches
         self.unreadCount = unreadCount
-        self.latestUnreadStartedAt = latestUnreadStartedAt
+        self.latestStartedAt = latestStartedAt
     }
     
     public init(from dict: [String: Any]) {
         self.conversationId = (dict["conversationId"] as? String) ?? ""
-        if let batches = dict["unreadBatchIds"] as? [String] {
-            self.unreadBatchIds = batches
+        if let batches = dict["batchIds"] as? [String] {
+            self.batchIds = batches
         } else {
-            self.unreadBatchIds = []
+            self.batchIds = []
         }
+        self.totalBatches = (dict["totalBatches"] as? Int) ?? 0
         self.unreadCount = (dict["unreadCount"] as? Int) ?? 0
-        self.latestUnreadStartedAt = JSONValue.parseDate(dict["latestUnreadStartedAt"]) ?? Date()
+        self.latestStartedAt = JSONValue.parseDate(dict["latestStartedAt"]) ?? Date()
         
     }
     
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.conversationId = try container.decode(String.self, forKey: .conversationId)
-        self.unreadBatchIds = try container.decode([String].self, forKey: .unreadBatchIds)
+        self.batchIds = try container.decode([String].self, forKey: .batchIds)
+        self.totalBatches = try container.decode(Int.self, forKey: .totalBatches)
         self.unreadCount = try container.decode(Int.self, forKey: .unreadCount)
-        self.latestUnreadStartedAt = try container.decode(Date.self, forKey: .latestUnreadStartedAt)
+        self.latestStartedAt = try container.decode(Date.self, forKey: .latestStartedAt)
     }
         
 }

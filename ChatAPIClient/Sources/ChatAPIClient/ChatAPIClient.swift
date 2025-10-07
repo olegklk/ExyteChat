@@ -11,8 +11,9 @@ public actor ChatAPIClient {
         case closeBatch(batchId: String)
         case patchMessage
         case getHistory(conversationId: String)
-        case getConversations(userId: String)
+        case getUnreadConversations(userId: String)
         case getUnreadBatches(conversationId: String)
+        case getAllConversations(userId: String)
         
         var path: String {
             switch self {
@@ -24,10 +25,12 @@ public actor ChatAPIClient {
                 return "/chats/mongo/patch"
             case .getHistory(let conversationId):
                 return "/chats/\(conversationId)/history"
-            case .getConversations(let userId):
+            case .getUnreadConversations(let userId):
                 return "/chats/unread/by-user/\(userId)"
             case .getUnreadBatches(let conversationId):
                 return "/chats/\(conversationId)/unread"
+            case .getAllConversations(let userId):
+                return "/chats/all-chat/\(userId)"
             }
         }
     }
@@ -84,8 +87,18 @@ public actor ChatAPIClient {
       
     }
     
-    public func getConversations(userId: String, limit: Int?, perConv: Int?) async throws -> [ServerConversationListItem] {
-        var urlComponents = URLComponents(string: baseURL + Endpoint.getConversations(userId: userId).path)!
+    public func getUnreadConversations(userId: String, limit: Int?, perConv: Int?) async throws -> [ServerUnreadConversationListItem] {
+        var urlComponents = URLComponents(string: baseURL + Endpoint.getUnreadConversations(userId: userId).path)!
+        var q: [URLQueryItem] = []
+        if let limit { q.append(URLQueryItem(name: "limit", value: String(limit))) }
+        if let perConv { q.append(URLQueryItem(name: "perConv", value: String(perConv))) }
+        urlComponents.queryItems = q.isEmpty ? nil : q
+        let items = try await makeRequest(urlComponents: urlComponents, method: "GET") as? [[String: Any]]
+        return items?.compactMap { ServerUnreadConversationListItem(from: $0) } ?? []
+    }
+    
+    public func getAllConversations(userId: String, limit: Int?, perConv: Int?) async throws -> [ServerConversationListItem] {
+        var urlComponents = URLComponents(string: baseURL + Endpoint.getAllConversations(userId: userId).path)!
         var q: [URLQueryItem] = []
         if let limit { q.append(URLQueryItem(name: "limit", value: String(limit))) }
         if let perConv { q.append(URLQueryItem(name: "perConv", value: String(perConv))) }

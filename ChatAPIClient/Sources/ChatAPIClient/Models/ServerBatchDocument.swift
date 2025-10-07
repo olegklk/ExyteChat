@@ -28,6 +28,7 @@ public struct ServerBatchDocument: Codable, Identifiable, Sendable {
     }
     
     public init(id: String,
+
                 conversationId: String,
                 type: BatchType,
                 participants: [String],

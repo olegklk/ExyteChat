@@ -11,8 +11,6 @@ struct NewChatView: View {
     private var currentUserId: String { Store.userId() }
     @State private var participants: [String] = [Store.userId()]
     private var currentUserName: String { Store.userName() }
-    @State private var isLoading = false
-    
     @StateObject private var viewModel = NewChatViewModel()
     
     var body: some View {
@@ -77,7 +75,7 @@ struct NewChatView: View {
                         Text("Start chat")
                             .frame(maxWidth: .infinity, alignment: .center)
                         
-                        if isLoading {
+                        if viewModel.isLoading {
                             ProgressView()
                                 .padding(.leading, 8)
                         }

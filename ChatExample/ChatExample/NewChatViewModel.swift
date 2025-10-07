@@ -58,7 +58,6 @@ class NewChatViewModel: ObservableObject {
         if var conversation {
             conversation.type = (batch.type).rawValue
             conversation.participants = batch.participants
-            conversation.startedAt = batch.startedAt
             
             Store.upsertConversation(conversation)
                         
@@ -114,7 +113,7 @@ class NewChatViewModel: ObservableObject {
     
     private func buildAuthData() -> [String: Any] {
         
-        var auth: [String: Any] = [
+        let auth: [String: Any] = [
             "chatType": chatType!,
             "participants": participants!,
             "userId": currentUserId

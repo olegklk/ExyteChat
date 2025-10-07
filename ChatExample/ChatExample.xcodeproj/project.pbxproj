@@ -26,6 +26,7 @@
 		5B6467A02D96F4FC00FFD920 /* ExyteChat in Frameworks */ = {isa = PBXBuildFile; productRef = 5B64679F2D96F4FC00FFD920 /* ExyteChat */; };
 		5B6D3A732987D85A00765148 /* Color+hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B6D3A722987D85A00765148 /* Color+hex.swift */; };
 		C34601E82E8D253A0080D49D /* ExyteChat in Frameworks */ = {isa = PBXBuildFile; productRef = C34601E72E8D253A0080D49D /* ExyteChat */; };
+		C3622C792E9421A2007FEB0E /* NewChatViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3622C782E9421A2007FEB0E /* NewChatViewModel.swift */; };
 		C39952082E8728E8008EF4D4 /* UserSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C39952072E8728E8008EF4D4 /* UserSetupView.swift */; };
 		C399520A2E8AE150008EF4D4 /* NewChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C39952092E8AE150008EF4D4 /* NewChatView.swift */; };
 		C39952102E8BE5D3008EF4D4 /* Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = C399520F2E8BE5D3008EF4D4 /* Utils.swift */; };
@@ -70,6 +71,7 @@
 		5B0636D52C2E9F6100E54AEE /* CommentsExampleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommentsExampleView.swift; sourceTree = "<group>"; };
 		5B0636DA2C2EA21900E54AEE /* Sequence+asyncMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sequence+asyncMap.swift"; sourceTree = "<group>"; };
 		5B6D3A722987D85A00765148 /* Color+hex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+hex.swift"; sourceTree = "<group>"; };
+		C3622C782E9421A2007FEB0E /* NewChatViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NewChatViewModel.swift; sourceTree = "<group>"; };
 		C39952072E8728E8008EF4D4 /* UserSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserSetupView.swift; sourceTree = "<group>"; };
 		C39952092E8AE150008EF4D4 /* NewChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewChatView.swift; sourceTree = "<group>"; };
 		C399520F2E8BE5D3008EF4D4 /* Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utils.swift; sourceTree = "<group>"; };
@@ -117,6 +119,7 @@
 				C3D61AE02E8EBF8100C78FED /* ConversationListView.swift */,
 				C3D61ADE2E8EB22400C78FED /* ConversationView.swift */,
 				C3D61ADC2E8EB1F600C78FED /* ConversationViewModel.swift */,
+				C3622C782E9421A2007FEB0E /* NewChatViewModel.swift */,
 				C3D61AE22E8EC36A00C78FED /* ConversationListViewModel.swift */,
 				C399520F2E8BE5D3008EF4D4 /* Utils.swift */,
 				C39952092E8AE150008EF4D4 /* NewChatView.swift */,
@@ -294,6 +297,7 @@
 				135987B82869F369006388CF /* Lorem.swift in Sources */,
 				135987BA2869F3AE006388CF /* MockMessage.swift in Sources */,
 				1376133E28782F8E00E7CF67 /* Date+Extensions.swift in Sources */,
+				C3622C792E9421A2007FEB0E /* NewChatViewModel.swift in Sources */,
 				13F1C0EF286AC86200D25D8A /* ChatExampleView.swift in Sources */,
 				C39952122E8BE7CE008EF4D4 /* Store.swift in Sources */,
 				C3D61ADF2E8EB22400C78FED /* ConversationView.swift in Sources */,

@@ -13,32 +13,40 @@ import ChatAPIClient
 @MainActor
 class ConversationViewModel: ObservableObject {
     @Published var messages: [Message] = []
+    @Published var conversationURL: String?
     
-    @Published var chatTitle: String = ""
-    @Published var chatStatus: String = ""
-    @Published var chatCover: URL?
-    
-    private var conversation: Conversation?
+    public var conversation: Conversation
     private var conversationId: String
-    public var batchId: String?
+        
     private var currentUserId: String { Store.userId() }
     private var currentUserName: String { Store.userName() }
     
     private var isHistoryLoaded: Bool = false
     
-    init(conversationId: String, batchId: String?) {
-        self.conversationId = conversationId
-        if let batchId {self.batchId = batchId}
+    init(conversationId: String) {
         
-        self.conversation = Store.conversation(for: conversationId)
+        self.conversationId = conversationId
+        self.conversation = Store.ensureConversation(conversationId)
+                
     }
     
-    func loadChatHistory() async {
+    private func loadChatHistory() async {
         guard isHistoryLoaded == false else {return}
         
         isHistoryLoaded = true
         do {
             let serverBatches = try await ChatAPIClient.shared.getHistory(conversationId: conversationId, month: nil) //current month by default
+            
+            if let batch = serverBatches.first {
+                
+                var conversation = Store.ensureConversation(conversationId)
+                conversation.type = (batch.type).rawValue
+                conversation.participants = batch.participants
+                conversation.messages = batch.messages
+                
+                Store.upsertConversation(conversation)
+                self.conversation = conversation
+            }
             
             // Convert server messages to chat messages and sort by createdAt
             let newMessages = serverBatches
@@ -60,7 +68,7 @@ class ConversationViewModel: ObservableObject {
         }
     }
     
-    func attachmentsFromDraft(_ draftMessage: DraftMessage) async -> [Attachment]? {
+    private func attachmentsFromDraft(_ draftMessage: DraftMessage) async -> [Attachment]? {
         var result: [Attachment] = []
         for media in draftMessage.medias where media.type == .image {
             let thumb = await media.getThumbnailURL()
@@ -80,7 +88,7 @@ class ConversationViewModel: ObservableObject {
     }
     
     func handleSend(_ draft: DraftMessage) async {
-        guard let batchId = batchId else { return }
+        guard let batchId = conversation.batchId else { return }
         
          let attachment = await attachmentsFromDraft(draft) ?? []
         
@@ -101,7 +109,7 @@ class ConversationViewModel: ObservableObject {
     }
     
     func handleEdit(_ messageId: String, _ newText: String) {
-        guard let batchId = batchId else { return }
+        guard let batchId = conversation.batchId else { return }
         
         SocketIOManager.shared.editMessage(conversationId: conversationId, batchId: batchId, messageId: messageId, newText: newText)
     }
@@ -115,24 +123,41 @@ class ConversationViewModel: ObservableObject {
         
     }
     
-    func setupSocketListeners() {
+    private func setupSocketListeners() {
         //sent after connection
-        SocketIOManager.shared.onConversationAssigned { [weak self] conversationId in
-            guard let self = self else { return }
-            
-            self.conversationId = conversationId
-                        
-            Task {
-                await self.loadChatHistory()
-            }
-        }
+        
+        /////////////////////////////
+        //onConversationAssigned should never happen, since it's not a new chat creation
+        /////////////////////////////
+        ///
+//        SocketIOManager.shared.onConversationAssigned { [weak self] conversationId in
+//            guard let self = self else { return }
+//            
+//            self.conversationId = conversationId
+//            if self.conversation == nil, let conversationId, let participants {
+//                self.conversation = Store.createConversation(conversationId, type: chatType, participants: participants, title: nil)
+//            }
+//            
+//            conversationURL = conversation.url()
+//                        
+//            Task {
+//                await self.loadChatHistory()
+//            }
+//        }
         
         SocketIOManager.shared.onBatchAssigned { [weak self] batchId, conversationId in
             guard let self = self else { return }
-            if let conversationId  {
-                self.conversationId = conversationId
-            }
-            self.batchId = batchId
+            
+            self.conversationId = conversationId!
+            
+            var conversation = Store.ensureConversation(conversationId!)
+            conversation.batchId = batchId
+            
+            conversationURL = conversation.url()
+            
+            Store.upsertConversation(conversation)
+            
+            self.conversation = conversation
             
             Task {
                 await self.loadChatHistory()
@@ -233,15 +258,13 @@ class ConversationViewModel: ObservableObject {
     }
 
     private func buildAuthData() -> [String: Any] {
-        
-        
         var auth: [String: Any] = [
-            "chatType": conversation?.type ?? "direct",
-            "participants": conversation?.participants ?? [currentUserId],
-            "userId": currentUserId
+            "participants": conversation.participants,
+            "userId": currentUserId,
+            "conversationId": conversationId
         ]
-        auth["conversationId"] = conversationId
-        if let batchId { auth["batchId"] = batchId }
+        if let chatType = conversation.type {auth["chatType"] =  chatType }
+        if let batchId = conversation.batchId { auth["batchId"] = batchId }
         return auth
     }
 
