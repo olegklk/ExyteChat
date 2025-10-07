@@ -79,8 +79,8 @@ struct ConversationView: View {
 //                    .padding(.leading, 10)
 //                }
                 ToolbarItem(placement: .principal) {
-                    Text($viewModel.conversationURL) //что нужно здсь исправить чтобы этот текст отображал значение conversationURL которое объявлено внутри  ConversationViewModel как @Published var conversationURL: String? AI!
-                    
+                    Text(viewModel.conversationURL ?? "")
+                        
                         .font(.subheadline)
                         .textSelection(.enabled)
                         .contextMenu {
