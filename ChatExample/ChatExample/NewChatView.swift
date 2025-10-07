@@ -11,6 +11,10 @@ struct NewChatView: View {
     private var currentUserId: String { Store.userId() }
     @State private var participants: [String] = [Store.userId()]
     private var currentUserName: String { Store.userName() }
+    @State private var isLoading = false
+    
+    @StateObject private var viewModel = NewChatViewModel()
+    
     var body: some View {
         Form {
             Section(header: Text("Chat Type")) {
@@ -64,11 +68,29 @@ struct NewChatView: View {
             }
 
             Section {
-                NavigationLink(destination: startChatDestination()) {
-                    Text("Start chat")
-                        .frame(maxWidth: .infinity, alignment: .center)
+                Button(action: {
+                        Task {
+                            await viewModel.start(chatType: chatType.rawValue, participants: participants)
+                        }
+                    }) {
+                    HStack {
+                        Text("Start chat")
+                            .frame(maxWidth: .infinity, alignment: .center)
+                        
+                        if isLoading {
+                            ProgressView()
+                                .padding(.leading, 8)
+                        }
+                    }
                 }
                 .disabled(participants.count < 2)
+            }
+            
+            if let error = viewModel.error {
+                Section {
+                    Text("Error: \(error.localizedDescription)")
+                        .foregroundColor(.red)
+                }
             }
         }
         .navigationTitle("New Chat")
@@ -80,6 +102,12 @@ struct NewChatView: View {
                 chatType = .group
             }
         }
+        .navigationDestination(item: $viewModel.navigationDestination) { destination in
+            switch destination {
+                            case .chat(let conversationId):
+                    ConversationView(ConversationViewModel(conversationId:conversationId))
+                            }
+        }
     }
 
     private var disableAddParticipant: Bool {
@@ -87,9 +115,4 @@ struct NewChatView: View {
         return pid.isEmpty || pid == currentUserId || participants.contains(pid)
     }
 
-    @ViewBuilder
-    private func startChatDestination() -> some View {
-        let allParticipants = Array(Set([currentUserId] + participants))
-        ConversationView(viewModel: ConversationViewModel(conversationId: nil, batchId: nil, participants: allParticipants), title: conversation.title)
-    }
 }
