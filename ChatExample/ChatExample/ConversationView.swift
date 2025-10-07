@@ -18,7 +18,6 @@ struct ConversationView: View {
     @StateObject private var viewModel: ConversationViewModel
     
     private let title: String
-    @State private var conversationURLText: String = Store.conversationURL()
     
     init(viewModel: ConversationViewModel, title: String) {
         _viewModel = StateObject(wrappedValue: viewModel)
@@ -49,53 +48,48 @@ struct ConversationView: View {
             //        .navigationBarBackButtonHidden()
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    HStack {
-                        if let url = viewModel.chatCover {
-                            CachedAsyncImage(url: url) { phase in
-                                switch phase {
-                                    case .success(let image):
-                                        image
-                                            .resizable()
-                                            .scaledToFill()
-                                    default:
-                                        Rectangle().fill(Color(hex: "AFB3B8"))
-                                }
-                            }
-                            .frame(width: 35, height: 35)
-                            .clipShape(Circle())
-                        }
-                        
-                        VStack(alignment: .leading, spacing: 0) {
-                            Text(viewModel.chatTitle)
-                                .fontWeight(.semibold)
-                                .font(.headline)
-                                .foregroundStyle(colorScheme == .dark ? .white : .black)
-                            Text(viewModel.chatStatus)
-                                .font(.footnote)
-                                .foregroundColor(Color(hex: "AFB3B8"))
-                        }
-                        Spacer()
-                    }
-                    .padding(.leading, 10)
-                }
+//                ToolbarItem(placement: .navigationBarLeading) {
+//                    HStack {
+//                        if let url = viewModel.conversation().coverURL {
+//                            CachedAsyncImage(url: url) { phase in
+//                                switch phase {
+//                                    case .success(let image):
+//                                        image
+//                                            .resizable()
+//                                            .scaledToFill()
+//                                    default:
+//                                        Rectangle().fill(Color(hex: "AFB3B8"))
+//                                }
+//                            }
+//                            .frame(width: 35, height: 35)
+//                            .clipShape(Circle())
+//                        }
+//                        
+//                        VStack(alignment: .leading, spacing: 0) {
+//                            Text(viewModel.chatTitle)
+//                                .fontWeight(.semibold)
+//                                .font(.headline)
+//                                .foregroundStyle(colorScheme == .dark ? .white : .black)
+//                            Text(viewModel.chatStatus)
+//                                .font(.footnote)
+//                                .foregroundColor(Color(hex: "AFB3B8"))
+//                        }
+//                        Spacer()
+//                    }
+//                    .padding(.leading, 10)
+//                }
                 ToolbarItem(placement: .principal) {
-                    Text(conversationURLText)
+                    Text($viewModel.conversationURL) //что нужно здсь исправить чтобы этот текст отображал значение conversationURL которое объявлено внутри  ConversationViewModel как @Published var conversationURL: String? AI!
+                    
                         .font(.subheadline)
                         .textSelection(.enabled)
                         .contextMenu {
-                            Button("Copy") { UIPasteboard.general.string = conversationURLText }
+                            Button("Copy") { UIPasteboard.general.string = viewModel.conversationURL }
                         }
                 }
             }
             .onAppear {
                 viewModel.onAppear()
-            }
-            .onReceive(NotificationCenter.default.publisher(for: Store.conversationIdDidChange)) { _ in
-                conversationURLText = Store.conversationURL()
-            }
-            .onReceive(NotificationCenter.default.publisher(for: Store.batchIdDidChange)) { _ in
-                conversationURLText = Store.conversationURL()
             }
         }
     }
@@ -103,9 +97,9 @@ struct ConversationView: View {
 
 
 
-struct APIClientExampleView_Previews: PreviewProvider {
+struct ConversationView_Previews: PreviewProvider {
     static var previews: some View {
-        let conversationid = Store.activeConversationId() ?? ChatUtils.generateRandomConversationId()
-        ConversationView(viewModel: ConversationViewModel(conversationId: conversationid, batchId: nil), title: "Chat (demo)")
+        let conversationid = ChatUtils.generateRandomConversationId()
+        ConversationView(viewModel: ConversationViewModel(conversationId: conversationid), title: "Chat (demo)")
     }
 }
