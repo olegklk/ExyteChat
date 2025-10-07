@@ -36,7 +36,7 @@ class NewChatViewModel: ObservableObject {
     private var participants: [String]?
     
     @Published var isLoading = false
-    @Published var navigationDestination: ChatDestination?
+    @Published var navigationTarget: ConversationNavTarget?
     @Published var error: Error?
     
     private var isHistoryLoaded: Bool = false
@@ -54,10 +54,7 @@ class NewChatViewModel: ObservableObject {
                 
                 
                 isLoading = false
-                //помоги упростить эту конструкцию - здесь используется ChatDestination объявленная в этом же файле, но если можно обойтись без нее или хотя бы упростить все это как-то то было бы здорово, что мне требуется это просто открыть ConversationView, что и делается в NewChatView который следит за этим navigationDestination AI!
-                navigationDestination = .chat(
-                            conversationId: conversationId!
-                        )
+                navigationTarget = ConversationNavTarget(id: conversationId!)
                                 
             }
             

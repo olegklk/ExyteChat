@@ -102,11 +102,8 @@ struct NewChatView: View {
                 chatType = .group
             }
         }
-        .navigationDestination(item: $viewModel.navigationDestination) { destination in
-            switch destination {
-                            case .chat(let conversationId):
-                    ConversationView(ConversationViewModel(conversationId:conversationId))
-                            }
+        .navigationDestination(item: $viewModel.navigationTarget) { target in
+            ConversationView(viewModel: ConversationViewModel(conversationId: target.id), title: "Chat")
         }
     }
 
