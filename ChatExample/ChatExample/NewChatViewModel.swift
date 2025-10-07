@@ -10,20 +10,8 @@ import ExyteChat
 import ExyteMediaPicker
 import ChatAPIClient
 
-
-// Минимальный вариант только для успешного перехода
-enum ChatDestination: Identifiable, Hashable {
-    
-    case chat(conversationId: String)
-    
-    var id: String { conversationId }
-    
-    private var conversationId: String {
-        switch self {
-        case .chat(let conversationId):
-            return conversationId
-        }
-    }
+struct ConversationNavTarget: Identifiable, Hashable {
+    let id: String
 }
 
 @MainActor
