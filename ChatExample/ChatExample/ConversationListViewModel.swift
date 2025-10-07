@@ -23,12 +23,9 @@ class ConversationListViewModel: ObservableObject {
             let items = try await ChatAPIClient.shared.getAllConversations(userId: Store.userId(), limit: nil, perConv: 1)
             
             for item in items {
-                Task {
-                    await loadChatHistory(item)
-                }
+                await loadChatHistory(item)
             }
-            
-            self.conversationItems = items //исправь этот метод так чтобы присвоение self.conversationItems происходило только после окончания загрузки loadHistory для каждого из них AI!
+            self.conversationItems = items
             
             isLoading = false
             
