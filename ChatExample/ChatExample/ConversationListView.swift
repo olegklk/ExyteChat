@@ -68,7 +68,7 @@ struct ConversationListView: View {
                         id: \.conversationId
                     ) { item in
                         if let conversation = Store.conversation(for: item.conversationId) {
-                            let vm = ConversationViewModel(conversationId: conversation.id, batchId: conversation.batchId)
+                            let vm = ConversationViewModel(conversationId: conversation.id)
                             let destination: AnyView
                             if !theme.isAccent, #available(iOS 18.0, *) {
                                 destination = AnyView(
@@ -102,7 +102,7 @@ struct ConversationListView: View {
             }
             .navigationTitle("Chats ")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
+            .toolbar {//Ambiguous use of 'toolbar(content:)' AI!
                 ToolbarItem(placement: .navigationBarTrailing) {
                     HStack {
                         Button(theme.title) {
