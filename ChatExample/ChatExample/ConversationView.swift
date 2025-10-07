@@ -47,37 +47,37 @@ struct ConversationView: View {
             .keyboardDismissMode(.interactive)
             //        .navigationBarBackButtonHidden()
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-//                ToolbarItem(placement: .navigationBarLeading) {
-//                    HStack {
-//                        if let url = viewModel.conversation().coverURL {
-//                            CachedAsyncImage(url: url) { phase in
-//                                switch phase {
-//                                    case .success(let image):
-//                                        image
-//                                            .resizable()
-//                                            .scaledToFill()
-//                                    default:
-//                                        Rectangle().fill(Color(hex: "AFB3B8"))
-//                                }
-//                            }
-//                            .frame(width: 35, height: 35)
-//                            .clipShape(Circle())
-//                        }
-//                        
-//                        VStack(alignment: .leading, spacing: 0) {
-//                            Text(viewModel.chatTitle)
-//                                .fontWeight(.semibold)
-//                                .font(.headline)
-//                                .foregroundStyle(colorScheme == .dark ? .white : .black)
-//                            Text(viewModel.chatStatus)
-//                                .font(.footnote)
-//                                .foregroundColor(Color(hex: "AFB3B8"))
-//                        }
-//                        Spacer()
-//                    }
-//                    .padding(.leading, 10)
-//                }
+            .toolbar {//что за ошибка здесь Trailing closure passed to parameter of type 'Visibility' that does not accept a closure AI!
+                ToolbarItem(placement: .navigationBarLeading) {
+                    HStack {
+                        if let url = viewModel.conversation().coverURL {
+                            CachedAsyncImage(url: url) { phase in
+                                switch phase {
+                                    case .success(let image):
+                                        image
+                                            .resizable()
+                                            .scaledToFill()
+                                    default:
+                                        Rectangle().fill(Color(hex: "AFB3B8"))
+                                }
+                            }
+                            .frame(width: 35, height: 35)
+                            .clipShape(Circle())
+                        }
+                        
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text(viewModel.chatTitle)
+                                .fontWeight(.semibold)
+                                .font(.headline)
+                                .foregroundStyle(colorScheme == .dark ? .white : .black)
+                            Text(viewModel.chatStatus)
+                                .font(.footnote)
+                                .foregroundColor(Color(hex: "AFB3B8"))
+                        }
+                        Spacer()
+                    }
+                    .padding(.leading, 10)
+                }
                 ToolbarItem(placement: .principal) {
                     Text(viewModel.conversationURL ?? "")
                         
