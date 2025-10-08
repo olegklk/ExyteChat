@@ -35,8 +35,11 @@ public struct Conversation: Codable, Identifiable, Hashable, Sendable {
     }
     
     public mutating func mergeMessages(_ messages: [ServerMessage]) {
-        //реализуй здесь вставку новых сообщений или замену существующих если у новых и старых id совпадают AI!
-        self.messages = messages
+        var byId = Dictionary(uniqueKeysWithValues: self.messages.map { ($0.id, $0) })
+        for m in messages {
+            byId[m.id] = m // insert new or replace existing
+        }
+        self.messages = byId.values.sorted { $0.createdAt < $1.createdAt }
     }
     
     public init(from decoder: Decoder) throws {
