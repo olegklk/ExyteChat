@@ -31,6 +31,11 @@ public struct Conversation: Codable, Identifiable, Hashable, Sendable {
     }
     
     public mutating func setMessages(_ messages: [ServerMessage]) {
+        self.messages = messages.sorted { $0.createdAt < $1.createdAt }
+    }
+    
+    public mutating func mergeMessages(_ messages: [ServerMessage]) {
+        //реализуй здесь вставку новых сообщений или замену существующих если у новых и старых id совпадают AI!
         self.messages = messages
     }
     
