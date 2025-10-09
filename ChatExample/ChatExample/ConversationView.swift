@@ -26,6 +26,33 @@ struct ConversationView: View {
     
     var body: some View {
         VStack {
+            // Invite URL block
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text("Invite URL")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    Spacer()
+                    Button("Copy") {
+                        UIPasteboard.general.string = viewModel.conversationURL
+                    }
+                    .disabled((viewModel.conversationURL ?? "").isEmpty)
+                }
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                    Text(viewModel.conversationURL ?? "")
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                        .padding(.horizontal, 12)
+                        .textSelection(.enabled)
+                        .contextMenu {
+                            Button("Copy") { UIPasteboard.general.string = viewModel.conversationURL }
+                        }
+                }
+                .frame(height: 40)
+            }
+            .padding([.horizontal, .top])
             ChatView( messages: viewModel.messages,
                       chatType: .conversation,
                       replyMode: .quote,
@@ -74,15 +101,6 @@ struct ConversationView: View {
                         Spacer()
                     }
                     .padding(.leading, 10)
-                }
-                ToolbarItem(placement: .principal) { //переделай этот экран так чтобы conversationURL отображался ниже тулбара - над чатом в отдельном текстовом поле высотой 40px у которого будет подзаголовок "Invite URL" и рядом кнопка "Copy" но при этом сохрани возможность копирования по длинному нажатию как сейчас AI!
-                    Text(viewModel.conversationURL ?? "")
-                        
-                        .font(.subheadline)
-                        .textSelection(.enabled)
-                        .contextMenu {
-                            Button("Copy") { UIPasteboard.general.string = viewModel.conversationURL }
-                        }
                 }
             })
             .onAppear {
