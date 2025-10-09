@@ -178,14 +178,17 @@ class ConversationViewModel: ObservableObject {
         
         SocketIOManager.shared.onUnreadBatches { [weak self] batches, cId in
             guard let self = self,
-            cId == self.conversationId else { return }
-            //получи ID последнего batch из списка batches,предварительно отсортировав их по дате startedAt AI!
-            let newMessages = batches.flatMap { $0.messages}
+                  cId == self.conversationId else { return }
+            let lastBatchId = batches.sorted { $0.startedAt < $1.startedAt }.last?.id
+            let newMessages = batches.flatMap { $0.messages }
             
             DispatchQueue.main.async {
+                if let lastBatchId {
+                    self.conversation.batchId = lastBatchId
+                    self.conversationURL = self.conversation.url()
+                }
                 self.updateMessages(newMessages)
             }
-            
         }
 
         // Listen for edited messages
