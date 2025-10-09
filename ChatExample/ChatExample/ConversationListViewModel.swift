@@ -38,18 +38,24 @@ class ConversationListViewModel: ObservableObject {
     func loadChatHistory(_ item: ServerConversationListItem) async {
         
         do {
-            let serverBatches = try await ChatAPIClient.shared.getHistory(conversationId: item.conversationId, month: nil)
+            var batches = try await ChatAPIClient.shared.getHistory(conversationId: item.conversationId, month: nil)
             
-            if let batch = serverBatches.first {
-                
-                var conversation = Store.ensureConversation(item.conversationId)
-                
-                conversation.type = (batch.type).rawValue
-                conversation.participants = batch.participants
-                conversation.messages = batch.messages
-                
-                Store.upsertConversation(conversation)
+            batches = batches.sorted { $0.startedAt < $1.startedAt }
+            
+            var conversation = Store.ensureConversation(item.conversationId)
+            
+            if let lastBatch = batches.last {
+                conversation.batchId = lastBatch.id
+                conversation.type = (lastBatch.type).rawValue
+                conversation.participants = lastBatch.participants
             }
+            
+            let newMessages = batches.flatMap { $0.messages }
+            
+            conversation.mergeMessages(newMessages)
+                
+            Store.upsertConversation(conversation)
+
             
         } catch {
             print("Failed to load details(unread history) for chat:\(item.conversationId) error: \(error)")

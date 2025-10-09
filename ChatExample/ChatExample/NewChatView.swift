@@ -5,6 +5,7 @@ struct NewChatView: View {
         case direct = "direct"
         case group = "group"
     }
+    @Binding var navigationPath: NavigationPath
     
     @State private var chatType: ChatType = .direct
     @State private var participantInput: String = ""
@@ -101,10 +102,23 @@ struct NewChatView: View {
             }
         }
         .navigationDestination(item: $viewModel.navigationTarget) { target in
-            ConversationView(viewModel: ConversationViewModel(conversationId: target.id, batchId: nil), title: "Chat")
+            conversationDestination(conversationId: target.id)
         }
     }
 
+    private func conversationDestination(conversationId: String) -> AnyView {
+        let conversation = Store.ensureConversation(conversationId)
+        let vm = ConversationViewModel(conversation: conversation)
+        
+        if navigationPath.count > 0 {
+            navigationPath.removeLast()
+        }
+        
+        return AnyView(
+            ConversationView(viewModel: vm, path: $navigationPath)
+        )
+    }
+    
     private var disableAddParticipant: Bool {
         let pid = participantInput.trimmingCharacters(in: .whitespacesAndNewlines)
         return pid.isEmpty || pid == currentUserId || participants.contains(pid)

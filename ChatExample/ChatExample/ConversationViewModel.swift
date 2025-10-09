@@ -23,13 +23,10 @@ class ConversationViewModel: ObservableObject {
     
     private var isHistoryLoaded: Bool = false
     
-    init(conversationId: String, batchId: String?) {
+    init(conversation: Conversation) {
         
-        self.conversationId = conversationId
-        self.conversation = Store.ensureConversation(conversationId)
-        if let batchId {
-            self.conversation.batchId = batchId
-        }
+        self.conversation = conversation
+        self.conversationId = conversation.id
                 
     }
     
@@ -39,18 +36,22 @@ class ConversationViewModel: ObservableObject {
         isHistoryLoaded = true
         do {
             
+            var batches = try await ChatAPIClient.shared.getHistory(conversationId: conversationId, month: nil) //current month by default
+            
             conversation.clearMessages()
             
-            let serverBatches = try await ChatAPIClient.shared.getHistory(conversationId: conversationId, month: nil) //current month by default
-            
-            if let batch = serverBatches.first {
-                
-                conversation.type = (batch.type).rawValue
-                conversation.participants = batch.participants
+            batches = batches.sorted { $0.startedAt < $1.startedAt }
+            if let lastBatch = batches.last {
+                DispatchQueue.main.async {
+                    self.conversation.batchId = lastBatch.id
+                    self.conversationURL = self.conversation.url()
+                    self.conversation.type = (lastBatch.type).rawValue
+                    self.conversation.participants = lastBatch.participants
+                }
             }
             
             // combine server messages from all batches into a single flat array
-            let newMessages = serverBatches.flatMap { $0.messages }
+            let newMessages = batches.flatMap { $0.messages }
             
             await MainActor.run {
                 self.updateMessages(newMessages)
@@ -143,9 +144,6 @@ class ConversationViewModel: ObservableObject {
 //            guard let self = self else { return }
 //            
 //            self.conversationId = conversationId
-//            if self.conversation == nil, let conversationId, let participants {
-//                self.conversation = Store.createConversation(conversationId, type: chatType, participants: participants, title: nil)
-//            }
 //            
 //            conversationURL = conversation.url()
 //                        
@@ -179,15 +177,23 @@ class ConversationViewModel: ObservableObject {
         SocketIOManager.shared.onUnreadBatches { [weak self] batches, cId in
             guard let self = self,
                   cId == self.conversationId else { return }
-            let lastBatchId = batches.sorted { $0.startedAt < $1.startedAt }.last?.id
+            let batches = batches.sorted { $0.startedAt < $1.startedAt }
+            let lastBatchId = batches.last?.id
             let newMessages = batches.flatMap { $0.messages }
             
-            DispatchQueue.main.async {
+            DispatchQueue.main.async { [self] in
                 if let lastBatchId {
                     self.conversation.batchId = lastBatchId
                     self.conversationURL = self.conversation.url()
                 }
-                self.updateMessages(newMessages)
+                if isHistoryLoaded {
+                    self.updateMessages(newMessages)
+                }
+                else {
+                    Task {
+                        await self.loadChatHistory()
+                    }
+                }
             }
         }
 

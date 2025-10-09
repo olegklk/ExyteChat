@@ -4,7 +4,10 @@ import ExyteChat
 
 struct ConversationListView: View {
     
+    @State private var isFirstAppear = true
     @StateObject private var viewModel : ConversationListViewModel = ConversationListViewModel()
+    
+    @State private var navigationPath = NavigationPath()
     
     @State private var theme: ExampleThemeState = .accent
     @State private var color = Color(.exampleBlue)
@@ -16,7 +19,7 @@ struct ConversationListView: View {
     @State private var batchId: String?
     
     var body: some View {
-        NavigationView {
+        NavigationStack(path: $navigationPath) {
             List {
                 Section { 
                     VStack {
@@ -42,12 +45,8 @@ struct ConversationListView: View {
                             RoundedRectangle(cornerRadius: 8)
                                 .stroke(Color.gray.opacity(0.3), lineWidth: 1)
                         )
-                                            
-                        NavigationLink(String("Join conversation")) {
-                            if let conversationId, let batchId {
-                                destinationViewToJoin(for: conversationId, batchId: batchId)
-                            }
-                        }.disabled(conversationId == nil || conversationURL.isEmpty)
+                        NavigationLink("Join conversation", value: "join_conversation")
+                        .disabled(conversationId == nil || conversationURL.isEmpty)
                     }
                 } header: {
                     Text("Join by URL")
@@ -55,10 +54,7 @@ struct ConversationListView: View {
 
                 Section {
                     VStack {
-                        NavigationLink(destination: NewChatView()) {
-//                            Image(systemName: "plus")
-                            Text("Create New Chat")
-                        }
+                        NavigationLink("Create New Chat", value: "new_chat")
                     }
                 } header: {
                     Text("")
@@ -69,12 +65,8 @@ struct ConversationListView: View {
                         id: \.conversationId
                     ) { item in
                         let conversation = Store.ensureConversation(item.conversationId)
-                        let vm = ConversationViewModel(conversation: conversation)
-                        
                         HStack {
-                            NavigationLink(conversation.title) {
-                                conversationDestination(vm: vm, conversation: conversation)
-                            }
+                            NavigationLink(conversation.title, value: conversation)
                             Spacer()
                             Text("\(item.unreadCount)")
                                 .foregroundColor(.secondary)
@@ -92,6 +84,21 @@ struct ConversationListView: View {
                     }
                 }
             }
+            .navigationDestination(for: Conversation.self) { conversation in
+                conversationDestination(conversation: conversation)
+            }
+            .navigationDestination(for: String.self) { screenType in
+                            switch screenType {
+                            case "new_chat":
+                                NewChatView(navigationPath: $navigationPath)
+                            case "join_conversation":
+                                if let conversationId, let batchId {
+                                    destinationViewToJoin(for: conversationId, batchId: batchId)
+                                }
+                            default:
+                                Text("Unknown screen")
+                            }
+                        }
             .navigationTitle("Chats ")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -106,18 +113,21 @@ struct ConversationListView: View {
             }
             .onAppear(perform: setup)
             
-        }
-        .navigationViewStyle(.stack)
+        }    
     }
     
-    @ViewBuilder
-    private func conversationDestination(vm: ConversationViewModel, conversation: Conversation) -> some View {
+    private func conversationDestination(conversation: Conversation) -> AnyView {
+        let vm = ConversationViewModel(conversation: conversation)
         if !theme.isAccent, #available(iOS 18.0, *) {
-            ConversationView(viewModel: vm, title: conversation.title)
-                .chatTheme(themeColor: color)
+            return AnyView(
+                ConversationView(viewModel: vm, path: $navigationPath)
+                    .chatTheme(themeColor: color)
+            )
         } else {
-            ConversationView(viewModel: vm, title: conversation.title)
-                .chatTheme(accentColor: color, images: theme.images)
+            return AnyView(
+                ConversationView(viewModel: vm, path: $navigationPath)
+                    .chatTheme(accentColor: color, images: theme.images)
+            )
         }
     }
     
@@ -125,21 +135,28 @@ struct ConversationListView: View {
         var conversation = Store.ensureConversation(convId)
         conversation.batchId = batchId
         let vm = ConversationViewModel(conversation: conversation)
-        let title = String(convId.prefix(10))
         if !theme.isAccent, #available(iOS 18.0, *) {
             return AnyView(
-                ConversationView(viewModel: vm, title: title)
+                ConversationView(viewModel: vm, path: $navigationPath)
                     .chatTheme(themeColor: color)
             )
         } else {
             return AnyView(
-                ConversationView(viewModel: vm, title: title)
+                ConversationView(viewModel: vm, path: $navigationPath)
                     .chatTheme(accentColor: color, images: theme.images)
             )
         }
     }
     
     private func setup() {
+        
+        let currentDepth = navigationPath.count
+        print("currentDepth=\(currentDepth)")
+        
+        if isFirstAppear {
+            SocketIOManager.shared.disconnect()
+            isFirstAppear = false
+        }
         
         viewModel.onAppear()
         

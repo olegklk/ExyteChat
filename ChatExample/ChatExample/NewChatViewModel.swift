@@ -29,38 +29,34 @@ class NewChatViewModel: ObservableObject {
     
     private var isHistoryLoaded: Bool = false
             
-    func loadChatHistory() async {
+    func loadChatHistory() async { //we need this in case this user already has conversation with the same participants, so we need to fetch the latest batchId and use it further on
         guard isHistoryLoaded == false else {return}
         guard conversationId != nil else {return}
         
         isHistoryLoaded = true
         do {
-            let serverBatches = try await ChatAPIClient.shared.getHistory(conversationId: conversationId!, month: nil)
-            
-            if let batch = serverBatches.first {
-                initConversation(batch: batch)
-                
-                
-                isLoading = false
-                navigationTarget = ConversationNavTarget(id: conversationId!)
-                                
+            var batches = try await ChatAPIClient.shared.getHistory(conversationId: conversationId!, month: nil)
+            if batches.isEmpty {
+                self.finish()
             }
-            
+            else {
+                batches = batches.sorted { $0.startedAt < $1.startedAt }
+                if let lastBatch = batches.last, var conversation = self.conversation {
+                    DispatchQueue.main.async {
+                        conversation.batchId = lastBatch.id
+                        conversation.type = (lastBatch.type).rawValue
+                        conversation.participants = lastBatch.participants
+                        Store.upsertConversation(conversation)
+                        
+                        self.finish()
+                    }
+                }
+            }
         } catch {
             print("Failed to load chat history: \(error)")
             self.error = error
-            isLoading = false
+            finish()
             
-        }
-    }
-    
-    func initConversation(batch: ServerBatchDocument) {
-        if var conversation {
-            conversation.type = (batch.type).rawValue
-            conversation.participants = batch.participants
-            
-            Store.upsertConversation(conversation)
-                        
         }
     }
     
@@ -105,10 +101,25 @@ class NewChatViewModel: ObservableObject {
                         
             self.conversation?.batchId = batchId
             
-            Task {
-                await self.loadChatHistory()
+            if isHistoryLoaded {
+                finish()
+            } else {
+                Task {
+                    await self.loadChatHistory()
+                }
             }
+            
         }
+    }
+    
+    private func finish() {
+        
+        isLoading = false
+        
+        //let's end this socket connection to reconnect later with the proper batchId (that we fetched with loadHistory() if any)
+        SocketIOManager.shared.disconnect()
+        
+        navigationTarget = ConversationNavTarget(id: conversationId!)
     }
     
     private func buildAuthData() -> [String: Any] {
@@ -123,3 +134,4 @@ class NewChatViewModel: ObservableObject {
     }
     
 }
+

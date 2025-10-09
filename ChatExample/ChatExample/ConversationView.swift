@@ -15,13 +15,13 @@ struct ConversationView: View {
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.presentationMode) private var presentationMode
     
+    @Binding var navigationPath: NavigationPath
+    
     @StateObject private var viewModel: ConversationViewModel
     
-    private let title: String
-    
-    init(viewModel: ConversationViewModel, title: String) {
+    init(viewModel: ConversationViewModel, path: Binding<NavigationPath>) {
         _viewModel = StateObject(wrappedValue: viewModel)
-        self.title = title
+        self._navigationPath = path
     }
     
     var body: some View {
@@ -42,8 +42,8 @@ struct ConversationView: View {
                     RoundedRectangle(cornerRadius: 8)
                         .stroke(Color.gray.opacity(0.3), lineWidth: 1)
                     Text(viewModel.conversationURL ?? "")
-                        .lineLimit(1)
-                        .truncationMode(.middle)
+                        .lineLimit(2)
+                        .truncationMode(.tail)
                         .padding(.horizontal, 12)
                         .textSelection(.enabled)
                         .contextMenu {
@@ -102,8 +102,14 @@ struct ConversationView: View {
                     }
                     .padding(.leading, 10)
                 }
+                ToolbarItem(placement: .primaryAction) {
+                    Text(viewModel.conversation.type ?? "")
+                        .font(.subheadline)
+                }
             })
             .onAppear {
+                let currentDepth = navigationPath.count
+                print("currentDepth=\(currentDepth)")
                 viewModel.onAppear()
             }
         }
@@ -114,8 +120,18 @@ struct ConversationView: View {
 
 struct ConversationView_Previews: PreviewProvider {
     static var previews: some View {
-        let conversationid = ChatUtils.generateRandomConversationId()
-        let conversation = Store.ensureConversation(conversationid)
-        ConversationView(viewModel: ConversationViewModel(conversation: conversation), title: "Chat (demo)")
+        struct PreviewWrapper: View {
+            @State private var previewPath = NavigationPath()
+            
+            var body: some View {
+                let conversationid = ChatUtils.generateRandomConversationId()
+                let conversation = Store.ensureConversation(conversationid)
+                ConversationView(
+                    viewModel: ConversationViewModel(conversation: conversation),
+                    path: $previewPath
+                )
+            }
+        }
+        return PreviewWrapper()
     }
 }
