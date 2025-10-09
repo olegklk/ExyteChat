@@ -58,17 +58,17 @@ public final class ChatUtils {
     }
     
     private static func generateRandomPart() -> String {
-        let alphabet = Array("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
-        let randomPart = String((0..<8).compactMap { _ in alphabet.randomElement() })
+        let alphabet = Array("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+        let randomPart = String((0..<3).compactMap { _ in alphabet.randomElement() })
         return randomPart
     }
     
     public static func generateRandomUserId() -> String {
-        return "u:" + generateRandomPart()
+        return "u" + generateRandomPart()
     }
     
     public static func generateRandomConversationId() -> String {
-        return UUID().uuidString
+        return "c" + generateRandomPart()//UUID().uuidString
     }
     
 //    public static func combineUUIDs(_ uuid1: UUID, _ uuid2: UUID) -> String {
