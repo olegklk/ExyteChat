@@ -4,6 +4,10 @@ import ExyteChat
 
 struct ConversationListView: View {
     
+    private enum Route: Hashable {
+        case join
+        case new
+    }
     @State private var isFirstAppear = true
     @StateObject private var viewModel : ConversationListViewModel = ConversationListViewModel()
     
@@ -45,7 +49,7 @@ struct ConversationListView: View {
                             RoundedRectangle(cornerRadius: 8)
                                 .stroke(Color.gray.opacity(0.3), lineWidth: 1)
                         )
-                        NavigationLink("Join conversation", value: "join_conversation")
+                        NavigationLink("Join conversation", value: Route.join)
                         .disabled(conversationId == nil || conversationURL.isEmpty)
                     }
                 } header: {
@@ -54,7 +58,7 @@ struct ConversationListView: View {
 
                 Section {
                     VStack {
-                        NavigationLink("Create New Chat", value: "new_chat")
+                        NavigationLink("Create New Chat", value: Route.new)
                     }
                 } header: {
                     Text("")
@@ -87,11 +91,11 @@ struct ConversationListView: View {
             .navigationDestination(for: Conversation.self) { conversation in
                 conversationDestination(conversation: conversation)
             }
-            .navigationDestination(for: String.self) { screenType in
-                            switch screenType {
-                            case "new_chat":
+            .navigationDestination(for: Route.self) { route in
+                            switch route {
+                                case .new:
                                 NewChatView(navigationPath: $navigationPath)
-                            case "join_conversation":
+                                case .join:
                                 if let conversationId, let batchId {
                                     destinationViewToJoin(for: conversationId, batchId: batchId)
                                 }

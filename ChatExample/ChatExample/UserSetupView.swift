@@ -42,13 +42,14 @@ struct UserSetupView: View {
                     .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
-        }
-        .navigationDestination(for: Route.self) { route in
-            switch route {
-            case .content:
-                ConversationListView()
+            .navigationDestination(for: Route.self) { route in
+                switch route {
+                case .content:
+                    ConversationListView()
+                }
             }
         }
+        
         .onAppear(perform: setup)
         
     }
