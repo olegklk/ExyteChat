@@ -97,6 +97,6 @@ struct ConversationView: View {
 struct ConversationView_Previews: PreviewProvider {
     static var previews: some View {
         let conversationid = ChatUtils.generateRandomConversationId()
-        ConversationView(viewModel: ConversationViewModel(conversationId: conversationid), title: "Chat (demo)")
+        ConversationView(viewModel: ConversationViewModel(conversationId: conversationid, batchId: nil), title: "Chat (demo)")
     }
 }

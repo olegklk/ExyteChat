@@ -101,7 +101,7 @@ struct NewChatView: View {
             }
         }
         .navigationDestination(item: $viewModel.navigationTarget) { target in
-            ConversationView(viewModel: ConversationViewModel(conversationId: target.id), title: "Chat")
+            ConversationView(viewModel: ConversationViewModel(conversationId: target.id, batchId: nil), title: "Chat")
         }
     }
 
