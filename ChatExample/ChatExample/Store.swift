@@ -25,7 +25,7 @@ public final class Store {
         
         var conversation = conversationsById[id]
         if conversation == nil {
-            conversation = Conversation(id: id, title: "")
+            conversation = Conversation(id: id, title: String(id.prefix(8)))
             conversation!.participants = [userId()]
             upsertConversation(conversation!)
         }
@@ -50,7 +50,7 @@ public final class Store {
     }
     
     public static func conversation(for id: String) -> Conversation? {
-        return conversationsById[id]!
+        return conversationsById[id]
     }
     
     public static func upsertConversation(_ conversation: Conversation) {

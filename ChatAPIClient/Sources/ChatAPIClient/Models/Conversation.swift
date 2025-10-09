@@ -30,6 +30,10 @@ public struct Conversation: Codable, Identifiable, Hashable, Sendable {
         self.participants = []
     }
     
+    public mutating func clearMessages() {
+        self.messages.removeAll()
+    }
+    
     public mutating func setMessages(_ messages: [ServerMessage]) {
         self.messages = messages.sorted { $0.createdAt < $1.createdAt }
     }
