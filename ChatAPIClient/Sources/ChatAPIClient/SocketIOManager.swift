@@ -148,7 +148,7 @@ public class SocketIOManager: ObservableObject {
         }
         
         let convAssigned = eventName(.conversationAssigned)
-        //почему-то этот обработчик не вызывается хотя я вижу по логам что событие "conversation-
+        
         socket?.on(convAssigned) { [weak self] data, ack in
             guard let self = self,
                   let handler = self.conversationAssignedHandler,
