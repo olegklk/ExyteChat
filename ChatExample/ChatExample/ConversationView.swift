@@ -75,7 +75,7 @@ struct ConversationView: View {
                     }
                     .padding(.leading, 10)
                 }
-                ToolbarItem(placement: .principal) {
+                ToolbarItem(placement: .principal) { //переделай этот экран так чтобы conversationURL отображался ниже тулбара - над чатом в отдельном текстовом поле высотой 40px у которого будет подзаголовок "Invite URL" и рядом кнопка "Copy" но при этом сохрани возможность копирования по длинному нажатию как сейчас AI!
                     Text(viewModel.conversationURL ?? "")
                         
                         .font(.subheadline)
@@ -97,6 +97,7 @@ struct ConversationView: View {
 struct ConversationView_Previews: PreviewProvider {
     static var previews: some View {
         let conversationid = ChatUtils.generateRandomConversationId()
-        ConversationView(viewModel: ConversationViewModel(conversationId: conversationid, batchId: nil), title: "Chat (demo)")
+        let conversation = Store.ensureConversation(conversationid)
+        ConversationView(viewModel: ConversationViewModel(conversation: conversation), title: "Chat (demo)")
     }
 }
