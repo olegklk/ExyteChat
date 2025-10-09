@@ -68,19 +68,19 @@ struct ConversationListView: View {
                         viewModel.conversationItems.sorted { $0.latestStartedAt > $1.latestStartedAt },
                         id: \.conversationId
                     ) { item in
-                        if let conversation = Store.conversation(for: item.conversationId) {
-                            let vm = ConversationViewModel(conversationId: conversation.id, batchId: nil)
-                            
-                            HStack {
-                                NavigationLink(conversation.title) {
-                                    conversationDestination(vm: vm, conversation: conversation)
-                                }
-                                Spacer()
-                                Text("\(item.unreadCount)")
-                                    .foregroundColor(.secondary)
+                        let conversation = Store.ensureConversation(item.conversationId)
+                        let vm = ConversationViewModel(conversation: conversation)
+                        
+                        HStack {
+                            NavigationLink(conversation.title) {
+                                conversationDestination(vm: vm, conversation: conversation)
                             }
+                            Spacer()
+                            Text("\(item.unreadCount)")
+                                .foregroundColor(.secondary)
                         }
                     }
+                    
                 } header: {
                     HStack {
                         Text("Chats")
@@ -123,7 +123,10 @@ struct ConversationListView: View {
     
     @ViewBuilder
     private func destinationViewToJoin(for convId: String, batchId: String) -> some View {
-        let vm = ConversationViewModel(conversationId: convId, batchId: batchId)
+        var conversation = Store.ensureConversation(convId)
+        conversation.batchId = batchId //компилятор ругается в этом месте 'buildExpression' is unavailable: this expression does not conform to 'View' как мне создать объект типа Conversation и задать ему свойство batchId в этом методе корректно AI!
+        
+        let vm = ConversationViewModel(conversation: conversation)
         let title = String(convId.prefix(10))
         if !theme.isAccent, #available(iOS 18.0, *) {
             ConversationView(viewModel: vm, title: title)
