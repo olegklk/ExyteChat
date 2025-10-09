@@ -25,6 +25,8 @@ struct UserSetupView: View {
                     .foregroundColor(.secondary)
                 
                 TextField("User Id", text: $userId)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled(true)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                 
                 Spacer()
