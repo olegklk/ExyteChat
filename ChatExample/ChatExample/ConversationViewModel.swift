@@ -23,10 +23,13 @@ class ConversationViewModel: ObservableObject {
     
     private var isHistoryLoaded: Bool = false
     
-    init(conversationId: String) {
+    init(conversationId: String, batchId: String?) {
         
         self.conversationId = conversationId
         self.conversation = Store.ensureConversation(conversationId)
+        if let batchId {
+            self.conversation.batchId = batchId
+        }
                 
     }
     
@@ -35,37 +38,43 @@ class ConversationViewModel: ObservableObject {
         
         isHistoryLoaded = true
         do {
+            
+            conversation.clearMessages()
+            
             let serverBatches = try await ChatAPIClient.shared.getHistory(conversationId: conversationId, month: nil) //current month by default
             
             if let batch = serverBatches.first {
                 
-                var conversation = Store.ensureConversation(conversationId)
                 conversation.type = (batch.type).rawValue
                 conversation.participants = batch.participants
-                conversation.messages = batch.messages
-                
-                Store.upsertConversation(conversation)
-                self.conversation = conversation
             }
             
-            // Convert server messages to chat messages and sort by createdAt
-            let newMessages = serverBatches
-                .flatMap { $0.messages.map(self.convertServerMessageToChatMessage) }
-                .sorted { $0.createdAt < $1.createdAt }
+            // combine server messages from all batches into a single flat array
+            let newMessages = serverBatches.flatMap { $0.messages }
             
             await MainActor.run {
-                self.messages = newMessages
-                // Re-init empty reply bodies
-                for i in self.messages.indices {
-                    if let reply = self.messages[i].replyMessage, reply.text.isEmpty {
-                        self.messages[i].replyMessage = self.makeReplyMessage(for: reply.id)
-                    }
-                }
+                self.updateMessages(newMessages)
             }
-                        
+            
         } catch {
             print("Failed to load chat history: \(error)")
         }
+    }
+    
+    private func updateMessages(_ serverMessages: [ServerMessage]) {
+        
+        conversation.mergeMessages(serverMessages)
+        
+        var msgs : [Message] = conversation.messages.map(self.convertServerMessageToChatMessage)
+        
+        // Re-init empty reply bodies
+        for i in msgs.indices {
+            if let reply = msgs[i].replyMessage, reply.text.isEmpty {
+                msgs[i].replyMessage = self.makeReplyMessage(for: reply.id)
+            }
+        }
+        self.messages = msgs
+        
     }
     
     private func attachmentsFromDraft(_ draftMessage: DraftMessage) async -> [Attachment]? {
@@ -147,17 +156,11 @@ class ConversationViewModel: ObservableObject {
         
         SocketIOManager.shared.onBatchAssigned { [weak self] batchId, conversationId in
             guard let self = self else { return }
+            guard self.conversationId == conversationId else { return }
             
-            self.conversationId = conversationId!
-            
-            var conversation = Store.ensureConversation(conversationId!)
             conversation.batchId = batchId
             
             conversationURL = conversation.url()
-            
-            Store.upsertConversation(conversation)
-            
-            self.conversation = conversation
             
             Task {
                 await self.loadChatHistory()
@@ -167,40 +170,22 @@ class ConversationViewModel: ObservableObject {
         // Listen for new messages
         SocketIOManager.shared.onMessageAppended { [weak self] serverMessage in
             guard let self = self else { return }
-            let chatMessage = self.convertServerMessageToChatMessage(serverMessage)
+            
             DispatchQueue.main.async {
-                self.messages.removeAll { $0.id == serverMessage.id }
-                self.messages.append(chatMessage)
+                self.updateMessages([serverMessage])
             }
         }
         
         SocketIOManager.shared.onUnreadBatches { [weak self] batches, cId in
             guard let self = self,
             cId == self.conversationId else { return }
+            //получи ID последнего batch из списка batches,предварительно отсортировав их по дате startedAt AI!
+            let newMessages = batches.flatMap { $0.messages}
             
-            let newMessages = batches
-                .flatMap { $0.messages.map(self.convertServerMessageToChatMessage) }
-            
-            
-            Task { @MainActor in
-                // merge newMessages into messages, replacing items with the same id
-                for msg in newMessages {
-                    if let idx = self.messages.firstIndex(where: { $0.id == msg.id }) {
-                        self.messages[idx] = msg
-                    } else {
-                        self.messages.append(msg)
-                    }
-                }
-                
-                self.messages.sort { $0.createdAt < $1.createdAt }
-                
-                // Re-init empty reply bodies
-                for i in self.messages.indices {
-                    if let reply = self.messages[i].replyMessage, reply.text.isEmpty {
-                        self.messages[i].replyMessage = self.makeReplyMessage(for: reply.id)
-                    }
-                }
+            DispatchQueue.main.async {
+                self.updateMessages(newMessages)
             }
+            
         }
 
         // Listen for edited messages
