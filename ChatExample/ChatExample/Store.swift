@@ -25,7 +25,7 @@ public final class Store {
         
         var conversation = conversationsById[id]
         if conversation == nil {
-            conversation = Conversation(id: id, title: String(id.prefix(8)))
+            conversation = Conversation(id: id, title: id)
             conversation!.participants = [userId()]
             upsertConversation(conversation!)
         }
@@ -42,7 +42,7 @@ public final class Store {
             }
         }
         
-        var conversation = Conversation(id: id, title: title ?? String(id.prefix(8)))
+        var conversation = Conversation(id: id, title: title ?? id)
         conversation.type = type
         if let allParticipants { conversation.participants = allParticipants }
         upsertConversation(conversation)
