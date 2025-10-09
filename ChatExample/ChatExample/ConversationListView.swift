@@ -1,4 +1,5 @@
 import SwiftUI
+import ChatAPIClient
 import ExyteChat
 
 struct ConversationListView: View {
@@ -68,21 +69,12 @@ struct ConversationListView: View {
                         id: \.conversationId
                     ) { item in
                         if let conversation = Store.conversation(for: item.conversationId) {
-                            let vm = ConversationViewModel(conversationId: conversation.id)
-                            let destination: AnyView
-                            if !theme.isAccent, #available(iOS 18.0, *) {
-                                destination = AnyView(
-                                    ConversationView(viewModel: vm, title: conversation.title)
-                                        .chatTheme(themeColor: color)
-                                )
-                            } else {
-                                destination = AnyView(
-                                    ConversationView(viewModel: vm, title: conversation.title)
-                                        .chatTheme(accentColor: color, images: theme.images)
-                                )
-                            }
+                            let vm = ConversationViewModel(conversationId: conversation.id, batchId: nil)
+                            
                             HStack {
-                                NavigationLink(conversation.title) { destination }
+                                NavigationLink(conversation.title) {
+                                    conversationDestination(vm: vm, conversation: conversation)
+                                }
                                 Spacer()
                                 Text("\(item.unreadCount)")
                                     .foregroundColor(.secondary)
@@ -102,7 +94,7 @@ struct ConversationListView: View {
             }
             .navigationTitle("Chats ")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar(content: {/u/
+            .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     HStack {
                         Button(theme.title) {
@@ -111,7 +103,7 @@ struct ConversationListView: View {
                         ColorPicker("", selection: $color)
                     }
                 }
-            })
+            }
             .onAppear(perform: setup)
             
         }
@@ -119,8 +111,19 @@ struct ConversationListView: View {
     }
     
     @ViewBuilder
+    private func conversationDestination(vm: ConversationViewModel, conversation: Conversation) -> some View {
+        if !theme.isAccent, #available(iOS 18.0, *) {
+            ConversationView(viewModel: vm, title: conversation.title)
+                .chatTheme(themeColor: color)
+        } else {
+            ConversationView(viewModel: vm, title: conversation.title)
+                .chatTheme(accentColor: color, images: theme.images)
+        }
+    }
+    
+    @ViewBuilder
     private func destinationViewToJoin(for convId: String, batchId: String) -> some View {
-        let vm = ConversationViewModel(conversationId: convId)
+        let vm = ConversationViewModel(conversationId: convId, batchId: batchId)
         let title = String(convId.prefix(10))
         if !theme.isAccent, #available(iOS 18.0, *) {
             ConversationView(viewModel: vm, title: title)
