@@ -95,7 +95,7 @@ struct NewChatView: View {
         .onAppear {
             
         }
-        .onChange(of: participants) { newValue in
+        .onChange(of: participants) { oldValue, newValue in
             if newValue.count > 2 {
                 chatType = .group
             }
