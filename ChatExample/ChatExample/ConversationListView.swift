@@ -121,22 +121,21 @@ struct ConversationListView: View {
         }
     }
     
-    @ViewBuilder
-    private func destinationViewToJoin(for convId: String, batchId: String) -> some View {
+    private func destinationViewToJoin(for convId: String, batchId: String) -> AnyView {
         var conversation = Store.ensureConversation(convId)
-        conversation.batchId = batchId //компилятор ругается в этом месте 'buildExpression' is unavailable: this expression does not conform to 'View' как мне создать объект типа Conversation и задать ему свойство batchId в этом методе корректно AI!
-        
+        conversation.batchId = batchId
         let vm = ConversationViewModel(conversation: conversation)
         let title = String(convId.prefix(10))
         if !theme.isAccent, #available(iOS 18.0, *) {
-            ConversationView(viewModel: vm, title: title)
-                .chatTheme(themeColor: color)
+            return AnyView(
+                ConversationView(viewModel: vm, title: title)
+                    .chatTheme(themeColor: color)
+            )
         } else {
-            ConversationView(viewModel: vm, title: title)
-                .chatTheme(
-                    accentColor: color,
-                    images: theme.images
-                )
+            return AnyView(
+                ConversationView(viewModel: vm, title: title)
+                    .chatTheme(accentColor: color, images: theme.images)
+            )
         }
     }
     
