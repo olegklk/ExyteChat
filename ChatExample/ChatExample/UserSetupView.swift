@@ -19,7 +19,7 @@ struct UserSetupView: View {
                 TextField("Your name", text: $name)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                 
-                Text("UserId:")
+                Text("UserId:") //отмени для этого поля капитализацию AI!
                     .font(.headline)
 //                    .textSelection(.enabled)
                     .foregroundColor(.secondary)
