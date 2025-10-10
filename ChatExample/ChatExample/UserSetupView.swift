@@ -33,7 +33,7 @@ struct UserSetupView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     NavigationLink("Go") {
                         destinationView()
-                    }
+                    } //есть ли способ выполнить метод save() в момент клика на эту ссылку AI!
                     .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
