@@ -110,6 +110,13 @@ struct ConversationView: View {
             .onAppear {
                 viewModel.onAppear()
             }
+            .onChange(of: navigationPath) { oldPath, newPath in
+                if newPath.count < oldPath.count {
+                    //just before back navigation - close socket to close batch
+                    SocketIOManager.shared.disconnect()
+                }
+            }
+            
         }
     }
 }
