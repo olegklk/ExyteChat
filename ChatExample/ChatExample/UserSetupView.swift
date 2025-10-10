@@ -4,7 +4,6 @@ struct UserSetupView: View {
     @State private var name: String = ""
     @State private var userId: String = ""
     
-    
     private enum Route: Hashable { case content }
     @State private var path = NavigationPath()
     private let defaults = UserDefaults.standard
@@ -21,7 +20,6 @@ struct UserSetupView: View {
                 
                 Text("UserId:")
                     .font(.headline)
-//                    .textSelection(.enabled)
                     .foregroundColor(.secondary)
                 
                 TextField("User Id", text: $userId)
@@ -42,31 +40,23 @@ struct UserSetupView: View {
                     .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
-            .navigationDestination(for: Route.self) { route in
+            .navigationDestination(for: Route.self) { route in  //исправь в этом экране навигацию по кнопке Go так чтобы обойтись без использования NavigationStack AI!
                 switch route {
                 case .content:
                     ConversationListView()
                 }
             }
         }
-        
         .onAppear(perform: setup)
-        
     }
     
-    
-    
     private func setup() {
-        
         userId = Store.userId()
         name = Store.userName()
-        
     }
 
     private func save() {
-
         Store.persistUserName(name.trimmingCharacters(in: .whitespacesAndNewlines))
         Store.persistUserId(userId.trimmingCharacters(in: .whitespacesAndNewlines))
     }
-    
 }
