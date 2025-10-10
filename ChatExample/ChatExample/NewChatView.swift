@@ -101,16 +101,13 @@ struct NewChatView: View {
                 chatType = .group
             }
         }
-        .onChange(of: $viewModel.navigationItem) { oldValue, newValue in
-            //что за ошибка здесь Instance method 'onChange(of:initial:_:)' requires that 'Binding<NavigationItem?>' conform to 'Equatable' AI!
-            var conversation = newValue.conversation
-            let vm = ConversationViewModel(conversation: conversation!)
+        .onChange(of: viewModel.navigationItem) { oldValue, newValue in
+            guard let item = newValue else { return }
             let newStack = [
                 NavigationItem(screenType: .userSetup, conversation: nil),
-                newValue
+                item
             ]
             navigationPath = NavigationPath(newStack)
-            
         }
         .navigationDestination(for: NavigationItem.self) { item in
             conversationDestination(item: item)
