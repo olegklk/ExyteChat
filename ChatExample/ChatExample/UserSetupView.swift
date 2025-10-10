@@ -49,9 +49,7 @@ struct UserSetupView: View {
     
     private func destinationView() -> AnyView{
         save()
-        return AnyView { //No exact matches in call to initializer  AI!
-            ConversationListView()
-        }
+        return AnyView(ConversationListView())
     }
 
     private func save() {
