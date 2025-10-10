@@ -74,7 +74,7 @@ public final class Store {
     }
     
     public static func userId() -> String {
-        if let savedId = UserDefaults.standard.string(forKey: AppKeys.UserDefaults.userId) {
+        if let savedId = UserDefaults.standard.string(forKey: AppKeys.UserDefaults.userId), !savedId.isEmpty {
             return savedId
         }
         
