@@ -33,7 +33,8 @@ struct UserSetupView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     NavigationLink("Go") {
                         destinationView()
-                    } //есть ли способ выполнить метод save() в момент клика на эту ссылку AI!
+                    }
+                    .simultaneousGesture(TapGesture().onEnded { save() })
                     .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
@@ -48,7 +49,6 @@ struct UserSetupView: View {
     }
     
     private func destinationView() -> AnyView{
-        save()
         return AnyView(ConversationListView())
     }
 
