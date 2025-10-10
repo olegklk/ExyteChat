@@ -4,12 +4,11 @@ struct UserSetupView: View {
     @State private var name: String = ""
     @State private var userId: String = ""
     
-    private enum Route: Hashable { case content }
-    @State private var path = NavigationPath()
+    @State private var showChats = false
     private let defaults = UserDefaults.standard
 
     var body: some View {
-        NavigationStack(path: $path) {
+        NavigationStack {
             VStack(alignment: .leading, spacing: 16) {
                 Text("Enter Your Name:")
                     .font(.headline)
@@ -35,17 +34,14 @@ struct UserSetupView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Go") {
                         save()
-                        path.append(Route.content)
+                        showChats = true
                     }
                     .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
-            .navigationDestination(for: Route.self) { route in  //исправь в этом экране навигацию по кнопке Go так чтобы обойтись без использования NavigationStack AI!
-                switch route {
-                case .content:
-                    ConversationListView()
-                }
-            }
+        }
+        .fullScreenCover(isPresented: $showChats) {
+            ConversationListView()
         }
         .onAppear(perform: setup)
     }
