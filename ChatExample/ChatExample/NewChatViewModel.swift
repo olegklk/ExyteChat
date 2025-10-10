@@ -10,10 +10,6 @@ import ExyteChat
 import ExyteMediaPicker
 import ChatAPIClient
 
-struct ConversationNavTarget: Identifiable, Hashable {
-    let id: String
-}
-
 @MainActor
 class NewChatViewModel: ObservableObject {
     
@@ -24,7 +20,7 @@ class NewChatViewModel: ObservableObject {
     private var participants: [String]?
     
     @Published var isLoading = false
-    @Published var navigationTarget: ConversationNavTarget?
+    @Published var navigationItem: NavigationItem?
     @Published var error: Error?
     
     private var isHistoryLoaded: Bool = false
@@ -119,7 +115,13 @@ class NewChatViewModel: ObservableObject {
         //let's end this socket connection to reconnect later with the proper batchId (that we fetched with loadHistory() if any)
         SocketIOManager.shared.disconnect()
         
-        navigationTarget = ConversationNavTarget(id: conversationId!)
+        if let conversationId = self.conversationId {
+            let navigationItem = NavigationItem(
+                screenType: .chat,
+                conversation: Store.ensureConversation(conversationId))
+            self.navigationItem = navigationItem
+        }
+        
     }
     
     private func buildAuthData() -> [String: Any] {

@@ -3,11 +3,11 @@ import SwiftUI
 struct UserSetupView: View {
     @State private var name: String = ""
     @State private var userId: String = ""
-        
+    @State private var navigationPath = NavigationPath()
     private let defaults = UserDefaults.standard
 
     var body: some View {
-        NavigationView {
+        NavigationStack(path: $navigationPath) {
             VStack(alignment: .leading, spacing: 16) {
                 Text("Enter Your Name:")
                     .font(.headline)
@@ -29,12 +29,20 @@ struct UserSetupView: View {
             }
             .padding()
             .navigationTitle("User Creation")
+            .navigationDestination(for: AppScreen.self) { destination in
+                switch destination {
+                    case .chatList:
+                        ConversationListView(navigationPath:$navigationPath)
+                default:
+                    Text("Unknown destination")
+                }
+            }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    NavigationLink("Go") {
-                        destinationView()
+                    Button("Go") {
+                        save()
+                        navigationPath.append(AppScreen.chatList)
                     }
-                    .simultaneousGesture(TapGesture().onEnded { save() })
                     .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
@@ -48,10 +56,6 @@ struct UserSetupView: View {
         name = Store.userName()
     }
     
-    private func destinationView() -> AnyView{
-        return AnyView(ConversationListView())
-    }
-
     private func save() {
         Store.persistUserName(name.trimmingCharacters(in: .whitespacesAndNewlines))
         Store.persistUserId(userId.trimmingCharacters(in: .whitespacesAndNewlines))

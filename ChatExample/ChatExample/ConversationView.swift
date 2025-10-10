@@ -108,8 +108,6 @@ struct ConversationView: View {
                 }
             })
             .onAppear {
-                let currentDepth = navigationPath.count
-                print("currentDepth=\(currentDepth)")
                 viewModel.onAppear()
             }
         }

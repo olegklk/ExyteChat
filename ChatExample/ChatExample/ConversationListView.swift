@@ -4,14 +4,9 @@ import ExyteChat
 
 struct ConversationListView: View {
     
-    private enum Route: Hashable {
-        case join
-        case new
-    }
-    @State private var isFirstAppear = true
     @StateObject private var viewModel : ConversationListViewModel = ConversationListViewModel()
     
-    @State private var navigationPath = NavigationPath()
+    @Binding var navigationPath: NavigationPath
     
     @State private var theme: ExampleThemeState = .accent
     @State private var color = Color(.exampleBlue)
@@ -23,144 +18,142 @@ struct ConversationListView: View {
     @State private var batchId: String?
     
     var body: some View {
-        NavigationStack(path: $navigationPath) {
-            List {
-                Section { 
-                    VStack {
-                        Text("Insert conversation URL to join:")
-                            .font(.headline)
-                            .foregroundColor(.secondary)
-                        ZStack(alignment: .topLeading) {
-                            TextEditor(text: $conversationURL)
-                                .frame(minHeight: 40, maxHeight: 200)
-                                .padding(4)
-                                .onChange(of: conversationURL) { oldValue, newValue in
-                                    debounceConversationIdChange(newValue: newValue)
-                                }
-                            
-                            if conversationURL.isEmpty {
-                                Text("http://..")
-                                    .foregroundColor(.secondary)
-                                    .padding(12)
-                                    .allowsHitTesting(false)
+        List {
+            Section {
+                VStack {
+                    Text("Insert conversation URL to join:")
+                        .font(.headline)
+                        .foregroundColor(.secondary)
+                    ZStack(alignment: .topLeading) {
+                        TextEditor(text: $conversationURL)
+                            .frame(minHeight: 40, maxHeight: 200)
+                            .padding(4)
+                            .onChange(of: conversationURL) { oldValue, newValue in
+                                debounceConversationIdChange(newValue: newValue)
                             }
-                        }
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                        )
-                        NavigationLink("Join conversation", value: Route.join)
-                        .disabled(conversationId == nil || conversationURL.isEmpty)
-                    }
-                } header: {
-                    Text("Join by URL")
-                }
-
-                Section {
-                    VStack {
-                        NavigationLink("Create New Chat", value: Route.new)
-                    }
-                } header: {
-                    Text("")
-                }
-                Section {
-                    ForEach(
-                        viewModel.conversationItems.sorted { $0.latestStartedAt > $1.latestStartedAt },
-                        id: \.conversationId
-                    ) { item in
-                        let conversation = Store.ensureConversation(item.conversationId)
-                        HStack {
-                            NavigationLink(conversation.title, value: conversation)
-                            Spacer()
-                            Text("\(item.unreadCount)")
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                    
-                } header: {
-                    HStack {
-                        Text("Chats")
                         
-                        if viewModel.isLoading {
-                            ProgressView()
-                                .padding(.leading, 8)
+                        if conversationURL.isEmpty {
+                            Text("http://..")
+                                .foregroundColor(.secondary)
+                                .padding(12)
+                                .allowsHitTesting(false)
                         }
                     }
-                }
-            }
-            .navigationDestination(for: Conversation.self) { conversation in
-                conversationDestination(conversation: conversation)
-            }
-            .navigationDestination(for: Route.self) { route in
-                            switch route {
-                                case .new:
-                                NewChatView(navigationPath: $navigationPath)
-                                case .join:
-                                if let conversationId, let batchId {
-                                    destinationViewToJoin(for: conversationId, batchId: batchId)
-                                }
-                            default:
-                                Text("Unknown screen")
-                            }
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                    )
+//                        NavigationLink("Join conversation", value: Route.join)
+                    
+                    Button("Join conversation") { //Button instead of NavigationLink because this way it performs only on click and allows to set some values before navigation
+                        if let conversationId, let batchId {
+                            var conversation = Store.ensureConversation(conversationId)
+                            conversation.batchId = batchId
+                            
+                            navigationPath.append(NavigationItem(screenType: AppScreen.chat, conversation:conversation))
                         }
-            .navigationTitle("Chats ")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                    }
+                    .disabled(conversationId == nil || conversationURL.isEmpty)
+                    
+                    
+                }
+            } header: {
+                Text("Join by URL")
+            }
+
+            Section {
+                VStack {
+                    Button("Create New Chat") {
+                        navigationPath.append(NavigationItem(screenType: AppScreen.newChat, conversation: nil))
+                    }
+                }
+            } header: {
+                Text("")
+            }
+            Section {
+                ForEach(
+                    viewModel.conversationItems.sorted { $0.latestStartedAt > $1.latestStartedAt },
+                    id: \.conversationId
+                ) { item in
+                    let conversation = Store.ensureConversation(item.conversationId)
                     HStack {
-                        Button(theme.title) {
-                            theme = theme.next()
+//
+                        Button(conversation.title) {
+                            
+                            navigationPath.append(NavigationItem(screenType: AppScreen.chat, conversation:conversation))
                         }
-                        ColorPicker("", selection: $color)
+                        .foregroundColor(.black)
+                        
+                        Spacer()
+                        Text("\(item.unreadCount)")
+                            .foregroundColor(.secondary)
+                    }
+                }
+                
+            } header: {
+                HStack {
+                    Text("Chats")
+                    
+                    if viewModel.isLoading {
+                        ProgressView()
+                            .padding(.leading, 8)
                     }
                 }
             }
-            .onAppear(perform: setup)
-            
-        }    
+        }
+        .navigationDestination(for: NavigationItem.self) { item in
+            conversationDestination(item)
+        }
+        .navigationTitle("Chats ")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                HStack {
+                    Button(theme.title) {
+                        theme = theme.next()
+                    }
+                    ColorPicker("", selection: $color)
+                }
+            }
+        }
+        .onAppear(perform: setup)
+        
     }
     
-    private func conversationDestination(conversation: Conversation) -> AnyView {
-        let vm = ConversationViewModel(conversation: conversation)
-        if !theme.isAccent, #available(iOS 18.0, *) {
-            return AnyView(
-                ConversationView(viewModel: vm, path: $navigationPath)
-                    .chatTheme(themeColor: color)
-            )
-        } else {
-            return AnyView(
-                ConversationView(viewModel: vm, path: $navigationPath)
-                    .chatTheme(accentColor: color, images: theme.images)
-            )
+    private func conversationDestination(_ item: NavigationItem) -> AnyView {
+        switch item.screenType  {
+            case .newChat:
+                return AnyView(
+                    NewChatView(navigationPath: $navigationPath)
+                )
+            case .chat:
+                if let conversation = item.conversation {
+                    let vm = ConversationViewModel(conversation: conversation)
+                    if !theme.isAccent, #available(iOS 18.0, *) {
+                        return AnyView(
+                            ConversationView(viewModel: vm, path: $navigationPath)
+                                .chatTheme(themeColor: color)
+                        )
+                    } else {
+                        return AnyView(
+                            ConversationView(viewModel: vm, path: $navigationPath)
+                                .chatTheme(accentColor: color, images: theme.images)
+                        )
+                    }
+                }
+            case .userSetup, .chatList:
+                break
         }
-    }
-    
-    private func destinationViewToJoin(for convId: String, batchId: String) -> AnyView {
-        var conversation = Store.ensureConversation(convId)
-        conversation.batchId = batchId
-        let vm = ConversationViewModel(conversation: conversation)
-        if !theme.isAccent, #available(iOS 18.0, *) {
-            return AnyView(
-                ConversationView(viewModel: vm, path: $navigationPath)
-                    .chatTheme(themeColor: color)
-            )
-        } else {
-            return AnyView(
-                ConversationView(viewModel: vm, path: $navigationPath)
-                    .chatTheme(accentColor: color, images: theme.images)
-            )
-        }
+        return AnyView(
+            EmptyView()
+        )
     }
     
     private func setup() {
-        
-        let currentDepth = navigationPath.count
-        print("currentDepth=\(currentDepth)")
-        
-        if isFirstAppear {
-            SocketIOManager.shared.disconnect()
-            isFirstAppear = false
-        }
+                
+//        if currentDepth == 0 {
+//            SocketIOManager.shared.disconnect()
+//        }
         
         viewModel.onAppear()
         

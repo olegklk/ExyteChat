@@ -101,21 +101,43 @@ struct NewChatView: View {
                 chatType = .group
             }
         }
-        .navigationDestination(item: $viewModel.navigationTarget) { target in
-            conversationDestination(conversationId: target.id)
+        .onChange(of: $viewModel.navigationItem) { oldValue, newValue in
+            //что за ошибка здесь Instance method 'onChange(of:initial:_:)' requires that 'Binding<NavigationItem?>' conform to 'Equatable' AI!
+            var conversation = newValue.conversation
+            let vm = ConversationViewModel(conversation: conversation!)
+            let newStack = [
+                NavigationItem(screenType: .userSetup, conversation: nil),
+                newValue
+            ]
+            navigationPath = NavigationPath(newStack)
+            
+        }
+        .navigationDestination(for: NavigationItem.self) { item in
+            conversationDestination(item: item)
         }
     }
 
-    private func conversationDestination(conversationId: String) -> AnyView {
-        let conversation = Store.ensureConversation(conversationId)
-        let vm = ConversationViewModel(conversation: conversation)
+    private func conversationDestination(item: NavigationItem) -> AnyView {
         
-        if navigationPath.count > 0 {
-            navigationPath.removeLast()
+        switch item.screenType  {
+            case .chat:
+                if let conversation = item.conversation {
+                    let vm = ConversationViewModel(conversation: conversation)
+                    return AnyView(
+                        ConversationView(viewModel: vm, path: $navigationPath)
+                    )
+                }
+            case .userSetup:
+                
+                return AnyView(
+                    UserSetupView()
+                )
+                
+            case .newChat, .chatList:
+                break
         }
-        
         return AnyView(
-            ConversationView(viewModel: vm, path: $navigationPath)
+            EmptyView()
         )
     }
     
