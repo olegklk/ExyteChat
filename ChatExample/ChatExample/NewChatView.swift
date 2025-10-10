@@ -101,37 +101,20 @@ struct NewChatView: View {
                 chatType = .group
             }
         }
-        .onChange(of: viewModel.navigationItem) { oldValue, newValue in
-            guard let item = newValue else { return }
-            let newStack = [
-                NavigationItem(screenType: .userSetup, conversation: nil),
-                item
-            ]
-            navigationPath = NavigationPath(newStack)
-        }
-        .navigationDestination(for: NavigationItem.self) { item in
+        .navigationDestination(item: $viewModel.navigationItem) { item in
             conversationDestination(item: item)
         }
     }
 
     private func conversationDestination(item: NavigationItem) -> AnyView {
         
-        switch item.screenType  {
-            case .chat:
-                if let conversation = item.conversation {
-                    let vm = ConversationViewModel(conversation: conversation)
-                    return AnyView(
-                        ConversationView(viewModel: vm, path: $navigationPath)
-                    )
-                }
-            case .userSetup:
-                
+        if item.screenType == .chat  {
+            if let conversation = item.conversation {
+                let vm = ConversationViewModel(conversation: conversation)
                 return AnyView(
-                    UserSetupView()
+                    ConversationView(viewModel: vm, path: $navigationPath)
                 )
-                
-            case .newChat, .chatList:
-                break
+            }
         }
         return AnyView(
             EmptyView()
