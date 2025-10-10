@@ -3,12 +3,11 @@ import SwiftUI
 struct UserSetupView: View {
     @State private var name: String = ""
     @State private var userId: String = ""
-    
-    @State private var showChats = false
+        
     private let defaults = UserDefaults.standard
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             VStack(alignment: .leading, spacing: 16) {
                 Text("Enter Your Name:")
                     .font(.headline)
@@ -32,23 +31,27 @@ struct UserSetupView: View {
             .navigationTitle("User Creation")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Go") {
-                        save()
-                        showChats = true
+                    NavigationLink("Go") {
+                        destinationView()
                     }
                     .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
         }
-        .fullScreenCover(isPresented: $showChats) {
-            ConversationListView()
-        }
+        
         .onAppear(perform: setup)
     }
     
     private func setup() {
         userId = Store.userId()
         name = Store.userName()
+    }
+    
+    private func destinationView() -> AnyView{
+        save()
+        return AnyView { //No exact matches in call to initializer  AI!
+            ConversationListView()
+        }
     }
 
     private func save() {
