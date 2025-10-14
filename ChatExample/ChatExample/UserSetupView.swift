@@ -81,5 +81,3 @@ struct UserSetupView: View {
         await MainActor.run { isLoggingIn = false }
     }
 }
-
-//на этой странице возникает какая-то проблема с constraints в тот момент когда поле email получает фокус AI!
