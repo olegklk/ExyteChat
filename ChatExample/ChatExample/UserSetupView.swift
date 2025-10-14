@@ -8,6 +8,7 @@ struct UserSetupView: View {
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
+            //добвиь еще один блок с вводимыми данными, где можно будет ввести Vero user email и password и кнопкой Login под ними AI!
             VStack(alignment: .leading, spacing: 16) {
                 Text("Enter Your Name:")
                     .font(.headline)
