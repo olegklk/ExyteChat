@@ -58,12 +58,12 @@ enum VeroServiceError: Error, LocalizedError, CustomStringConvertible {
     }
 }
 
-class VeroAuthenticationService: ObservableObject {
+final class VeroAuthenticationService: ObservableObject, @unchecked Sendable {
     static let error = NSError(domain: "Networking", code: 0, userInfo: [NSLocalizedDescriptionKey : "Networking Error"])
     var isRefreshingToken = false
     @objc public var tokenStatus: AccessTokenStatus = .prelogin
     private let retryInterval: TimeInterval = 3
-    static let shared = VeroAuthenticationService()//Static property 'shared' is not concurrency-safe because non-'Sendable' type 'VeroAuthenticationService' may have shared mutable state AI!
+    static let shared = VeroAuthenticationService()
     
     enum FBURL {
         case loginToVero
