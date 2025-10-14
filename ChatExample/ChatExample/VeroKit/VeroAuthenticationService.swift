@@ -103,7 +103,7 @@ final class VeroAuthenticationService: ObservableObject, @unchecked Sendable {
                      skipAuth:Bool = false,
                      error: VeroServiceError) async throws -> (Data) {
         if let accessToken = KeychainHelper.standard.read(service: .token, type: CompleteLoginResponse.self)?.veroPass?.jwt {
-            tokenStatus = self.needRefreshToken(token: accessToken) ? .expired : .valid // почему-то все еще не находится needRefreshToken() в scope AI!
+            tokenStatus = needRefreshToken(token: accessToken) ? .expired : .valid
             if tokenStatus == .expired && !isRefreshingToken {
                 let refreshToken = try await refresh()
                 if refreshToken != nil {
