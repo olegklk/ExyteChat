@@ -9,13 +9,13 @@ import Foundation
 
 final class KeychainHelper: Sendable {
     
-    public enum Account {
-        case vero
+    public enum Account: String {
+        case vero = "vero"
     }
     
-    public enum Service {
-        case credential
-        case token
+    public enum Service: String {
+        case credential = "credential";
+        case token = "token"
     }
     
     static let standard = KeychainHelper()
@@ -24,10 +24,11 @@ final class KeychainHelper: Sendable {
     private func read(service: Service, account: Account = .vero) -> Data? {
         
         let query = [
-            kSecAttrService: service,
-            kSecAttrAccount: account,
+            kSecAttrService: service.rawValue,
+            kSecAttrAccount: account.rawValue,
             kSecClass: kSecClassGenericPassword,
-            kSecReturnData: true
+            kSecReturnData: true,
+            kSecMatchLimit: kSecMatchLimitOne
         ] as CFDictionary
         
         var result: AnyObject?
@@ -42,8 +43,9 @@ final class KeychainHelper: Sendable {
           let query = [
               kSecValueData: data,
               kSecClass: kSecClassGenericPassword,
-              kSecAttrService: service,
-              kSecAttrAccount: account,
+              kSecAttrService: service.rawValue,
+              kSecAttrAccount: account.rawValue,
+              kSecAttrAccessible: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
           ] as CFDictionary
           
           // Add data in query to keychain
@@ -51,14 +53,15 @@ final class KeychainHelper: Sendable {
           
           if status != errSecSuccess {
               // Print out the error
-              print("Error: \(status)")
+              if status != errSecSuccess && status != errSecDuplicateItem { 
+                  print("Keychain add error: \(status)") } 
           }
 
         if status == errSecDuplicateItem {
             // Item already exist, thus update it.
             let query = [
-                kSecAttrService: service,
-                kSecAttrAccount: account,
+                kSecAttrService: service.rawValue,
+                kSecAttrAccount: account.rawValue,
                 kSecClass: kSecClassGenericPassword,
             ] as CFDictionary
 
@@ -72,8 +75,8 @@ final class KeychainHelper: Sendable {
     func delete(service: Service, account: Account = .vero) {
         
         let query = [
-            kSecAttrService: service,
-            kSecAttrAccount: account,
+            kSecAttrService: service.rawValue,
+            kSecAttrAccount: account.rawValue,
             kSecClass: kSecClassGenericPassword,
             ] as CFDictionary
         

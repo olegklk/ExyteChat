@@ -56,6 +56,7 @@ struct UserSetupView: View {
     }
     
     private func setup() {
+        
         let credential = KeychainHelper.standard.read(service: .credential, type: VeroLoginData.self)
         veroEmail = credential?.email ?? ""
         veroPassword = credential?.password ?? ""
@@ -66,12 +67,7 @@ struct UserSetupView: View {
         let result = await util.veroLogin(username: veroEmail, password: veroPassword)
         switch result {
             case .success(let resp):
-                if let token = resp.veroPass?.jwt {
-                    KeychainHelper.standard.save(resp, service: .token)
-                    KeychainHelper.standard.save(VeroLoginData(email: veroEmail, password: veroPassword),
-                                                 service:
-                            .credential)
-                    
+                if let _ = resp.veroPass?.jwt {
                     navigationPath.append(AppScreen.chatList)
                 }
             case .failure(let error): // Show
