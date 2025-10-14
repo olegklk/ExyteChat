@@ -7,7 +7,7 @@
 
 import Foundation
 
-final class KeychainHelper {
+final class KeychainHelper: Sendable {
     
     public enum Account {
         case vero
