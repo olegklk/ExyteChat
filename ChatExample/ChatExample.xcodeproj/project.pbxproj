@@ -28,6 +28,13 @@
 		C34601E82E8D253A0080D49D /* ExyteChat in Frameworks */ = {isa = PBXBuildFile; productRef = C34601E72E8D253A0080D49D /* ExyteChat */; };
 		C3622C792E9421A2007FEB0E /* NewChatViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3622C782E9421A2007FEB0E /* NewChatViewModel.swift */; };
 		C3622C7B2E99140D007FEB0E /* NavigationItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3622C7A2E99140D007FEB0E /* NavigationItem.swift */; };
+		C3622C862E9EA898007FEB0E /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3622C802E9EA898007FEB0E /* KeychainHelper.swift */; };
+		C3622C872E9EA898007FEB0E /* RefreshTokenResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3622C812E9EA898007FEB0E /* RefreshTokenResponse.swift */; };
+		C3622C882E9EA898007FEB0E /* VeroAuthenticationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3622C822E9EA898007FEB0E /* VeroAuthenticationService.swift */; };
+		C3622C892E9EA898007FEB0E /* ChallengeTokenResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3622C7E2E9EA898007FEB0E /* ChallengeTokenResponse.swift */; };
+		C3622C8A2E9EA898007FEB0E /* VeroUtility.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3622C842E9EA898007FEB0E /* VeroUtility.swift */; };
+		C3622C8B2E9EA898007FEB0E /* VeroLoginData.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3622C832E9EA898007FEB0E /* VeroLoginData.swift */; };
+		C3622C8C2E9EA898007FEB0E /* CompleteLoginResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3622C7F2E9EA898007FEB0E /* CompleteLoginResponse.swift */; };
 		C39952082E8728E8008EF4D4 /* UserSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C39952072E8728E8008EF4D4 /* UserSetupView.swift */; };
 		C399520A2E8AE150008EF4D4 /* NewChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C39952092E8AE150008EF4D4 /* NewChatView.swift */; };
 		C39952102E8BE5D3008EF4D4 /* Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = C399520F2E8BE5D3008EF4D4 /* Utils.swift */; };
@@ -74,6 +81,13 @@
 		5B6D3A722987D85A00765148 /* Color+hex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+hex.swift"; sourceTree = "<group>"; };
 		C3622C782E9421A2007FEB0E /* NewChatViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NewChatViewModel.swift; sourceTree = "<group>"; };
 		C3622C7A2E99140D007FEB0E /* NavigationItem.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NavigationItem.swift; sourceTree = "<group>"; };
+		C3622C7E2E9EA898007FEB0E /* ChallengeTokenResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeTokenResponse.swift; sourceTree = "<group>"; };
+		C3622C7F2E9EA898007FEB0E /* CompleteLoginResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompleteLoginResponse.swift; sourceTree = "<group>"; };
+		C3622C802E9EA898007FEB0E /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
+		C3622C812E9EA898007FEB0E /* RefreshTokenResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RefreshTokenResponse.swift; sourceTree = "<group>"; };
+		C3622C822E9EA898007FEB0E /* VeroAuthenticationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VeroAuthenticationService.swift; sourceTree = "<group>"; };
+		C3622C832E9EA898007FEB0E /* VeroLoginData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VeroLoginData.swift; sourceTree = "<group>"; };
+		C3622C842E9EA898007FEB0E /* VeroUtility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VeroUtility.swift; sourceTree = "<group>"; };
 		C39952072E8728E8008EF4D4 /* UserSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserSetupView.swift; sourceTree = "<group>"; };
 		C39952092E8AE150008EF4D4 /* NewChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewChatView.swift; sourceTree = "<group>"; };
 		C399520F2E8BE5D3008EF4D4 /* Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utils.swift; sourceTree = "<group>"; };
@@ -118,6 +132,7 @@
 		135549322864620900C9459A /* ChatExample */ = {
 			isa = PBXGroup;
 			children = (
+				C3622C852E9EA898007FEB0E /* VeroKit */,
 				C3D61AE02E8EBF8100C78FED /* ConversationListView.swift */,
 				C3D61ADE2E8EB22400C78FED /* ConversationView.swift */,
 				C3D61ADC2E8EB1F600C78FED /* ConversationViewModel.swift */,
@@ -214,6 +229,20 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+		C3622C852E9EA898007FEB0E /* VeroKit */ = {
+			isa = PBXGroup;
+			children = (
+				C3622C7E2E9EA898007FEB0E /* ChallengeTokenResponse.swift */,
+				C3622C7F2E9EA898007FEB0E /* CompleteLoginResponse.swift */,
+				C3622C802E9EA898007FEB0E /* KeychainHelper.swift */,
+				C3622C812E9EA898007FEB0E /* RefreshTokenResponse.swift */,
+				C3622C822E9EA898007FEB0E /* VeroAuthenticationService.swift */,
+				C3622C832E9EA898007FEB0E /* VeroLoginData.swift */,
+				C3622C842E9EA898007FEB0E /* VeroUtility.swift */,
+			);
+			path = VeroKit;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -293,6 +322,13 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C3622C862E9EA898007FEB0E /* KeychainHelper.swift in Sources */,
+				C3622C872E9EA898007FEB0E /* RefreshTokenResponse.swift in Sources */,
+				C3622C882E9EA898007FEB0E /* VeroAuthenticationService.swift in Sources */,
+				C3622C892E9EA898007FEB0E /* ChallengeTokenResponse.swift in Sources */,
+				C3622C8A2E9EA898007FEB0E /* VeroUtility.swift in Sources */,
+				C3622C8B2E9EA898007FEB0E /* VeroLoginData.swift in Sources */,
+				C3622C8C2E9EA898007FEB0E /* CompleteLoginResponse.swift in Sources */,
 				13DF043228647C070043DBBC /* ChatExampleViewModel.swift in Sources */,
 				5B6D3A732987D85A00765148 /* Color+hex.swift in Sources */,
 				13E17B6F2869E983004DF140 /* MockChatData.swift in Sources */,
