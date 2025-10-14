@@ -125,6 +125,12 @@ class ConversationViewModel: ObservableObject {
     }
 
     func onAppear() {
+        
+        let msgs : [Message] = conversation.messages.map(self.convertServerMessageToChatMessage)
+        self.messages = msgs
+        
+        self.conversationURL = self.conversation.url()
+        
         setupSocketListeners()
         SocketIOManager.shared.setAuthData(buildAuthData())
         SocketIOManager.shared.connect() // connection should trigger onConversationAssigned with conversationId
