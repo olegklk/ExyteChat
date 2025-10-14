@@ -96,9 +96,10 @@ class NewChatViewModel: ObservableObject {
             }
                         
             self.conversation?.batchId = batchId
+            Store.upsertConversation(self.conversation!)
             
             if isHistoryLoaded {
-                finish()
+                self.finish()
             } else {
                 Task {
                     await self.loadChatHistory()
@@ -111,11 +112,13 @@ class NewChatViewModel: ObservableObject {
     private func finish() {
         
         isLoading = false
+        isHistoryLoaded = false
         
         //let's end this socket connection to reconnect later with the proper batchId (that we fetched with loadHistory() if any)
         SocketIOManager.shared.disconnect()
         
         if let conversationId = self.conversationId {
+            
             let navigationItem = NavigationItem(
                 screenType: .chat,
                 conversation: Store.ensureConversation(conversationId))
