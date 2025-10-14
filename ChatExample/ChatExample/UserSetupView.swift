@@ -9,52 +9,49 @@ struct UserSetupView: View {
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
-            
-            VStack(alignment: .leading, spacing: 16) {
-                
-                Divider().padding(.vertical, 4)
-                Text("E-mail:")
-                    .font(.headline)
-                    .foregroundColor(.secondary)
-                TextField("Email", text: $veroEmail)
-                    .keyboardType(.emailAddress)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled(true)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                Text("Password:")
-                    .font(.headline)
-                    .foregroundColor(.secondary)
-                SecureField("Password", text: $veroPassword)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                Button {
-                    isLoggingIn = true
-                    Task { await handleVeroLogin() }
-                } label: {
-                    HStack {
-                        Text("Login")
-                            .frame(maxWidth: .infinity)
-                        if isLoggingIn {
-                            ProgressView().padding(.leading, 8)
+            Form {
+                Section {
+                    Text("E-mail:")
+                        .font(.headline)
+                        .foregroundColor(.secondary)
+                    TextField("Email", text: $veroEmail)
+                        .keyboardType(.emailAddress)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled(true)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                    Text("Password:")
+                        .font(.headline)
+                        .foregroundColor(.secondary)
+                    SecureField("Password", text: $veroPassword)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                    Button {
+                        isLoggingIn = true
+                        Task { await handleVeroLogin() }
+                    } label: {
+                        HStack {
+                            Text("Login")
+                                .frame(maxWidth: .infinity)
+                            if isLoggingIn {
+                                ProgressView().padding(.leading, 8)
+                            }
                         }
                     }
+                    .disabled(veroEmail.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || veroPassword.isEmpty)
                 }
-                .disabled(veroEmail.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || veroPassword.isEmpty)
-                
-                Spacer()
             }
-            .padding()
             .navigationTitle("Vero Login")
+            .navigationBarTitleDisplayMode(.inline)
             .navigationDestination(for: AppScreen.self) { destination in
                 switch destination {
-                    case .chatList:
-                        ConversationListView(navigationPath:$navigationPath)
+                case .chatList:
+                    ConversationListView(navigationPath: $navigationPath)
                 default:
                     Text("Unknown destination")
                 }
             }
-            
         }
-        
+        .scrollDismissesKeyboard(.interactively)
+        .ignoresSafeArea(.keyboard, edges: .bottom)
         .onAppear(perform: setup)
     }
     
