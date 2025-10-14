@@ -94,7 +94,7 @@ final class VeroAuthenticationService: ObservableObject, @unchecked Sendable {
     
     func sendRequest(url: URL, httpMethod: String = "POST", timeout: TimeInterval? = nil, numberOfRetries: Int = 2, message: String? = nil, body: Any? = nil, skipLogs: Bool = false, refreshToken: Bool = false, skipAuth:Bool = false, error: VeroServiceError) async throws -> (Data) {
         if let accessToken = KeychainHelper.standard.read(service: .token, type: CompleteLoginResponse.self)?.veroPass?.jwt {
-            tokenStatus = needRefreshToken(token: accessToken) ? .expired : .valid //Cannot find 'needRefreshToken' in scope AI!
+            tokenStatus = self.needRefreshToken(token: accessToken) ? .expired : .valid
             if tokenStatus == .expired && !isRefreshingToken {
                 let refreshToken = try await refresh()
                 if refreshToken != nil {
