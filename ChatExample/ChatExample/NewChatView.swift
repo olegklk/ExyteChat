@@ -11,6 +11,7 @@ struct NewChatView: View {
     @State private var participantInput: String = ""
     private var currentUserId: String { Store.userId() }
     @State private var participants: [String] = [Store.userId()]
+    @State private var showVeroContacts = false
     private var currentUserName: String { Store.userName() }
     @StateObject private var viewModel = NewChatViewModel()
     
@@ -64,6 +65,9 @@ struct NewChatView: View {
                         }
                     }
                 }
+                Button("Add Vero Contact") {
+                    showVeroContacts = true
+                }
             }
 
             Section {
@@ -103,6 +107,14 @@ struct NewChatView: View {
         }
         .navigationDestination(item: $viewModel.navigationItem) { item in
             conversationDestination(item: item)
+        }
+        .sheet(isPresented: $showVeroContacts) {
+            VeroContactsView { selectedId in
+                if selectedId != currentUserId && !participants.contains(selectedId) {
+                    participants.append(selectedId)
+                }
+                showVeroContacts = false
+            }
         }
     }
 
