@@ -92,9 +92,18 @@ final class VeroAuthenticationService: ObservableObject, @unchecked Sendable {
         try await Task.sleep(nanoseconds: UInt64(interval * 1_000_000_000)) // Convert seconds to nanoseconds
     }
     
-    func sendRequest(url: URL, httpMethod: String = "POST", timeout: TimeInterval? = nil, numberOfRetries: Int = 2, message: String? = nil, body: Any? = nil, skipLogs: Bool = false, refreshToken: Bool = false, skipAuth:Bool = false, error: VeroServiceError) async throws -> (Data) {
+    func sendRequest(url: URL,
+                     httpMethod: String = "POST",
+                     timeout: TimeInterval? = nil,
+                     numberOfRetries: Int = 2,
+                     message: String? = nil,
+                     body: Any? = nil,
+                     skipLogs: Bool = false,
+                     refreshToken: Bool = false,
+                     skipAuth:Bool = false,
+                     error: VeroServiceError) async throws -> (Data) {
         if let accessToken = KeychainHelper.standard.read(service: .token, type: CompleteLoginResponse.self)?.veroPass?.jwt {
-            tokenStatus = self.needRefreshToken(token: accessToken) ? .expired : .valid
+            tokenStatus = self.needRefreshToken(token: accessToken) ? .expired : .valid // почему-то все еще не находится needRefreshToken() в scope AI!
             if tokenStatus == .expired && !isRefreshingToken {
                 let refreshToken = try await refresh()
                 if refreshToken != nil {
