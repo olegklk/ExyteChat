@@ -16,6 +16,7 @@
 
 import Foundation
 import SRP
+import CryptoKit
 
 @objc public enum AccessTokenStatus: Int {
     // first three cases are for logged in user
@@ -62,7 +63,7 @@ class VeroAuthenticationService: ObservableObject {
     var isRefreshingToken = false
     @objc public var tokenStatus: AccessTokenStatus = .prelogin
     private let retryInterval: TimeInterval = 3
-    static let shared = VeroAuthenticationService()
+    static let shared = VeroAuthenticationService()//Static property 'shared' is not concurrency-safe because non-'Sendable' type 'VeroAuthenticationService' may have shared mutable state AI!
     
     enum FBURL {
         case loginToVero
