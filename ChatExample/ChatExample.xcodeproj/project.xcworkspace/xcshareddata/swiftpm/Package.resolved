@@ -1,5 +1,5 @@
 {
-  "originHash" : "95a033c1dd891bfb4ed1bdf5a4392c9a780296f9c025941f72e413ef06e590bf",
+  "originHash" : "8d65364973b466714257de210c9a253c69ba355667be44c21827b67250a546c5",
   "pins" : [
     {
       "identity" : "activityindicatorview",
@@ -17,6 +17,15 @@
       "state" : {
         "revision" : "d7478c34e761725ff06ad74e44e675d0d56a4150",
         "version" : "1.0.7"
+      }
+    },
+    {
+      "identity" : "big-num",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/adam-fowler/big-num",
+      "state" : {
+        "revision" : "5c5511ad06aeb2b97d0868f7394e14a624bfb1c7",
+        "version" : "2.0.2"
       }
     },
     {
@@ -71,6 +80,24 @@
       "state" : {
         "revision" : "c6bfd1af48efcc9a9ad203665db12375ba6b145a",
         "version" : "4.0.8"
+      }
+    },
+    {
+      "identity" : "swift-crypto",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-crypto",
+      "state" : {
+        "revision" : "ddb07e896a2a8af79512543b1c7eb9797f8898a5",
+        "version" : "1.1.7"
+      }
+    },
+    {
+      "identity" : "swift-srp",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/adam-fowler/swift-srp",
+      "state" : {
+        "revision" : "982c378279e1fc00fbdb8611137c26dfa6ac1660",
+        "version" : "1.1.0"
       }
     }
   ],

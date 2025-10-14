@@ -194,23 +194,25 @@ final class VeroAuthenticationService: ObservableObject, @unchecked Sendable {
 extension VeroAuthenticationService {
     
     func loginToVero(email: String, password: String) async throws -> CompleteLoginResponse {
-        if !self.isRefreshingToken
-        {
+        if !self.isRefreshingToken {
             self.isRefreshingToken = true
             let srpClient = SRPClient(configuration: SRPConfiguration<SHA256>(.N1024))
-            var clientKeys : SRPKeyPair?
+            var clientKeys: SRPKeyPair?
             clientKeys = srpClient.generateKeys()
             let clientPublicKey = clientKeys!.public.hex
-            let body = ["clientPub": clientPublicKey,"login": email]
+            let body = ["clientPub": clientPublicKey, "login": email]
+            
             if let url = URL(string: FBURL.loginToVero.url) {
-                let result = try await sendRequest(url: url, numberOfRetries: 5, body: body,refreshToken: true, skipAuth: true, error: .challenge)
+                let result = try await sendRequest(url: url, numberOfRetries: 5, body: body, refreshToken: true, skipAuth: true, error: .challenge)
                 let decoder = JSONDecoder()
                 let response = try decoder.decode(ChallengeTokenResponse.self, from: result)
+                
                 if let salt = response.salt, let serverPub = response.serverPub {
                     guard let saltBytes = dataFromHex(salt),
                           let serverPubKey = SRPKey(hex: serverPub) else {
                         throw VeroServiceError.challenge
                     }
+                    
                     let clientSharedSecret = try srpClient.calculateSharedSecret(
                         username: email,
                         password: password,
@@ -218,6 +220,7 @@ extension VeroAuthenticationService {
                         clientKeys: clientKeys!,
                         serverPublicKey: serverPubKey
                     )
+                    
                     let clientProof = srpClient.calculateClientProof(
                         username: email,
                         salt: [UInt8](saltBytes),
@@ -225,8 +228,10 @@ extension VeroAuthenticationService {
                         serverPublicKey: serverPubKey,
                         sharedSecret: clientSharedSecret
                     )
+                    
                     let proofString = hexFromBytes(clientProof)
                     return try await completeVeroLogin(email: email, password: password, proofString: proofString)
+                }
                 throw VeroServiceError.challenge
             } else {
                 throw VeroServiceError.challenge
@@ -415,7 +420,7 @@ extension VeroAuthenticationService {
         }
     }
 }
-}
+
 
 struct SelfProfile: Codable {
     let id: String
