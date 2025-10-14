@@ -1,8 +1,6 @@
 import SwiftUI
 
 struct UserSetupView: View {
-    @State private var name: String = ""
-    @State private var userId: String = ""
     @State private var veroEmail: String = ""
     @State private var veroPassword: String = ""
     @State private var isLoggingIn: Bool = false
@@ -11,26 +9,11 @@ struct UserSetupView: View {
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
-            //добвиь еще один блок с вводимыми данными, где можно будет ввести Vero user email и password и кнопкой Login под ними AI!
+            
             VStack(alignment: .leading, spacing: 16) {
-                Text("Enter Your Name:")
-                    .font(.headline)
-                    .foregroundColor(.secondary)
-                    
-                TextField("Your name", text: $name)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                
-                Text("UserId:")
-                    .font(.headline)
-                    .foregroundColor(.secondary)
-                
-                TextField("User Id", text: $userId)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled(true)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
                 
                 Divider().padding(.vertical, 4)
-                Text("Vero Login:")
+                Text("E-mail:")
                     .font(.headline)
                     .foregroundColor(.secondary)
                 TextField("Email", text: $veroEmail)
@@ -38,6 +21,9 @@ struct UserSetupView: View {
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled(true)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
+                Text("Password:")
+                    .font(.headline)
+                    .foregroundColor(.secondary)
                 SecureField("Password", text: $veroPassword)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                 Button {
@@ -57,7 +43,7 @@ struct UserSetupView: View {
                 Spacer()
             }
             .padding()
-            .navigationTitle("User Creation")
+            .navigationTitle("Vero Login")
             .navigationDestination(for: AppScreen.self) { destination in
                 switch destination {
                     case .chatList:
@@ -66,32 +52,37 @@ struct UserSetupView: View {
                     Text("Unknown destination")
                 }
             }
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Go") {
-                        save()
-                        navigationPath.append(AppScreen.chatList)
-                    }
-                    .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                }
-            }
+            
         }
         
         .onAppear(perform: setup)
     }
     
     private func setup() {
-        userId = Store.userId()
-        name = Store.userName()
-    }
-    
-    private func save() {
-        Store.persistUserName(name.trimmingCharacters(in: .whitespacesAndNewlines))
-        Store.persistUserId(userId.trimmingCharacters(in: .whitespacesAndNewlines))
+        let credential = KeychainHelper.standard.read(service: .credential, type: VeroLoginData.self)
+        veroEmail = credential?.email ?? ""
+        veroPassword = credential?.password ?? ""
     }
     
     private func handleVeroLogin() async {
-        // TODO: интегрировать VeroAuthenticationService
+        let util = VeroUtility()
+        let result = await util.veroLogin(username: veroEmail, password: veroPassword)
+        switch result {
+            case .success(let resp):
+                if let token = resp.veroPass?.jwt {
+                    KeychainHelper.standard.save(resp, service: .token)
+                    KeychainHelper.standard.save(VeroLoginData(email: veroEmail, password: veroPassword),
+                                                 service:
+                            .credential)
+                    
+                    navigationPath.append(AppScreen.chatList)
+                }
+            case .failure(let error): // Show
+                print("Login error\(error.localizedDescription)")
+        }
+                   
         await MainActor.run { isLoggingIn = false }
     }
 }
+
+//на этой странице возникает какая-то проблема с constraints в тот момент когда поле email получает фокус AI!
