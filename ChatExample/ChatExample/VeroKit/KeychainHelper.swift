@@ -54,7 +54,7 @@ final class KeychainHelper: Sendable {
           if status != errSecSuccess {
               // Print out the error
               if status != errSecSuccess && status != errSecDuplicateItem { 
-                  print("Keychain add error: \(status)") } 
+                  print("Keychain add error: \(status)") }
           }
 
         if status == errSecDuplicateItem {

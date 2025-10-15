@@ -47,4 +47,16 @@ password)
             return .failure(.unknown)
         }
     }
-}       
+    
+    func configVeroInfo(forUserID userID: String, email: String, accessToken: String) async {
+        
+        let profile = await veroAuthenticationService.getUserProfile(forID: userID, email: email, accessToken: accessToken)
+        let contacts = await veroAuthenticationService.getContacts(accessToken) ?? []
+        
+        await MainActor.run {
+            Store.setContacts(contacts)
+            if let profile { Store.setSelfProfile(profile) }
+        }
+                
+    }
+}

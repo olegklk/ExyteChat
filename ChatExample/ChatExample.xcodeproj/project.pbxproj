@@ -36,7 +36,8 @@
 		C3622C8B2E9EA898007FEB0E /* VeroLoginData.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3622C832E9EA898007FEB0E /* VeroLoginData.swift */; };
 		C3622C8C2E9EA898007FEB0E /* CompleteLoginResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3622C7F2E9EA898007FEB0E /* CompleteLoginResponse.swift */; };
 		C3622C8F2E9EAA55007FEB0E /* SRP in Frameworks */ = {isa = PBXBuildFile; productRef = C3622C8E2E9EAA55007FEB0E /* SRP */; };
-		C3622C912E9EC287007FEB0E /* VeroContactsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3622C902E9EC287007FEB0E /* VeroContactsView.swift */; };
+		C3622C952E9FC4DA007FEB0E /* VeroContactsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3622C942E9FC4DA007FEB0E /* VeroContactsView.swift */; };
+		C3622C992E9FDAB4007FEB0E /* Contact.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3622C982E9FDAB4007FEB0E /* Contact.swift */; };
 		C39952082E8728E8008EF4D4 /* UserSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C39952072E8728E8008EF4D4 /* UserSetupView.swift */; };
 		C399520A2E8AE150008EF4D4 /* NewChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C39952092E8AE150008EF4D4 /* NewChatView.swift */; };
 		C39952102E8BE5D3008EF4D4 /* Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = C399520F2E8BE5D3008EF4D4 /* Utils.swift */; };
@@ -90,7 +91,8 @@
 		C3622C822E9EA898007FEB0E /* VeroAuthenticationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VeroAuthenticationService.swift; sourceTree = "<group>"; };
 		C3622C832E9EA898007FEB0E /* VeroLoginData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VeroLoginData.swift; sourceTree = "<group>"; };
 		C3622C842E9EA898007FEB0E /* VeroUtility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VeroUtility.swift; sourceTree = "<group>"; };
-		C3622C902E9EC287007FEB0E /* VeroContactsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VeroContactsView.swift; sourceTree = "<group>"; };
+		C3622C942E9FC4DA007FEB0E /* VeroContactsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VeroContactsView.swift; sourceTree = "<group>"; };
+		C3622C982E9FDAB4007FEB0E /* Contact.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Contact.swift; sourceTree = "<group>"; };
 		C39952072E8728E8008EF4D4 /* UserSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserSetupView.swift; sourceTree = "<group>"; };
 		C39952092E8AE150008EF4D4 /* NewChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewChatView.swift; sourceTree = "<group>"; };
 		C399520F2E8BE5D3008EF4D4 /* Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utils.swift; sourceTree = "<group>"; };
@@ -136,7 +138,7 @@
 		135549322864620900C9459A /* ChatExample */ = {
 			isa = PBXGroup;
 			children = (
-				C3622C902E9EC287007FEB0E /* VeroContactsView.swift */,
+				C3622C942E9FC4DA007FEB0E /* VeroContactsView.swift */,
 				C3622C852E9EA898007FEB0E /* VeroKit */,
 				C3D61AE02E8EBF8100C78FED /* ConversationListView.swift */,
 				C3D61ADE2E8EB22400C78FED /* ConversationView.swift */,
@@ -237,6 +239,7 @@
 		C3622C852E9EA898007FEB0E /* VeroKit */ = {
 			isa = PBXGroup;
 			children = (
+				C3622C982E9FDAB4007FEB0E /* Contact.swift */,
 				C3622C7E2E9EA898007FEB0E /* ChallengeTokenResponse.swift */,
 				C3622C7F2E9EA898007FEB0E /* CompleteLoginResponse.swift */,
 				C3622C802E9EA898007FEB0E /* KeychainHelper.swift */,
@@ -331,6 +334,7 @@
 			files = (
 				C3622C862E9EA898007FEB0E /* KeychainHelper.swift in Sources */,
 				C3622C872E9EA898007FEB0E /* RefreshTokenResponse.swift in Sources */,
+				C3622C992E9FDAB4007FEB0E /* Contact.swift in Sources */,
 				C3622C882E9EA898007FEB0E /* VeroAuthenticationService.swift in Sources */,
 				C3622C892E9EA898007FEB0E /* ChallengeTokenResponse.swift in Sources */,
 				C3622C8A2E9EA898007FEB0E /* VeroUtility.swift in Sources */,
@@ -361,7 +365,7 @@
 				C39952102E8BE5D3008EF4D4 /* Utils.swift in Sources */,
 				13E17B6D2869E940004DF140 /* MockUser.swift in Sources */,
 				135987BD2869F6F2006388CF /* ChatInteractorProtocol.swift in Sources */,
-				C3622C912E9EC287007FEB0E /* VeroContactsView.swift in Sources */,
+				C3622C952E9FC4DA007FEB0E /* VeroContactsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

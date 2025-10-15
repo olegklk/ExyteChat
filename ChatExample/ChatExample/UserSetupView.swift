@@ -67,7 +67,10 @@ struct UserSetupView: View {
         let result = await util.veroLogin(username: veroEmail, password: veroPassword)
         switch result {
             case .success(let resp):
-                if let _ = resp.veroPass?.jwt {
+                if let accessToken = resp.veroPass?.jwt,
+                    let userID = resp.userID {
+                        await util.configVeroInfo(forUserID: userID, email: veroEmail, accessToken: accessToken)
+                    
                     navigationPath.append(AppScreen.chatList)
                 }
             case .failure(let error): // Show

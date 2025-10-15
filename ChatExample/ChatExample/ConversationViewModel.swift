@@ -18,8 +18,8 @@ class ConversationViewModel: ObservableObject {
     public var conversation: Conversation
     private var conversationId: String
         
-    private var currentUserId: String { Store.userId() }
-    private var currentUserName: String { Store.userName() }
+    private var currentUserId: String { Store.getSelfProfile()?.id ?? "" }
+    private var currentUserDisplayName: String { Store.userDisplayName() }
     
     private var isHistoryLoaded: Bool = false
     
@@ -104,7 +104,7 @@ class ConversationViewModel: ObservableObject {
         
         let tempMessage = Message(
             id: draft.id ?? UUID().uuidString,
-            user: User(id: currentUserId, name: currentUserName, avatarURL: nil, isCurrentUser: true),
+            user: User(id: currentUserId, name: currentUserDisplayName, avatarURL: nil, isCurrentUser: true),
             status: .sending,
             createdAt: draft.createdAt,
             text: draft.text,

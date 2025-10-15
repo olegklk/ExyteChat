@@ -13,7 +13,7 @@ import ChatAPIClient
 @MainActor
 class NewChatViewModel: ObservableObject {
     
-    private var currentUserId: String { Store.userId() }
+    private var currentUserId: String { Store.getSelfProfile()?.id ?? "" }
     private var conversation: Conversation?
     private var conversationId: String?
     private var chatType: String?

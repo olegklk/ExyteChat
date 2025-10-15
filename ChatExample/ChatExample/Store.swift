@@ -13,13 +13,25 @@ public final class Store {
     
     public static let conversationIdDidChange = Notification.Name("Store.conversationIdDidChange")
     public static let batchIdDidChange = Notification.Name("Store.batchIdDidChange")
+    public static let selflProfileDidChange = Notification.Name("Store.selflProfileDidChange")
     private static var conversationsById: [String: Conversation] = [:]
 //    private static var _activeConversationId: String?
     private static var _batchId: String?
-    private static var _veroContacts: [VeroContact] = []
+    private static var _selfProfile: SelfProfile?
+    private static var _contacts: [Contact] = []
     public static func setBatchId(_ id: String?) {
         _batchId = id
         NotificationCenter.default.post(name: Store.batchIdDidChange, object: nil)
+    }
+    
+    public static func setSelfProfile(_ profile: SelfProfile) {
+        _selfProfile = profile
+        NotificationCenter.default.post(name: Store.selflProfileDidChange, object: nil)
+    }
+    
+    public static func getSelfProfile() -> SelfProfile? {
+        return _selfProfile
+        
     }
     
     public static func ensureConversation(_ id: String) -> Conversation {
@@ -27,7 +39,11 @@ public final class Store {
         var conversation = conversationsById[id]
         if conversation == nil {
             conversation = Conversation(id: id, title: id)
-            conversation!.participants = [userId()]
+            if let userId = _selfProfile?.id {
+                conversation!.participants = [userId]
+            } else {
+                conversation!.participants = []
+            }
             upsertConversation(conversation!)
         }
         return conversation!
@@ -36,11 +52,8 @@ public final class Store {
     public static func createConversation(_ id: String, type: String, participants: [String]?, title: String?) -> Conversation {
         
         var allParticipants = participants
-        if allParticipants != nil {
-            let current = userId()
-            if !allParticipants!.contains(current) {
+        if allParticipants != nil, let current = _selfProfile?.id, !allParticipants!.contains(current) {
                 allParticipants!.append(current)
-            }
         }
         
         var conversation = Conversation(id: id, title: title ?? id)
@@ -60,36 +73,19 @@ public final class Store {
     
     public static func batchId() -> String? { _batchId }
     
-    public static func persistUserId(_ id: String?) {
-        let defaults = UserDefaults.standard
-        if let id { defaults.set(id, forKey: AppKeys.UserDefaults.userId) } else { defaults.removeObject(forKey: AppKeys.UserDefaults.userId) }
-    }
-    
-    public static func persistUserName(_ name: String?) {
-        let defaults = UserDefaults.standard
-        if let name { defaults.set(name, forKey: AppKeys.UserDefaults.userName) } else { defaults.removeObject(forKey: AppKeys.UserDefaults.userName) }
-    }
-    
-    public static func userName() -> String {
-        return UserDefaults.standard.string(forKey: AppKeys.UserDefaults.userName) ?? ""
-    }
-    
-    public static func userId() -> String {
-        if let savedId = UserDefaults.standard.string(forKey: AppKeys.UserDefaults.userId), !savedId.isEmpty {
-            return savedId
+    public static func userDisplayName() -> String {
+        if let profile = _selfProfile {
+            return "\(profile.firstName) \(profile.lastName)".trimmingCharacters(in: .whitespaces)
         }
-        
-        let newId = ChatUtils.generateRandomUserId()
-        persistUserId(newId)
-        return newId
+        return "You"
     }
     
-    static func setVeroContacts(_ contacts: [VeroContact]) {
-        _veroContacts = contacts
+    static func setContacts(_ contacts: [Contact]) {
+        _contacts = contacts
     }
     
-    static func getVeroContacts() -> [VeroContact] {
-        _veroContacts
+    static func getContacts() -> [Contact] {
+        _contacts
     }
         
 }

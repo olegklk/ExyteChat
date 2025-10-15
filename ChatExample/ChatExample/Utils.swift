@@ -127,8 +127,6 @@ extension UUID {
 
 public enum AppKeys {
     public enum UserDefaults {
-        public static let userId = "UserSettings.userId"
-        public static let userName = "UserSettings.userName"
         public static let conversationId = "UserSettings.conversationId"
     }
 }
