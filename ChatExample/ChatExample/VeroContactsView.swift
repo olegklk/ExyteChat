@@ -25,7 +25,7 @@ struct VeroContactsView: View {
                 } else if contacts.isEmpty {
                     Text("No contacts").foregroundColor(.secondary)
                 } else {
-                    List(filteredContacts) { contact in //Initializer 'init(_:rowContent:)' requires that 'Contact' conform to 'Identifiable' исправь определение Contact и вынеси его в отдельный файл AI!
+                    List(filteredContacts) { contact in
                         Button {
                             onSelect(contact.id)
                             dismiss()

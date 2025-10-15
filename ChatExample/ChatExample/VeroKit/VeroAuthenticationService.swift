@@ -449,13 +449,6 @@ public struct Profile: Codable {
         case lastName = "lastname"
     }
 }
-struct Contact: Codable {
-    let id: String
-    let username: String?
-    let firstname: String
-    let lastname: String?
-    let picture: String?
-}
 
 private func dataFromHex(_ hex: String) -> Data? {
     let cleaned = hex.trimmingCharacters(in: .whitespacesAndNewlines)
