@@ -16,7 +16,7 @@ struct VeroContactsView: View {
             return name.contains(q) || uname.contains(q)
         }
     }
-
+//пусть однажды загрузившись контакты сохранялись в памяти в Store.setVeroContacts и далее при открытии этого экрана отображаются уже загруженные контакты (Store.getVeroContacts) при наличии, и только запрашивались с сервера если их еще нет или если  пользователь сделает sorce refresh жестом AI!
     var body: some View {
         NavigationView {
             Group {
