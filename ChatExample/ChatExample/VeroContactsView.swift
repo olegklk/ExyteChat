@@ -3,11 +3,11 @@ import SwiftUI
 struct VeroContactsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var isLoading = true
-    @State private var contacts: [VeroContact] = []
+    @State private var contacts: [Contact] = []
     @State private var searchText: String = ""
     let onSelect: (String) -> Void
 
-    private var filteredContacts: [VeroContact] {
+    private var filteredContacts: [Contact] {
         let q = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         guard !q.isEmpty else { return contacts }
         return contacts.filter { c in
@@ -25,7 +25,7 @@ struct VeroContactsView: View {
                 } else if contacts.isEmpty {
                     Text("No contacts").foregroundColor(.secondary)
                 } else {
-                    List(filteredContacts) { contact in
+                    List(filteredContacts) { contact in //Initializer 'init(_:rowContent:)' requires that 'Contact' conform to 'Identifiable' исправь определение Contact и вынеси его в отдельный файл AI!
                         Button {
                             onSelect(contact.id)
                             dismiss()
@@ -85,19 +85,11 @@ struct VeroContactsView: View {
         if service.needRefreshToken(token: token) {
             _ = try? await service.refresh()
         }
-        let raw = await service.getContacts(token) ?? []
-        let mapped: [VeroContact] = raw.map { c in
-            VeroContact(
-                id: c.id,
-                firstname: c.firstname ?? c.username ?? "Contact",
-                lastname: c.lastname,
-                username: c.username,
-                picture: c.picture
-            )
-        }
+        let contacts = await service.getContacts(token) ?? []
+        
         await MainActor.run {
-            self.contacts = mapped
-            Store.setContacts(mapped)
+            self.contacts = contacts
+            Store.setContacts(contacts)
         }
     }
 

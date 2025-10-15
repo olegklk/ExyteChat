@@ -340,7 +340,7 @@ extension VeroAuthenticationService {
     }
     
     // MARK: - get user profile
-    func getUserProfile(forID id: String, username: String, accessToken: String) async -> SelfProfile? {
+    func getUserProfile(forID id: String, email: String, accessToken: String) async -> SelfProfile? {
         
         let accessToken = "Bearer \(accessToken)"
         
@@ -348,7 +348,7 @@ extension VeroAuthenticationService {
         components.scheme = "https"
         components.host = "gateway.veroapi.com"
         components.path = "/api/profiles"
-        components.queryItems = [URLQueryItem(name: "id", value: id), URLQueryItem(name: "username", value: username)]
+        components.queryItems = [URLQueryItem(name: "id", value: id), URLQueryItem(name: "username", value: email)]
         
         guard
             let url = components.url
@@ -422,7 +422,7 @@ extension VeroAuthenticationService {
 }
 
 
-struct SelfProfile: Codable {
+public struct SelfProfile: Codable {
     let id: String
     let firstName: String
     let lastName: String
@@ -437,7 +437,7 @@ struct SelfProfile: Codable {
 struct ProfileResponse: Decodable {
     let items: [Profile]
 }
-struct Profile: Codable {
+public struct Profile: Codable {
     let id: String
     let firstName: String
     let lastName: String
@@ -452,7 +452,7 @@ struct Profile: Codable {
 struct Contact: Codable {
     let id: String
     let username: String?
-    let firstname: String?
+    let firstname: String
     let lastname: String?
     let picture: String?
 }
