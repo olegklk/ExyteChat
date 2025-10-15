@@ -44,6 +44,9 @@ struct VeroContactsView: View {
                             }
                         }
                     }
+                    .refreshable {
+                        await reloadContacts()
+                    }
                 }
             }
             .navigationTitle("Vero Contacts")
@@ -62,6 +65,18 @@ struct VeroContactsView: View {
     }
 
     private func loadContacts() async {
+        let cached = Store.getContacts()
+        if !cached.isEmpty {
+            await MainActor.run {
+                self.contacts = cached
+                self.isLoading = false
+            }
+            return
+        }
+        await reloadContacts()
+    }
+
+    private func reloadContacts() async {
         defer { isLoading = false }
         let service = VeroAuthenticationService.shared
         guard let token = KeychainHelper.standard.read(service: .token, type: CompleteLoginResponse.self)?.veroPass?.jwt else {
@@ -71,15 +86,18 @@ struct VeroContactsView: View {
             _ = try? await service.refresh()
         }
         let raw = await service.getContacts(token) ?? []
-        self.contacts = raw.compactMap { c in
-            let first = c.firstname ?? c.username ?? "Contact"
-            return VeroContact(
+        let mapped: [VeroContact] = raw.map { c in
+            VeroContact(
                 id: c.id,
-                firstname: first,
+                firstname: c.firstname ?? c.username ?? "Contact",
                 lastname: c.lastname,
                 username: c.username,
                 picture: c.picture
             )
+        }
+        await MainActor.run {
+            self.contacts = mapped
+            Store.setContacts(mapped)
         }
     }
 
