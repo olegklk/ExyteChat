@@ -42,7 +42,7 @@ struct VeroContactsView: View {
         .task { await loadContacts() }
     }
 
-    private func loadContacts() async {
+    private func loadContacts() async { //перепиши этот класс так чтобы контакты описывались классом VeroContact с полями firstname(обязательное), lastname(опциональное),username(опциональное), picture (опциональное),id (обязательное) именно так они названы в ответе сервера AI!
         defer { isLoading = false }
         let service = VeroAuthenticationService.shared
         guard let token = KeychainHelper.standard.read(service: .token, type: CompleteLoginResponse.self)?.veroPass?.jwt else {
@@ -71,7 +71,6 @@ struct VeroContactsView: View {
         return nil
     }
 
-    // Пытаемся вытащить имя для отображения
     private func extractName<T>(_ contact: T) -> String? {
         let m = Mirror(reflecting: contact)
         for child in m.children {
