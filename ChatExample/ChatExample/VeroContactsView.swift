@@ -3,12 +3,22 @@ import SwiftUI
 struct VeroContactsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var isLoading = true
-    @State private var items: [Item] = []
+    @State private var contacts: [VeroContact] = []
     let onSelect: (String) -> Void
 
-    struct Item: Identifiable {
+    final class VeroContact: Identifiable {
         let id: String
-        let name: String
+        let firstname: String
+        let lastname: String?
+        let username: String?
+        let picture: String?
+        init(id: String, firstname: String, lastname: String?, username: String?, picture: String?) {
+            self.id = id
+            self.firstname = firstname
+            self.lastname = lastname
+            self.username = username
+            self.picture = picture
+        }
     }
 
     var body: some View {
@@ -16,16 +26,24 @@ struct VeroContactsView: View {
             Group {
                 if isLoading {
                     ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-                } else if items.isEmpty {
+                } else if contacts.isEmpty {
                     Text("No contacts").foregroundColor(.secondary)
                 } else {
-                    List(items) { item in
+                    List(contacts) { contact in
                         Button {
-                            onSelect(item.id)
+                            onSelect(contact.id)
                             dismiss()
                         } label: {
                             HStack {
-                                Text(item.name)
+                                VStack(alignment: .leading) {
+                                    Text("\(contact.firstname) \(contact.lastname ?? "")".trimmingCharacters(in: .whitespaces))
+                                        .lineLimit(1)
+                                    if let username = contact.username, !username.isEmpty {
+                                        Text("@\(username)")
+                                            .font(.subheadline)
+                                            .foregroundColor(.secondary)
+                                    }
+                                }
                                 Spacer()
                             }
                         }
@@ -42,7 +60,7 @@ struct VeroContactsView: View {
         .task { await loadContacts() }
     }
 
-    private func loadContacts() async { //перепиши этот класс так чтобы контакты описывались классом VeroContact с полями firstname(обязательное), lastname(опциональное),username(опциональное), picture (опциональное),id (обязательное) именно так они названы в ответе сервера AI!
+    private func loadContacts() async {
         defer { isLoading = false }
         let service = VeroAuthenticationService.shared
         guard let token = KeychainHelper.standard.read(service: .token, type: CompleteLoginResponse.self)?.veroPass?.jwt else {
@@ -51,34 +69,17 @@ struct VeroContactsView: View {
         if service.needRefreshToken(token: token) {
             _ = try? await service.refresh()
         }
-        let contacts = await service.getContacts(token) ?? []
-        self.items = contacts.compactMap { contact in
-            guard let id = extractId(contact) else { return nil }
-            let name = extractName(contact) ?? "Contact"
-            return Item(id: id, name: name)
+        let raw = await service.getContacts(token) ?? []
+        self.contacts = raw.compactMap { c in
+            let first = c.firstname ?? c.username ?? "Contact"
+            return VeroContact(
+                id: c.id,
+                firstname: first,
+                lastname: c.lastname,
+                username: c.username,
+                picture: c.picture
+            )
         }
     }
 
-    // Пытаемся вытащить id из распространённых полей (id/userId/user_id/userID)
-    private func extractId<T>(_ contact: T) -> String? {
-        let m = Mirror(reflecting: contact)
-        for child in m.children {
-            guard let label = child.label?.lowercased() else { continue }
-            if ["id", "userid", "user_id", "userId".lowercased(), "userID".lowercased()].contains(label) {
-                return String(describing: child.value)
-            }
-        }
-        return nil
-    }
-
-    private func extractName<T>(_ contact: T) -> String? {
-        let m = Mirror(reflecting: contact)
-        for child in m.children {
-            guard let label = child.label?.lowercased() else { continue }
-            if ["name", "displayname", "display_name", "username", "email", "title"].contains(label) {
-                return String(describing: child.value)
-            }
-        }
-        return nil
-    }
 }
