@@ -36,8 +36,10 @@ struct NewChatView: View {
                     Button {
                         let pid = participantInput.trimmingCharacters(in: .whitespacesAndNewlines)
                         guard !pid.isEmpty else { return }
-                        if !participants.contains(pid) {
-                            participants.append(pid)
+                        if pid != currentUserId,
+                           !participants.contains(where: { $0.id == pid }),
+                           let contact = Store.getContacts().first(where: { $0.id == pid }) {
+                            participants.append(contact)
                         }
                         participantInput = ""
                     } label: {
@@ -46,24 +48,29 @@ struct NewChatView: View {
                     .disabled(disableAddParticipant)
                 }
                 
-                ForEach(participants, id: \.self) { pid in
-                    if pid == currentUserId {
-                        VStack(alignment: .leading) {// Non-removable current user row
-                            Text("\(currentUserDisplayName) (You)")
-                                    
-                            if let username = currentUsername {
+                ForEach(participants, id: \.id) { contact in
+                    if contact.id == currentUserId {
+                        VStack(alignment: .leading) { // Non-removable current user row
+                            Text("\(displayName(contact)) (You)")
+                            if let username = contact.username, !username.isEmpty {
                                 Text("@\(username)")
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                             }
-                            Spacer()
                         }
                     } else {
                         HStack {
-                            Text(pid)
+                            VStack(alignment: .leading) {
+                                Text(displayName(contact))
+                                if let username = contact.username, !username.isEmpty {
+                                    Text("@\(username)")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                            }
                             Spacer()
                             Button {
-                                participants.removeAll { $0 == pid }
+                                participants.removeAll { $0.id == contact.id }
                             } label: {
                                 Image(systemName: "trash")
                                     .foregroundColor(.red)
@@ -80,7 +87,7 @@ struct NewChatView: View {
             Section {
                 Button(action: {
                         Task {
-                            await viewModel.start(chatType: chatType.rawValue, participants: participants)
+                            await viewModel.start(chatType: chatType.rawValue, participants: participants.map { $0.id })
                         }
                     }) {
                     HStack {
@@ -105,8 +112,9 @@ struct NewChatView: View {
         }
         .navigationTitle("New Chat")
         .onAppear {
-            if let profile = Store.getSelfProfile() {
-                participants = [profile.id]
+            if let p = Store.getSelfProfile() {
+                let selfContact = Contact(id: p.id, username: p.username, firstname: p.firstName, lastname: p.lastName, picture: p.picture)
+                participants = [selfContact]
             }
         }
         .onChange(of: participants) { oldValue, newValue in
@@ -119,8 +127,10 @@ struct NewChatView: View {
         }
         .sheet(isPresented: $showVeroContacts) {
             VeroContactsView { selectedId in
-                if selectedId != currentUserId && !participants.contains(selectedId) {
-                    participants.append(selectedId)
+                if selectedId != currentUserId,
+                   !participants.contains(where: { $0.id == selectedId }),
+                   let contact = Store.getContacts().first(where: { $0.id == selectedId }) {
+                    participants.append(contact)
                 }
                 showVeroContacts = false
             }
@@ -144,7 +154,7 @@ struct NewChatView: View {
     
     private var disableAddParticipant: Bool {
         let pid = participantInput.trimmingCharacters(in: .whitespacesAndNewlines)
-        return pid.isEmpty || pid == currentUserId || participants.contains(pid)
+        return pid.isEmpty || pid == currentUserId || participants.contains(where: { $0.id == pid })
     }
 
 }
