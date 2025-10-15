@@ -6,21 +6,6 @@ struct VeroContactsView: View {
     @State private var contacts: [VeroContact] = []
     let onSelect: (String) -> Void
 
-    final class VeroContact: Identifiable {
-        let id: String
-        let firstname: String
-        let lastname: String?
-        let username: String?
-        let picture: String?
-        init(id: String, firstname: String, lastname: String?, username: String?, picture: String?) {
-            self.id = id
-            self.firstname = firstname
-            self.lastname = lastname
-            self.username = username
-            self.picture = picture
-        }
-    }
-
     var body: some View {
         NavigationView {
             Group {
@@ -33,7 +18,7 @@ struct VeroContactsView: View {
                         Button {
                             onSelect(contact.id)
                             dismiss()
-                        } label: {
+                        } label: {//добавь над списком здесь поискоевое поле для поиска контактов в списке либо по имени либо по username но так чтобы оно было видно только когда пользователь потянет вниз (как это обычно делают) AI!
                             HStack {
                                 VStack(alignment: .leading) {
                                     Text("\(contact.firstname) \(contact.lastname ?? "")".trimmingCharacters(in: .whitespaces))
