@@ -16,6 +16,7 @@ public final class Store {
     private static var conversationsById: [String: Conversation] = [:]
 //    private static var _activeConversationId: String?
     private static var _batchId: String?
+    private static var _veroContacts: [VeroContact] = []
     public static func setBatchId(_ id: String?) {
         _batchId = id
         NotificationCenter.default.post(name: Store.batchIdDidChange, object: nil)
@@ -81,6 +82,14 @@ public final class Store {
         let newId = ChatUtils.generateRandomUserId()
         persistUserId(newId)
         return newId
-    }        
+    }
+    
+    static func setVeroContacts(_ contacts: [VeroContact]) {
+        _veroContacts = contacts
+    }
+    
+    static func getVeroContacts() -> [VeroContact] {
+        _veroContacts
+    }
         
 }
