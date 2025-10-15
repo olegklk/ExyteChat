@@ -6,14 +6,14 @@ struct NewChatView: View {
         case group = "group"
     }
     @Binding var navigationPath: NavigationPath
-    //измени здесь логику так чтобы все участники чата в списке быи  сущностями типа Contact, включая себя, но сохрани особенность отображения себя, т.е. что этот элемент в списке всегад первый и не удаляемый и имеет добавку (You) после имени, при любом добавлении нового участника в чат (через ввод в текстовом поле или выбор из списка контактов) нужно найти пользователя с таким ID в списке контактов сохраненном в Store и добавить его в список, но визуально отображать в списке его displayName и (второй строкой) его username (с приставкой @) если есть AI!
     @State private var chatType: ChatType = .direct
     @State private var participantInput: String = ""
     private var currentUserId: String { Store.getSelfProfile()?.id ?? "" }
-    private var currentUserDisplayName: String { Store.userDisplayName() }
-    @State private var participants: [String] = []
-    @State private var showVeroContacts = false
-    private var currentUsername: String? { Store.getSelfProfile()?.username }
+    @State private var participants: [Contact] = []
+    // helper to render full name
+    private func displayName(_ c: Contact) -> String {
+        "\(c.firstname) \(c.lastname ?? "")".trimmingCharacters(in: .whitespaces)
+    }
     @StateObject private var viewModel = NewChatViewModel()
     
     var body: some View {
