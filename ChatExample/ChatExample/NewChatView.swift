@@ -10,6 +10,7 @@ struct NewChatView: View {
     @State private var participantInput: String = ""
     private var currentUserId: String { Store.getSelfProfile()?.id ?? "" }
     @State private var participants: [Contact] = []
+    @State private var showVeroContacts = false
     // helper to render full name
     private func displayName(_ c: Contact) -> String {
         "\(c.firstname) \(c.lastname ?? "")".trimmingCharacters(in: .whitespaces)
