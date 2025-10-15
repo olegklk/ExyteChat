@@ -4,7 +4,18 @@ struct VeroContactsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var isLoading = true
     @State private var contacts: [VeroContact] = []
+    @State private var searchText: String = ""
     let onSelect: (String) -> Void
+
+    private var filteredContacts: [VeroContact] {
+        let q = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !q.isEmpty else { return contacts }
+        return contacts.filter { c in
+            let name = "\(c.firstname) \(c.lastname ?? "")".lowercased()
+            let uname = (c.username ?? "").lowercased()
+            return name.contains(q) || uname.contains(q)
+        }
+    }
 
     var body: some View {
         NavigationView {
@@ -14,11 +25,11 @@ struct VeroContactsView: View {
                 } else if contacts.isEmpty {
                     Text("No contacts").foregroundColor(.secondary)
                 } else {
-                    List(contacts) { contact in
+                    List(filteredContacts) { contact in
                         Button {
                             onSelect(contact.id)
                             dismiss()
-                        } label: {//добавь над списком здесь поискоевое поле для поиска контактов в списке либо по имени либо по username но так чтобы оно было видно только когда пользователь потянет вниз (как это обычно делают) AI!
+                        } label: {
                             HStack {
                                 VStack(alignment: .leading) {
                                     Text("\(contact.firstname) \(contact.lastname ?? "")".trimmingCharacters(in: .whitespaces))
@@ -41,6 +52,11 @@ struct VeroContactsView: View {
                     Button("Close") { dismiss() }
                 }
             }
+            .searchable(
+                text: $searchText,
+                placement: .navigationBarDrawer(displayMode: .automatic),
+                prompt: "Search contacts"
+            )
         }
         .task { await loadContacts() }
     }
