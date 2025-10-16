@@ -26,10 +26,35 @@ import ChatAPIClient
     case authenticating // authentication in process
     case prelogin // user is logged out
 }
-//заведи отдельные контанты для veroURL для разынх окружений: production "https://gateway.veroapi.com", staging "https://gateway-stg.veroapi.com" и добавь метод для их выбора из UI приложения. Выбранный URL затем используется далее при работе приложения - при попытке авторизации в бакэнде. AI!
+enum VeroEnvironment: String {
+    case production
+    case staging
+    
+    var baseURL: String {
+        switch self {
+        case .production: return "https://gateway.veroapi.com"
+        case .staging:    return "https://gateway-stg.veroapi.com"
+        }
+    }
+}
 struct EnvironmentConstants {
-    static let veroURL = "https://gateway.veroapi.com"
-//    static let veroURL = "https://gateway-stg.veroapi.com"
+    private static let key = "vero.environment"
+    
+    static func setEnvironment(_ env: VeroEnvironment) {
+        UserDefaults.standard.set(env.rawValue, forKey: key)
+    }
+    
+    static func currentEnvironment() -> VeroEnvironment {
+        if let raw = UserDefaults.standard.string(forKey: key),
+           let env = VeroEnvironment(rawValue: raw) {
+            return env
+        }
+        return .production
+    }
+    
+    static func currentBaseURL() -> String {
+        currentEnvironment().baseURL
+    }
 }
 
 enum VeroServiceError: Error, LocalizedError, CustomStringConvertible {
@@ -67,6 +92,10 @@ final class VeroAuthenticationService: ObservableObject, @unchecked Sendable {
     private let retryInterval: TimeInterval = 3
     static let shared = VeroAuthenticationService()
     
+    public func selectEnvironment(_ env: VeroEnvironment) {
+        EnvironmentConstants.setEnvironment(env)
+    }
+    
     enum FBURL {
         case loginToVero
         case completeLogin
@@ -74,21 +103,26 @@ final class VeroAuthenticationService: ObservableObject, @unchecked Sendable {
         case profile
         
         var url: String {
+            let base = EnvironmentConstants.currentBaseURL()
             switch self {
             case .loginToVero:
-                return EnvironmentConstants.veroURL + "/api/auth/challenge"
+                return base + "/api/auth/challenge"
             case .completeLogin:
-                return EnvironmentConstants.veroURL + "/api/auth/complete"
+                return base + "/api/auth/complete"
             case .refresh:
-                return EnvironmentConstants.veroURL + "/veritas/refresh"
+                return base + "/veritas/refresh"
             case .profile:
-                return EnvironmentConstants.veroURL + "/api/profiles/self"
+                return base + "/api/profiles/self"
             }
             
         }
     }
     
     private init() {}
+    
+    private func veroBaseComponents() -> URLComponents {
+        URLComponents(string: EnvironmentConstants.currentBaseURL()) ?? URLComponents()
+    }
     
     private func delay(_ interval: TimeInterval) async throws {
         try await Task.sleep(nanoseconds: UInt64(interval * 1_000_000_000)) // Convert seconds to nanoseconds
@@ -327,9 +361,7 @@ extension VeroAuthenticationService {
         
         let accessToken = "Bearer \(accessToken)"
         
-        var components = URLComponents()
-        components.scheme = "https"
-        components.host = "gateway.veroapi.com"
+        var components = veroBaseComponents()
         components.path = "/api/relations/contacts"
         
         guard
@@ -363,9 +395,7 @@ extension VeroAuthenticationService {
         
         let accessToken = "Bearer \(accessToken)"
         
-        var components = URLComponents()
-        components.scheme = "https"
-        components.host = "gateway.veroapi.com"
+        var components = veroBaseComponents()
         components.path = "/api/profiles"
         components.queryItems = [URLQueryItem(name: "id", value: id), URLQueryItem(name: "username", value: email)]
         
@@ -400,9 +430,7 @@ extension VeroAuthenticationService {
         
         let accessToken = "Bearer \(accessToken)"
         
-        var components = URLComponents()
-        components.scheme = "https"
-        components.host = "gateway.veroapi.com"
+        var components = veroBaseComponents()
         components.path = "/api/profiles/list"
         
         var queryItems = [URLQueryItem]()
