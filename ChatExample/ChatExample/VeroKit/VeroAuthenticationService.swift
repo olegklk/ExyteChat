@@ -49,7 +49,7 @@ struct EnvironmentConstants {
            let env = VeroEnvironment(rawValue: raw) {
             return env
         }
-        return .production
+        return .staging
     }
     
     static func currentBaseURL() -> String {
@@ -471,9 +471,9 @@ extension VeroAuthenticationService {
 public struct SelfProfile: Codable {
     let id: String
     let firstName: String
-    let lastName: String
-    let username: String
-    let picture: String
+    let lastName: String?
+    let username: String?
+    let picture: String?
     enum CodingKeys: String, CodingKey {
         case id, username, picture
         case firstName = "firstname"
