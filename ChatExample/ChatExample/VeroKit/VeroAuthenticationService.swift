@@ -26,9 +26,10 @@ import ChatAPIClient
     case authenticating // authentication in process
     case prelogin // user is logged out
 }
-
+//заведи отдельные контанты для veroURL для разынх окружений: production "https://gateway.veroapi.com", staging "https://gateway-stg.veroapi.com" и добавь метод для их выбора из UI приложения. Выбранный URL затем используется далее при работе приложения - при попытке авторизации в бакэнде. AI!
 struct EnvironmentConstants {
     static let veroURL = "https://gateway.veroapi.com"
+//    static let veroURL = "https://gateway-stg.veroapi.com"
 }
 
 enum VeroServiceError: Error, LocalizedError, CustomStringConvertible {
@@ -263,6 +264,9 @@ extension VeroAuthenticationService {
                     await ChatAPIClient.shared.setTokenProvider {
                         KeychainHelper.standard.read(service: .token, type: CompleteLoginResponse.self)?.veroPass?.jwt
                     }
+                    await SocketIOManager.shared.setTokenProvider {
+                        KeychainHelper.standard.read(service: .token, type: CompleteLoginResponse.self)?.veroPass?.jwt
+                    }
                 }
                 
                 self.isRefreshingToken = false
@@ -294,6 +298,9 @@ extension VeroAuthenticationService {
                     KeychainHelper.standard.save(credential, service: .token)
                     Task {
                         await ChatAPIClient.shared.setTokenProvider {
+                            KeychainHelper.standard.read(service: .token, type: CompleteLoginResponse.self)?.veroPass?.jwt
+                        }
+                        await SocketIOManager.shared.setTokenProvider {
                             KeychainHelper.standard.read(service: .token, type: CompleteLoginResponse.self)?.veroPass?.jwt
                         }
                     }
