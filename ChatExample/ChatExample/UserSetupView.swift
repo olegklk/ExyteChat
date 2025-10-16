@@ -5,11 +5,20 @@ struct UserSetupView: View {
     @State private var veroPassword: String = ""
     @State private var isLoggingIn: Bool = false
     @State private var navigationPath = NavigationPath()
+    @State private var selectedEnv: VeroEnvironment = EnvironmentConstants.currentEnvironment()
     private let defaults = UserDefaults.standard
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
             Form {
+                Section(header: Text("Environment")) {
+                    Picker("Environment", selection: $selectedEnv) {
+                        ForEach(VeroEnvironment.allCases, id: \.self) { env in
+                            Text(env.rawValue.capitalized).tag(env)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                }
                 Section {
                     Text("E-mail:")
                         .font(.headline)
@@ -49,6 +58,9 @@ struct UserSetupView: View {
                     Text("Unknown destination")
                 }
             }
+            .onChange(of: selectedEnv) { _, newValue in
+                VeroAuthenticationService.shared.selectEnvironment(newValue)
+            }
         }
         .scrollDismissesKeyboard(.interactively)
         .ignoresSafeArea(.keyboard, edges: .bottom)
@@ -60,6 +72,7 @@ struct UserSetupView: View {
         let credential = KeychainHelper.standard.read(service: .credential, type: VeroLoginData.self)
         veroEmail = credential?.email ?? ""
         veroPassword = credential?.password ?? ""
+        selectedEnv = EnvironmentConstants.currentEnvironment()
     }
     
     private func handleVeroLogin() async {
