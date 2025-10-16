@@ -11,7 +11,26 @@ public class SocketIOManager: ObservableObject {
     private var manager: SocketManager?
     private var socket: SocketIOClient?
     private var authData: [String: Any] = [:]
-    public func setAuthData(_ data: [String: Any]) {
+    private var tokenProvider: (() -> String?)?
+    public func setTokenProvider(_ provider: @escaping () -> String?) {
+        self.tokenProvider = provider
+    }
+    
+    public func setAuthData(userId: String,
+                            participants: [String],
+                            conversationId: String?,
+                            chatType: String?,
+                            batchId: String?) {
+        var data: [String: Any] = [
+            "participants": participants,
+            "userId": userId
+        ]
+        if let chatType { data["chatType"] =  chatType }
+        if let batchId { data["batchId"] =  batchId }
+        if let conversationId { data["conversationId"] =  conversationId }
+        if let token = tokenProvider?(), !token.isEmpty {
+            data["token"] = token
+        }
         self.authData = data
     }
     

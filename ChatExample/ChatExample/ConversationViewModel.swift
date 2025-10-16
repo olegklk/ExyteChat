@@ -132,7 +132,8 @@ class ConversationViewModel: ObservableObject {
         self.conversationURL = self.conversation.url()
         
         setupSocketListeners()
-        SocketIOManager.shared.setAuthData(buildAuthData())
+        
+        SocketIOManager.shared.setAuthData(userId: currentUserId, participants: conversation.participants, conversationId: conversationId, chatType: conversation.type, batchId: conversation.batchId)
         SocketIOManager.shared.connect() // connection should trigger onConversationAssigned with conversationId
                 
 //        Task { await loadChatHistory() }
@@ -255,17 +256,6 @@ class ConversationViewModel: ObservableObject {
             recording: nil, // In a real implementation, you would convert recordings
             replyMessage: makeReplyMessage(for: serverMessage.replyTo)
         )
-    }
-
-    private func buildAuthData() -> [String: Any] {
-        var auth: [String: Any] = [
-            "participants": conversation.participants,
-            "userId": currentUserId,
-            "conversationId": conversationId
-        ]
-        if let chatType = conversation.type {auth["chatType"] =  chatType }
-        if let batchId = conversation.batchId { auth["batchId"] = batchId }
-        return auth
     }
 
     private func makeReplyMessage(for replyTo: String?) -> ReplyMessage? {

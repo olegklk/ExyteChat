@@ -65,7 +65,8 @@ class NewChatViewModel: ObservableObject {
         error = nil
         
         setupSocketListeners()
-        SocketIOManager.shared.setAuthData(buildAuthData())
+        
+        SocketIOManager.shared.setAuthData(userId: currentUserId, participants: participants, conversationId: nil, chatType: chatType, batchId: nil)
         SocketIOManager.shared.connect() // connection should trigger onConversationAssigned with conversationId
     }
     
@@ -127,16 +128,7 @@ class NewChatViewModel: ObservableObject {
         
     }
     
-    private func buildAuthData() -> [String: Any] {
-        
-        let auth: [String: Any] = [
-            "chatType": chatType!,
-            "participants": participants!,
-            "userId": currentUserId
-        ]
-        
-        return auth
-    }
+    
     
 }
 
