@@ -17,6 +17,7 @@
 import Foundation
 import SRP
 import CryptoKit
+import ChatAPIClient
 
 @objc public enum AccessTokenStatus: Int {
     // first three cases are for logged in user
@@ -258,6 +259,12 @@ extension VeroAuthenticationService {
                 
                 let veroLoginData = KeychainHelper.standard.read(service: .credential, type: VeroLoginData.self)
                 
+                Task {
+                    await ChatAPIClient.shared.setTokenProvider {
+                        KeychainHelper.standard.read(service: .token, type: CompleteLoginResponse.self)?.veroPass?.jwt
+                    }
+                }
+                
                 self.isRefreshingToken = false
                 return response
             }
@@ -285,6 +292,11 @@ extension VeroAuthenticationService {
 //                    let email = UsersLocalStorageManager.shared.getVeroEmail()
 //                    UsersLocalStorageManager.shared.setVeroAuth(token: response.jwt ?? "", email: email ?? "")
                     KeychainHelper.standard.save(credential, service: .token)
+                    Task {
+                        await ChatAPIClient.shared.setTokenProvider {
+                            KeychainHelper.standard.read(service: .token, type: CompleteLoginResponse.self)?.veroPass?.jwt
+                        }
+                    }
                     self.isRefreshingToken = false
                     return response
                 }

@@ -6,6 +6,11 @@ public actor ChatAPIClient {
     private var baseURL = "https://chat-back.gramatune.com"
     public func setBaseURL(_ url: String) { self.baseURL = url }
     
+    private var tokenProvider: (() -> String?)?
+    public func setTokenProvider(_ provider: @escaping () -> String?) {
+        self.tokenProvider = provider
+    }
+    
     public enum Endpoint {
         case openBatch(type: String, batchId: String)
         case closeBatch(batchId: String)
@@ -115,7 +120,9 @@ public actor ChatAPIClient {
         var request = URLRequest(url: url)
         request.httpMethod = method
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        // добавь сюда Authorization bearer header содержащий jwt токен из KeychainHelper.standard.read(service: .token, type: CompleteLoginResponse.self)?.veroPass?.jwt AI!
+        if let token = tokenProvider?(), !token.isEmpty {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
         if let body = body {
             request.httpBody = try JSONSerialization.data(withJSONObject: body)
         }
