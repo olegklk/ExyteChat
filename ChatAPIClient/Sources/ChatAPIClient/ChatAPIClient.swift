@@ -108,7 +108,8 @@ public actor ChatAPIClient {
         if let limit { q.append(URLQueryItem(name: "limit", value: String(limit))) }
         if let perConv { q.append(URLQueryItem(name: "perConv", value: String(perConv))) }
         urlComponents.queryItems = q.isEmpty ? nil : q
-        let items = try await makeRequest(urlComponents: urlComponents, method: "GET") as? [[String: Any]]
+        
+        let items = try await makeRequest(urlComponents: urlComponents, method: "GET") as? [[String: Any]] //измени эту часть так чтобы показывать в алерте на экране возникшую ошибку с текстом ошибки в ответе сервера AI!
         return items?.compactMap { ServerConversationListItem(from: $0) } ?? []
     }
     
