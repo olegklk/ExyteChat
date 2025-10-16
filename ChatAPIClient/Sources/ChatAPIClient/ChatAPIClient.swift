@@ -1,5 +1,15 @@
 import Foundation
 
+public enum ChatAPIError: Error, LocalizedError, Sendable {
+    case server(statusCode: Int, message: String)
+    
+    public var errorDescription: String? {
+        switch self {
+        case .server(_, let message): return message
+        }
+    }
+}
+
 public actor ChatAPIClient {
     public static let shared = ChatAPIClient()
 
@@ -109,7 +119,7 @@ public actor ChatAPIClient {
         if let perConv { q.append(URLQueryItem(name: "perConv", value: String(perConv))) }
         urlComponents.queryItems = q.isEmpty ? nil : q
         
-        let items = try await makeRequest(urlComponents: urlComponents, method: "GET") as? [[String: Any]] //измени эту часть так чтобы показывать в алерте на экране возникшую ошибку с текстом ошибки в ответе сервера AI!
+        let items = try await makeRequest(urlComponents: urlComponents, method: "GET") as? [[String: Any]]
         return items?.compactMap { ServerConversationListItem(from: $0) } ?? []
     }
     
@@ -134,8 +144,19 @@ public actor ChatAPIClient {
             throw URLError(.badServerResponse)
         }
         
-        guard 200...299 ~= httpResponse.statusCode else {
-            throw URLError(.badServerResponse)
+        if !(200...299).contains(httpResponse.statusCode) {
+            var message: String?
+            if !data.isEmpty {
+                if let obj = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
+                    message = (obj["message"] as? String) ?? (obj["error"] as? String)
+                } else {
+                    message = String(data: data, encoding: .utf8)
+                }
+            }
+            throw ChatAPIError.server(
+                statusCode: httpResponse.statusCode,
+                message: message ?? HTTPURLResponse.localizedString(forStatusCode: httpResponse.statusCode)
+            )
         }
         
         if data.isEmpty { return NSNull() }
