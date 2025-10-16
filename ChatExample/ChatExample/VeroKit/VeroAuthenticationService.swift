@@ -91,7 +91,7 @@ final class VeroAuthenticationService: ObservableObject, @unchecked Sendable {
     @objc public var tokenStatus: AccessTokenStatus = .prelogin
     private let retryInterval: TimeInterval = 3
     static let shared = VeroAuthenticationService()
-    
+    //теперь используя новые методы для выбора окружения реализуй отображение выбора окружения (имей в виду что их может быть более 5 в будущем, поэтому используй в UI выбор позволяющий выбирать из нескольких вариантов). Это нужно сделать внутри экрана UserSetupView.swift AI!
     public func selectEnvironment(_ env: VeroEnvironment) {
         EnvironmentConstants.setEnvironment(env)
     }
