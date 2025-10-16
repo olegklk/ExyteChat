@@ -115,7 +115,7 @@ public actor ChatAPIClient {
         var request = URLRequest(url: url)
         request.httpMethod = method
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
+        // добавь сюда Authorization bearer header содержащий jwt токен из KeychainHelper.standard.read(service: .token, type: CompleteLoginResponse.self)?.veroPass?.jwt AI!
         if let body = body {
             request.httpBody = try JSONSerialization.data(withJSONObject: body)
         }
