@@ -19,9 +19,6 @@ struct ConversationView: View {
     
     @StateObject private var viewModel: ConversationViewModel
     
-    // Store reference to reply activation closure
-    @State private var replyActivator: ((Message) -> Void)?
-    
     init(viewModel: ConversationViewModel, path: Binding<NavigationPath>) {
         _viewModel = StateObject(wrappedValue: viewModel)
         self._navigationPath = path
@@ -66,13 +63,6 @@ struct ConversationView: View {
                       messageMenuAction: {
                 (action: DefaultMessageMenuAction, defaultActionClosure, message) in 
                 
-                // Capture the reply activator on first call
-                if replyActivator == nil {
-                    replyActivator = { msg in
-                        defaultActionClosure(msg, .reply)
-                    }
-                }
-                
                 switch action {
                     case .reply:
                         defaultActionClosure(message, .reply)
@@ -83,17 +73,21 @@ struct ConversationView: View {
                     case .copy: defaultActionClosure(message, .copy)
                 }
             } )
-            .swipeActions(edge: .leading, allowsFullSwipe: true) {
-                SwipeAction(action: { message in
-                    if let msg = message {
-                        replyActivator?(msg)
+            .swipeActions(edge: .leading, performsFirstActionWithFullSwipe: true,
+                          items: [
+                            SwipeAction(action: onReply, activeFor: { _ in true/*!$0.user.isCurrentUser*/}, background: .blue) {
+                    VStack {
+                        Image(systemName: "arrowshape.turn.up.left")
+                            .imageScale(.large)
+                            .foregroundStyle(.white)
+                            .frame(height: 30)
+                        Text("Reply")
+                            .foregroundStyle(.white)
+                            .font(.footnote)
                     }
-                }) {
-                    swipeActionButtonStandard(title: "Reply", 
-                                            image: "arrowshape.turn.up.left", 
-                                            background: .blue)
                 }
-            }
+                ])
+                   
             .keyboardDismissMode(.interactive)
             //        .navigationBarBackButtonHidden()
             .navigationBarTitleDisplayMode(.inline)
@@ -139,22 +133,16 @@ struct ConversationView: View {
                     SocketIOManager.shared.disconnect()
                 }
             }
-            
         }
     }
     
-    // Helper function for swipe action button appearance
-    @ViewBuilder
-    private func swipeActionButtonStandard(title: String, image: String, background: Color) -> some View {
-        VStack(spacing: 4) {
-            Image(systemName: image)
-            Text(title)
-                .font(.caption)
-        }
-        .foregroundColor(.white)
-        .frame(maxWidth: 60, maxHeight: .infinity)
-        .background(background)
+    // Swipe Action
+    func onReply(message: Message, defaultActions: @escaping (Message, DefaultMessageMenuAction) -> Void) {
+        // This places the message in the ChatView's InputView ready for the sender to reply
+        defaultActions(message, .reply)
+        
     }
+    
 }
 
 
