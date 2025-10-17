@@ -19,6 +19,9 @@ struct ConversationView: View {
     
     @StateObject private var viewModel: ConversationViewModel
     
+    // Store reference to reply activation closure
+    @State private var replyActivator: ((Message) -> Void)?
+    
     init(viewModel: ConversationViewModel, path: Binding<NavigationPath>) {
         _viewModel = StateObject(wrappedValue: viewModel)
         self._navigationPath = path
@@ -61,7 +64,16 @@ struct ConversationView: View {
             },
                       reactionDelegate: nil,
                       messageMenuAction: {
-                (action: DefaultMessageMenuAction, defaultActionClosure, message) in switch action {
+                (action: DefaultMessageMenuAction, defaultActionClosure, message) in 
+                
+                // Capture the reply activator on first call
+                if replyActivator == nil {
+                    replyActivator = { msg in
+                        defaultActionClosure(msg, .reply)
+                    }
+                }
+                
+                switch action {
                     case .reply:
                         defaultActionClosure(message, .reply)
                     case .edit: defaultActionClosure(message, .edit { editedText in
@@ -71,6 +83,17 @@ struct ConversationView: View {
                     case .copy: defaultActionClosure(message, .copy)
                 }
             } )
+            .swipeActions(edge: .leading, allowsFullSwipe: true) {
+                SwipeAction(action: { message in
+                    if let msg = message {
+                        replyActivator?(msg)
+                    }
+                }) {
+                    swipeActionButtonStandard(title: "Reply", 
+                                            image: "arrowshape.turn.up.left", 
+                                            background: .blue)
+                }
+            }
             .keyboardDismissMode(.interactive)
             //        .navigationBarBackButtonHidden()
             .navigationBarTitleDisplayMode(.inline)
@@ -118,6 +141,19 @@ struct ConversationView: View {
             }
             
         }
+    }
+    
+    // Helper function for swipe action button appearance
+    @ViewBuilder
+    private func swipeActionButtonStandard(title: String, image: String, background: Color) -> some View {
+        VStack(spacing: 4) {
+            Image(systemName: image)
+            Text(title)
+                .font(.caption)
+        }
+        .foregroundColor(.white)
+        .frame(maxWidth: 60, maxHeight: .infinity)
+        .background(background)
     }
 }
 
