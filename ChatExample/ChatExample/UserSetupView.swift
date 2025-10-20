@@ -4,6 +4,7 @@ struct UserSetupView: View {
     @State private var veroEmail: String = ""
     @State private var veroPassword: String = ""
     @State private var isLoggingIn: Bool = false
+    @State private var loginError: String? = nil
     @State private var navigationPath = NavigationPath()
     @State private var selectedEnv: VeroEnvironment = EnvironmentConstants.currentEnvironment()
     @ObservedObject private var authService = VeroAuthenticationService.shared
@@ -36,6 +37,7 @@ struct UserSetupView: View {
                         SecureField("Password", text: $veroPassword)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
                         Button {
+                            loginError = nil
                             isLoggingIn = true
                             Task { await handleVeroLogin() }
                         } label: {
@@ -51,8 +53,8 @@ struct UserSetupView: View {
                     }
                 }
                 
-                if let error = authService.userFacingError {
-                    Text(error.description)
+                if let message = loginError ?? authService.userFacingError?.description {
+                    Text(message)
                         .foregroundColor(.red)
                         .font(.footnote)
                         .padding(.horizontal)
@@ -77,7 +79,6 @@ struct UserSetupView: View {
         .ignoresSafeArea(.keyboard, edges: .bottom)
         .onAppear(perform: setup)
     }
-    //добавь в этом экране текстовое отображение возникающий ошибок при взаимодействии с сервером под формой красным цветом, проверь хорошо ли использовать для этого поле userFacingError добавленное на предыдущем шаге другой моделью или используй другой более подходящий способ удалив это поле AI!
     private func setup() {
         
         let credential = KeychainHelper.standard.read(service: .credential, type: VeroLoginData.self)
@@ -95,10 +96,11 @@ struct UserSetupView: View {
                     let userID = resp.userID {
                         await util.configVeroInfo(forUserID: userID, email: veroEmail, accessToken: accessToken)
                     
+                    await MainActor.run { self.loginError = nil }
                     navigationPath.append(AppScreen.chatList)
                 }
             case .failure(let error): // Show
-                print("Login error\(error.localizedDescription)")
+                await MainActor.run { self.loginError = error.localizedDescription }
         }
                    
         await MainActor.run { isLoggingIn = false }
