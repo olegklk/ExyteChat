@@ -77,7 +77,7 @@ struct UserSetupView: View {
         .ignoresSafeArea(.keyboard, edges: .bottom)
         .onAppear(perform: setup)
     }
-    
+    //добавь в этом экране текстовое отображение возникающий ошибок при взаимодействии с сервером под формой красным цветом, проверь хорошо ли использовать для этого поле userFacingError добавленное на предыдущем шаге другой моделью или используй другой более подходящий способ удалив это поле AI!
     private func setup() {
         
         let credential = KeychainHelper.standard.read(service: .credential, type: VeroLoginData.self)
