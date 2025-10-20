@@ -157,7 +157,8 @@ struct ConversationView: View {
                     .frame(width: 40, height: 40)
                     .clipShape(Circle())
                 } else {
-                    //вставь сюда блок который будет просто занимать такое же место 40x40px как и аватар, но будет не видим, в случае когда я не хочу здесь видеть аватар, но не хочу ломать структуру AI!
+                    Color.clear
+                        .frame(width: 40, height: 40)
                 }
 
                 VStack(alignment: .leading, spacing: 6) {
