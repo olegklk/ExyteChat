@@ -91,6 +91,7 @@ final class VeroAuthenticationService: ObservableObject, @unchecked Sendable {
     static let error = NSError(domain: "Networking", code: 0, userInfo: [NSLocalizedDescriptionKey : "Networking Error"])
     var isRefreshingToken = false
     @objc public var tokenStatus: AccessTokenStatus = .prelogin
+    @Published var userFacingError: VeroServiceError?
     private let retryInterval: TimeInterval = 3
     static let shared = VeroAuthenticationService()
     public func selectEnvironment(_ env: VeroEnvironment) {
@@ -218,7 +219,10 @@ final class VeroAuthenticationService: ObservableObject, @unchecked Sendable {
         } catch let error {
             switch error {
                 case VeroServiceError.internalError:
-                //покажи alert для пользователя с описанием ошибки AI!
+                    await MainActor.run {
+                        self.userFacingError = VeroServiceError.internalError
+                    }
+                    throw VeroServiceError.internalError
                 default:
                     return try await retry(url: url, httpMethod: httpMethod, timeout: timeout, numberOfRetries: numberOfRetries, message: message, body: body, skipLogs: skipLogs, error: error as! VeroServiceError)
             }
@@ -599,4 +603,3 @@ private func jwtExpiration(_ token: String) -> TimeInterval? {
 //        }
 //    }
 //}
-
