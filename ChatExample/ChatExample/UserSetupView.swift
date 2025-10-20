@@ -6,46 +6,57 @@ struct UserSetupView: View {
     @State private var isLoggingIn: Bool = false
     @State private var navigationPath = NavigationPath()
     @State private var selectedEnv: VeroEnvironment = EnvironmentConstants.currentEnvironment()
+    @ObservedObject private var authService = VeroAuthenticationService.shared
     private let defaults = UserDefaults.standard
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
-            Form {
-                Section(header: Text("Environment")) {
-                    Picker("Environment", selection: $selectedEnv) {
-                        ForEach(VeroEnvironment.allCases, id: \.self) { env in
-                            Text(env.rawValue.capitalized).tag(env)
-                        }
-                    }
-                    .pickerStyle(.menu)
-                }
-                Section {
-                    Text("E-mail:")
-                        .font(.headline)
-                        .foregroundColor(.secondary)
-                    TextField("Email", text: $veroEmail)
-                        .keyboardType(.emailAddress)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled(true)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                    Text("Password:")
-                        .font(.headline)
-                        .foregroundColor(.secondary)
-                    SecureField("Password", text: $veroPassword)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                    Button {
-                        isLoggingIn = true
-                        Task { await handleVeroLogin() }
-                    } label: {
-                        HStack {
-                            Text("Login")
-                                .frame(maxWidth: .infinity)
-                            if isLoggingIn {
-                                ProgressView().padding(.leading, 8)
+            VStack {
+                Form {
+                    Section(header: Text("Environment")) {
+                        Picker("Environment", selection: $selectedEnv) {
+                            ForEach(VeroEnvironment.allCases, id: \.self) { env in
+                                Text(env.rawValue.capitalized).tag(env)
                             }
                         }
+                        .pickerStyle(.menu)
                     }
-                    .disabled(veroEmail.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || veroPassword.isEmpty)
+                    Section {
+                        Text("E-mail:")
+                            .font(.headline)
+                            .foregroundColor(.secondary)
+                        TextField("Email", text: $veroEmail)
+                            .keyboardType(.emailAddress)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled(true)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                        Text("Password:")
+                            .font(.headline)
+                            .foregroundColor(.secondary)
+                        SecureField("Password", text: $veroPassword)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                        Button {
+                            isLoggingIn = true
+                            Task { await handleVeroLogin() }
+                        } label: {
+                            HStack {
+                                Text("Login")
+                                    .frame(maxWidth: .infinity)
+                                if isLoggingIn {
+                                    ProgressView().padding(.leading, 8)
+                                }
+                            }
+                        }
+                        .disabled(veroEmail.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || veroPassword.isEmpty)
+                    }
+                }
+                
+                if let error = authService.userFacingError {
+                    Text(error.description)
+                        .foregroundColor(.red)
+                        .font(.footnote)
+                        .padding(.horizontal)
+                        .padding(.top, 8)
                 }
             }
             .navigationTitle("Vero Login")
@@ -66,7 +77,6 @@ struct UserSetupView: View {
         .ignoresSafeArea(.keyboard, edges: .bottom)
         .onAppear(perform: setup)
     }
-    //добавь на этом экране дополнительное красное текстовое поле под формой в котором будет показываться VeroAuthenticationService.userFacingError если возникнет AI!
     
     private func setup() {
         
