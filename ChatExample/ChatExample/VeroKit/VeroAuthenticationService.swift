@@ -66,6 +66,7 @@ enum VeroServiceError: Error, LocalizedError, CustomStringConvertible {
     case tokenBase
     case restoreSession
     case unknown
+    case internalError
     
     var errorDescription: String? {
         return self.description
@@ -81,6 +82,7 @@ enum VeroServiceError: Error, LocalizedError, CustomStringConvertible {
         case .tokenBase:        return "Error in calling token based login service"
         case .restoreSession:   return "Error in restoring session"
         case .unknown:          return "UnKnown error"
+        case .internalError:         return "Internal server error"
         }
     }
 }
@@ -196,7 +198,10 @@ final class VeroAuthenticationService: ObservableObject, @unchecked Sendable {
                  
                 }
                 if let statusCode = (response as? HTTPURLResponse)?.statusCode {
-                    if statusCode == 401 || statusCode == 403 {
+                    if statusCode == 500 {//internal error
+                        throw VeroServiceError.internalError
+                    }
+                    else if statusCode == 401 || statusCode == 403 {
                         tokenStatus = .expired
                         return try await retry(url: url, httpMethod: httpMethod, timeout: timeout, numberOfRetries: numberOfRetries, message: message, body: body, skipLogs: skipLogs, error: error)
                     }
@@ -210,8 +215,14 @@ final class VeroAuthenticationService: ObservableObject, @unchecked Sendable {
                 }
             }
             return try await retry(url: url, httpMethod: httpMethod, timeout: timeout, numberOfRetries: numberOfRetries, message: message, body: body, skipLogs: skipLogs, error: error)
-        } catch let err {
-            return try await retry(url: url, httpMethod: httpMethod, timeout: timeout, numberOfRetries: numberOfRetries, message: message, body: body, skipLogs: skipLogs, error: error)
+        } catch let error {
+            switch error {
+                case VeroServiceError.internalError:
+                //покажи alert для пользователя с описанием ошибки AI!
+                default:
+                    return try await retry(url: url, httpMethod: httpMethod, timeout: timeout, numberOfRetries: numberOfRetries, message: message, body: body, skipLogs: skipLogs, error: error as! VeroServiceError)
+            }
+            
         }
     }
     
