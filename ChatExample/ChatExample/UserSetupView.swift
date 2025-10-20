@@ -66,6 +66,7 @@ struct UserSetupView: View {
         .ignoresSafeArea(.keyboard, edges: .bottom)
         .onAppear(perform: setup)
     }
+    //добавь на этом экране дополнительное красное текстовое поле под формой в котором будет показываться VeroAuthenticationService.userFacingError если возникнет AI!
     
     private func setup() {
         
