@@ -164,10 +164,18 @@ struct ConversationView: View {
                 VStack(alignment: .leading, spacing: 6) {
 
                     if !message.text.isEmpty {
-                        HStack {//нужно изменить отображение message bubble так чтобы текст был окружен облаком с кругленными углами. Цвет облака должен быть белым светлосерым если message.user.isCurrentUser=false с черным шрифтом и цвет облака должен быть (0,204/256,204/256) с белым шрифтом если это свойство = true AI!
+                        HStack {
                             Text(message.text)
                                 .font(.system(size: 14)).fontWeight(.medium)
-                                .foregroundStyle(.black)
+                                .foregroundStyle(message.user.isCurrentUser ? .white : .black)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                        .fill(message.user.isCurrentUser
+                                              ? Color(red: 0, green: 204.0/256.0, blue: 204.0/256.0)
+                                              : Color(red: 0.95, green: 0.95, blue: 0.95))
+                                )
                             Spacer()
                         }
                     }
