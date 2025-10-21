@@ -11,7 +11,6 @@ import Combine
 import ExyteChat
 import ExyteMediaPicker
 import ChatAPIClient
-//вынеси из этого кода блок отвечающий за отображение invite url в отдельный скрин который будет доступен из кнопки размещенной в навигационной панели справа и обозначенной символом "..." AI!
 struct ConversationView: View {
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.presentationMode) private var presentationMode
@@ -19,6 +18,7 @@ struct ConversationView: View {
     @Binding var navigationPath: NavigationPath
     
     @StateObject private var viewModel: ConversationViewModel
+    @State private var showInviteURL: Bool = false
     
     init(viewModel: ConversationViewModel, path: Binding<NavigationPath>) {
         _viewModel = StateObject(wrappedValue: viewModel)
@@ -27,33 +27,7 @@ struct ConversationView: View {
     
     var body: some View {
         VStack {
-            // Invite URL block
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Text("Invite URL")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    Spacer()
-                    Button("Copy") {
-                        UIPasteboard.general.string = viewModel.conversationURL
-                    }
-                    .disabled((viewModel.conversationURL ?? "").isEmpty)
-                }
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                    Text(viewModel.conversationURL ?? "")
-                        .lineLimit(2)
-                        .truncationMode(.tail)
-                        .padding(.horizontal, 12)
-                        .textSelection(.enabled)
-                        .contextMenu {
-                            Button("Copy") { UIPasteboard.general.string = viewModel.conversationURL }
-                        }
-                }
-                .frame(height: 40)
-            }
-            .padding([.horizontal, .top])
+            NavigationLink(destination: InviteURLView(conversationURL: viewModel.conversationURL), isActive: $showInviteURL) { EmptyView() }
             ChatView( messages: viewModel.messages,
                       chatType: .conversation,
                       replyMode: .quote) { draft in
@@ -124,8 +98,9 @@ struct ConversationView: View {
                     .padding(.leading, 10)
                 }
                 ToolbarItem(placement: .primaryAction) {
-                    Text(viewModel.conversation.type ?? "")
-                        .font(.subheadline)
+                    Button("...") {
+                        showInviteURL = true
+                    }
                 }
             })
             .onAppear {
