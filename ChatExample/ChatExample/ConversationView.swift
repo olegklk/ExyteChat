@@ -4,13 +4,14 @@
 //
 //  Created by [Your Name] on [Date].
 //
+//https://chat.gramatune.com/#conversation=c:d5c78030-fd50-11e4-8f87-e365c4562176:f5a53f40-d69b-11e4-b69a-e365c4562176&batch=bcdc8d52-66e6-46a9-8cf1-5a97d880be3d
 
 import SwiftUI
 import Combine
 import ExyteChat
 import ExyteMediaPicker
 import ChatAPIClient
-
+//вынеси из этого кода блок отвечающий за отображение invite url в отдельный скрин который будет доступен из кнопки размещенной в навигационной панели справа и обозначенной символом "..." AI!
 struct ConversationView: View {
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.presentationMode) private var presentationMode
@@ -136,48 +137,72 @@ struct ConversationView: View {
                     SocketIOManager.shared.disconnect()
                 }
             }
+            .background(Color.black)
         }
+        
+    }
+    
+    fileprivate func messageBubble(_ message: Message, isLastInGroup: Bool) -> some View {
+        return Text(message.text)
+//            .font(.system(size: 14)).fontWeight(.medium)
+            .font(.custom("ProximaNova-Light", size: 18))
+            .foregroundStyle(message.user.isCurrentUser ? .white : .black)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .frame(minHeight:40)
+            .lineSpacing(6)
+            .background(
+                MessageBubbleShape(
+                    isCurrentUser: message.user.isCurrentUser,
+                    showTail: isLastInGroup
+                )
+                .fill(message.user.isCurrentUser
+                      ? Color(red: 0, green: 204.0/256.0, blue: 204.0/256.0)
+                      : Color(red: 0.95, green: 0.95, blue: 0.95))
+            )
     }
     
     @ViewBuilder
     func messageCell(_ message: Message, _ positionInGroup: PositionInUserGroup, _ commentsPosition: CommentsPosition?, showMenuClosure: @escaping ()->(), actionClosure: @escaping (Message, DefaultMessageMenuAction) -> Void, attachmentClosure: @escaping (Attachment) -> Void) -> some View {
         VStack {
-            HStack(alignment: .top, spacing: 12) {
+            HStack(alignment: .top, spacing: 0) {
+                
                 if positionInGroup == .last {
-                    CachedAsyncImage(
-                        url: message.user.avatarURL,
-                        cacheKey: message.user.avatarCacheKey
-                    ) { image in
-                        image
-                            .resizable()
-                            .scaledToFill()
-                    } placeholder: {
-                        Rectangle().fill(Color.gray)
+                    VStack(alignment: .trailing, spacing: 0) {
+                        Spacer()
+                        HStack(alignment: .bottom, spacing: 4) {
+                            CachedAsyncImage(
+                                url: message.user.avatarURL,
+                                cacheKey: message.user.avatarCacheKey
+                            ) { image in
+                                image
+                                    .resizable()
+                                    .scaledToFill()
+                            } placeholder: {
+                                Rectangle().fill(Color.gray)
+                            }
+                            .frame(width: 40, height: 40)
+                            .clipShape(Circle())
+                        }
+                        Color.clear
+                            .frame(width: 40, height: 20)
                     }
-                    .frame(width: 40, height: 40)
-                    .clipShape(Circle())
                 } else {
                     Color.clear
-                        .frame(width: 40, height: 40)
+                        .frame(width: 44, height: 20)
                 }
+                    
 
-                VStack(alignment: .leading, spacing: 6) {
+                VStack (alignment: message.user.isCurrentUser ? .trailing : .leading, spacing: 0) {
 
                     if !message.text.isEmpty {
-                        HStack {
-                            Text(message.text)
-                                .font(.system(size: 14)).fontWeight(.medium)
-                                .foregroundStyle(message.user.isCurrentUser ? .white : .black)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 8)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                        .fill(message.user.isCurrentUser
-                                              ? Color(red: 0, green: 204.0/256.0, blue: 204.0/256.0)
-                                              : Color(red: 0.95, green: 0.95, blue: 0.95))
-                                )
-                            Spacer()
+                        VStack {
+                            HStack {
+                                messageBubble(message, isLastInGroup: positionInGroup == .last)
+                                Spacer()
+                            }
                         }
+                        .padding(.bottom,2.0)
                     }
 
                     if !message.attachments.isEmpty {
@@ -206,7 +231,7 @@ struct ConversationView: View {
                 }
             }
             .padding(.leading, message.replyMessage != nil ? 40 : 0)
-//https://chat.gramatune.com/#conversation=c:d5c78030-fd50-11e4-8f87-e365c4562176:f5a53f40-d69b-11e4-b69a-e365c4562176&batch=bcdc8d52-66e6-46a9-8cf1-5a97d880be3d
+
             if let commentsPosition {
                 if commentsPosition.isLastInCommentsGroup {
                     Color.gray.frame(height: 0.5)
