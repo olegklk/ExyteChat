@@ -27,7 +27,7 @@ struct ConversationView: View {
     
     var body: some View {
         VStack {
-            NavigationLink(destination: InviteURLView(conversationURL: viewModel.conversationURL), isActive: $showInviteURL) { EmptyView() }
+            NavigationLink(destination: InviteURLView(conversationURL: viewModel.conversationURL), isActive: $showInviteURL) { EmptyView() }//'init(destination:isActive:label:)' was deprecated in iOS 16.0: use NavigationLink(value:label:), or navigationDestination(isPresented:destination:), inside a NavigationStack or NavigationSplitView AI!
             ChatView( messages: viewModel.messages,
                       chatType: .conversation,
                       replyMode: .quote) { draft in
