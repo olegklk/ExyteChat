@@ -97,8 +97,10 @@ struct ConversationView: View {
                     .padding(.leading, 10)
                 }
                 ToolbarItem(placement: .primaryAction) {
-                    Button("...") { //есть ли какой-нибудь стандартный системный символ для такой кнопки вместо текста из трех точек? замени на него AI!
+                    Button(action: {
                         navigationPath.append(ConversationRoute.inviteURL)
+                    }) {
+                        Image(systemName: "ellipsis.circle")
                     }
                 }
             })
