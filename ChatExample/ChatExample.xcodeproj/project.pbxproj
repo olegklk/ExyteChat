@@ -48,13 +48,14 @@
 		C391733B2EA69950005BDE01 /* proximanova-thin.otf in Resources */ = {isa = PBXBuildFile; fileRef = C39173332EA69950005BDE01 /* proximanova-thin.otf */; };
 		C391733C2EA69950005BDE01 /* proximanova-semiboldit.otf in Resources */ = {isa = PBXBuildFile; fileRef = C39173322EA69950005BDE01 /* proximanova-semiboldit.otf */; };
 		C391733D2EA69950005BDE01 /* proximanova-regularit.otf in Resources */ = {isa = PBXBuildFile; fileRef = C39173302EA69950005BDE01 /* proximanova-regularit.otf */; };
+		C391733F2EA77398005BDE01 /* ConversationDetailsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C391733E2EA77398005BDE01 /* ConversationDetailsView.swift */; };
+		C39173412EA773A8005BDE01 /* ConversationListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C39173402EA773A8005BDE01 /* ConversationListView.swift */; };
 		C39952082E8728E8008EF4D4 /* UserSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C39952072E8728E8008EF4D4 /* UserSetupView.swift */; };
 		C399520A2E8AE150008EF4D4 /* NewChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C39952092E8AE150008EF4D4 /* NewChatView.swift */; };
 		C39952102E8BE5D3008EF4D4 /* Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = C399520F2E8BE5D3008EF4D4 /* Utils.swift */; };
 		C39952122E8BE7CE008EF4D4 /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = C39952112E8BE7CE008EF4D4 /* Store.swift */; };
 		C3D61ADD2E8EB1F600C78FED /* ConversationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3D61ADC2E8EB1F600C78FED /* ConversationViewModel.swift */; };
 		C3D61ADF2E8EB22400C78FED /* ConversationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3D61ADE2E8EB22400C78FED /* ConversationView.swift */; };
-		C3D61AE12E8EBF8100C78FED /* ConversationListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3D61AE02E8EBF8100C78FED /* ConversationListView.swift */; };
 		C3D61AE32E8EC36A00C78FED /* ConversationListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3D61AE22E8EC36A00C78FED /* ConversationListViewModel.swift */; };
 		FF220E5D2DD9F0B700BE315E /* .editorconfig in Resources */ = {isa = PBXBuildFile; fileRef = FF220E5C2DD9F0AF00BE315E /* .editorconfig */; };
 /* End PBXBuildFile section */
@@ -113,13 +114,14 @@
 		C39173312EA69950005BDE01 /* proximanova-semibold.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "proximanova-semibold.otf"; sourceTree = "<group>"; };
 		C39173322EA69950005BDE01 /* proximanova-semiboldit.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "proximanova-semiboldit.otf"; sourceTree = "<group>"; };
 		C39173332EA69950005BDE01 /* proximanova-thin.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "proximanova-thin.otf"; sourceTree = "<group>"; };
+		C391733E2EA77398005BDE01 /* ConversationDetailsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationDetailsView.swift; sourceTree = "<group>"; };
+		C39173402EA773A8005BDE01 /* ConversationListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationListView.swift; sourceTree = "<group>"; };
 		C39952072E8728E8008EF4D4 /* UserSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserSetupView.swift; sourceTree = "<group>"; };
 		C39952092E8AE150008EF4D4 /* NewChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewChatView.swift; sourceTree = "<group>"; };
 		C399520F2E8BE5D3008EF4D4 /* Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utils.swift; sourceTree = "<group>"; };
 		C39952112E8BE7CE008EF4D4 /* Store.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; };
 		C3D61ADC2E8EB1F600C78FED /* ConversationViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationViewModel.swift; sourceTree = "<group>"; };
 		C3D61ADE2E8EB22400C78FED /* ConversationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationView.swift; sourceTree = "<group>"; };
-		C3D61AE02E8EBF8100C78FED /* ConversationListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationListView.swift; sourceTree = "<group>"; };
 		C3D61AE22E8EC36A00C78FED /* ConversationListViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ConversationListViewModel.swift; sourceTree = "<group>"; };
 		FF220E5C2DD9F0AF00BE315E /* .editorconfig */ = {isa = PBXFileReference; lastKnownFileType = text; path = .editorconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -158,9 +160,10 @@
 		135549322864620900C9459A /* ChatExample */ = {
 			isa = PBXGroup;
 			children = (
+				C39173402EA773A8005BDE01 /* ConversationListView.swift */,
+				C391733E2EA77398005BDE01 /* ConversationDetailsView.swift */,
 				C3622C942E9FC4DA007FEB0E /* VeroContactsView.swift */,
 				C3622C852E9EA898007FEB0E /* VeroKit */,
-				C3D61AE02E8EBF8100C78FED /* ConversationListView.swift */,
 				C3D61ADE2E8EB22400C78FED /* ConversationView.swift */,
 				C3D61ADC2E8EB1F600C78FED /* ConversationViewModel.swift */,
 				C3622C782E9421A2007FEB0E /* NewChatViewModel.swift */,
@@ -390,10 +393,12 @@
 				13DF043228647C070043DBBC /* ChatExampleViewModel.swift in Sources */,
 				5B6D3A732987D85A00765148 /* Color+hex.swift in Sources */,
 				13E17B6F2869E983004DF140 /* MockChatData.swift in Sources */,
+				C39173412EA773A8005BDE01 /* ConversationListView.swift in Sources */,
 				1376F7BB286472530016CD1B /* ChatError.swift in Sources */,
 				135987B82869F369006388CF /* Lorem.swift in Sources */,
 				135987BA2869F3AE006388CF /* MockMessage.swift in Sources */,
 				1376133E28782F8E00E7CF67 /* Date+Extensions.swift in Sources */,
+				C391733F2EA77398005BDE01 /* ConversationDetailsView.swift in Sources */,
 				C3622C792E9421A2007FEB0E /* NewChatViewModel.swift in Sources */,
 				13F1C0EF286AC86200D25D8A /* ChatExampleView.swift in Sources */,
 				C39952122E8BE7CE008EF4D4 /* Store.swift in Sources */,
@@ -402,7 +407,6 @@
 				C399520A2E8AE150008EF4D4 /* NewChatView.swift in Sources */,
 				135987BF2869F704006388CF /* MockChatInteractor.swift in Sources */,
 				5B0636D72C2E9F6100E54AEE /* CommentsExampleView.swift in Sources */,
-				C3D61AE12E8EBF8100C78FED /* ConversationListView.swift in Sources */,
 				C3D61AE32E8EC36A00C78FED /* ConversationListViewModel.swift in Sources */,
 				C39952082E8728E8008EF4D4 /* UserSetupView.swift in Sources */,
 				C391732A2EA6860B005BDE01 /* MessageBubbleShape.swift in Sources */,

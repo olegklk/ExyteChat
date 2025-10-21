@@ -1,7 +1,7 @@
 import SwiftUI
 import UIKit
 
-struct InviteURLView: View {
+struct ConversationDetailsView: View {
     let conversationURL: String?
 
     var body: some View {
