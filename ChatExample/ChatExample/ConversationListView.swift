@@ -9,7 +9,7 @@ struct ConversationListView: View {
     @Binding var navigationPath: NavigationPath
     
     @State private var theme: ExampleThemeState = .accent
-    @State private var color = Color(.exampleBlue)
+    @State private var color = Color(.black)
     
     @State private var conversationURL: String = ""
     @State private var debounceTask: Task<Void, Never>?
@@ -107,14 +107,14 @@ struct ConversationListView: View {
         .navigationTitle("Chats ")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                HStack {
-                    Button(theme.title) {
-                        theme = theme.next()
-                    }
-                    ColorPicker("", selection: $color)
-                }
-            }
+//            ToolbarItem(placement: .navigationBarTrailing) {
+//                HStack {
+//                    Button(theme.title) {
+//                        theme = theme.next()
+//                    }
+//                    ColorPicker("", selection: $color)
+//                }
+//            }
         }
         .onAppear(perform: setup)
         
@@ -129,10 +129,10 @@ struct ConversationListView: View {
             case .chat:
                 if let conversation = item.conversation {
                     let vm = ConversationViewModel(conversation: conversation)
-                    if !theme.isAccent, #available(iOS 18.0, *) {
+                    if #available(iOS 18.0, *) {
                         return AnyView(
                             ConversationView(viewModel: vm, path: $navigationPath)
-                                .chatTheme(themeColor: color)
+                                .chatTheme(themeColor: color, background: .static(color))
                         )
                     } else {
                         return AnyView(
