@@ -28,7 +28,7 @@ public actor ChatAPIClient {
         case getHistory(conversationId: String)
         case getUnreadConversations(userId: String)
         case getUnreadBatches(conversationId: String)
-        case getAllConversations(userId: String)
+        case getAllConversations
         
         var path: String {
             switch self {
@@ -44,8 +44,8 @@ public actor ChatAPIClient {
                 return "/chats/unread/by-user/\(userId)"
             case .getUnreadBatches(let conversationId):
                 return "/chats/\(conversationId)/unread"
-            case .getAllConversations(let userId):
-                return "/chats/all-chat/\(userId)"
+            case .getAllConversations:
+                return "/chats/all-chat"
             }
         }
     }
@@ -112,8 +112,8 @@ public actor ChatAPIClient {
         return items?.compactMap { ServerUnreadConversationListItem(from: $0) } ?? []
     }
     
-    public func getAllConversations(userId: String, limit: Int?, perConv: Int?) async throws -> [ServerConversationListItem] {
-        var urlComponents = URLComponents(string: baseURL + Endpoint.getAllConversations(userId: userId).path)!
+    public func getAllConversations(limit: Int?, perConv: Int?) async throws -> [ServerConversationListItem] {
+        var urlComponents = URLComponents(string: baseURL + Endpoint.getAllConversations.path)!
         var q: [URLQueryItem] = []
         if let limit { q.append(URLQueryItem(name: "limit", value: String(limit))) }
         if let perConv { q.append(URLQueryItem(name: "perConv", value: String(perConv))) }

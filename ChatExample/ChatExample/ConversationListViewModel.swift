@@ -20,7 +20,7 @@ class ConversationListViewModel: ObservableObject {
         
         do {
             isLoading = true
-            let items = try await ChatAPIClient.shared.getAllConversations(userId: Store.getSelfProfile()?.id ?? "", limit: nil, perConv: 1)
+            let items = try await ChatAPIClient.shared.getAllConversations(limit: nil, perConv: 1)
             
             for item in items {
                 await loadChatHistory(item)
