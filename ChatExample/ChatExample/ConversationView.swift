@@ -97,7 +97,7 @@ struct ConversationView: View {
                     .padding(.leading, 10)
                 }
                 ToolbarItem(placement: .primaryAction) {
-                    Button("...") {
+                    Button("...") { //есть ли какой-нибудь стандартный системный символ для такой кнопки вместо текста из трех точек? замени на него AI!
                         navigationPath.append(ConversationRoute.inviteURL)
                     }
                 }
@@ -105,7 +105,7 @@ struct ConversationView: View {
             .navigationDestination(for: ConversationRoute.self) { route in
                 switch route {
                 case .inviteURL:
-                    InviteURLView(conversationURL: viewModel.conversationURL)
+                    ConversationDetailsView(conversationURL: viewModel.conversationURL)
                 }
             }
             .onAppear {
