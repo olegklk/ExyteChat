@@ -25,7 +25,7 @@ struct MessageBubbleShape: Shape {
         return path
     }
     
-    private func drawRightTailBubble(in rect: CGRect, path: inout Path) {
+    private func drawLeftTailBubble(in rect: CGRect, path: inout Path) {
         let frame = rect
         
         path.move(to: CGPoint(x: frame.maxX - 8.05, y: frame.minY))
@@ -105,7 +105,7 @@ struct MessageBubbleShape: Shape {
         path.closeSubpath()
     }
     
-    private func drawLeftTailBubble(in rect: CGRect, path: inout Path) {
+    private func drawRightTailBubble(in rect: CGRect, path: inout Path) {
         let frame = rect
         
         path.move(to: CGPoint(x: frame.minX + 8.05, y: frame.minY))
