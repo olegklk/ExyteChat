@@ -11,6 +11,7 @@ import Combine
 import ExyteChat
 import ExyteMediaPicker
 import ChatAPIClient
+private enum ConversationRoute: Hashable { case inviteURL }
 struct ConversationView: View {
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.presentationMode) private var presentationMode
@@ -18,7 +19,6 @@ struct ConversationView: View {
     @Binding var navigationPath: NavigationPath
     
     @StateObject private var viewModel: ConversationViewModel
-    @State private var showInviteURL: Bool = false
     
     init(viewModel: ConversationViewModel, path: Binding<NavigationPath>) {
         _viewModel = StateObject(wrappedValue: viewModel)
@@ -27,7 +27,6 @@ struct ConversationView: View {
     
     var body: some View {
         VStack {
-            NavigationLink(destination: InviteURLView(conversationURL: viewModel.conversationURL), isActive: $showInviteURL) { EmptyView() }//'init(destination:isActive:label:)' was deprecated in iOS 16.0: use NavigationLink(value:label:), or navigationDestination(isPresented:destination:), inside a NavigationStack or NavigationSplitView AI!
             ChatView( messages: viewModel.messages,
                       chatType: .conversation,
                       replyMode: .quote) { draft in
@@ -99,10 +98,16 @@ struct ConversationView: View {
                 }
                 ToolbarItem(placement: .primaryAction) {
                     Button("...") {
-                        showInviteURL = true
+                        navigationPath.append(ConversationRoute.inviteURL)
                     }
                 }
             })
+            .navigationDestination(for: ConversationRoute.self) { route in
+                switch route {
+                case .inviteURL:
+                    InviteURLView(conversationURL: viewModel.conversationURL)
+                }
+            }
             .onAppear {
                 viewModel.onAppear()
             }
