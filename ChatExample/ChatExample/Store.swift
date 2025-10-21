@@ -75,7 +75,7 @@ public final class Store {
     
     public static func userDisplayName() -> String {
         if let profile = _selfProfile {
-            return "\(profile.firstName) \(profile.lastName)".trimmingCharacters(in: .whitespaces)
+            return "\(profile.firstName) \(profile.lastName ?? "")".trimmingCharacters(in: .whitespaces)
         }
         return "You"
     }

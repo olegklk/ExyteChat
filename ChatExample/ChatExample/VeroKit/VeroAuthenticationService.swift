@@ -301,12 +301,12 @@ extension VeroAuthenticationService {
             let result = try await sendRequest(url: url, numberOfRetries: 5, body: body, refreshToken: true, skipAuth: true, error: .complete)
             let decoder = JSONDecoder()
             let response = try decoder.decode(CompleteLoginResponse.self, from: result)
-            if let userToken = response.veroPass?.jwt {
+            if let _ = response.veroPass?.jwt {
                 KeychainHelper.standard.delete(service: .token)
                 KeychainHelper.standard.save(response, service:.token)
                 KeychainHelper.standard.save(VeroLoginData(email: email, password: password), service: .credential)
                 
-                let veroLoginData = KeychainHelper.standard.read(service: .credential, type: VeroLoginData.self)
+                _ = KeychainHelper.standard.read(service: .credential, type: VeroLoginData.self)
                 
                 Task {
                     await ChatAPIClient.shared.setTokenProvider {
@@ -501,8 +501,8 @@ struct ProfileResponse: Decodable {
 public struct Profile: Codable {
     let id: String
     let firstName: String
-    let lastName: String
-    let username: String
+    let lastName: String?
+    let username: String?
     let picture: String?
     enum CodingKeys: String, CodingKey {
         case id, username, picture
