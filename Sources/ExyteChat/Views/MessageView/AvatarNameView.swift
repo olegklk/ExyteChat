@@ -15,6 +15,7 @@ struct AvatarNameView: View {
         Text(letter)
             .viewSize(avatarSize)
             .clipShape(Circle())
+            .background(Circle().foregroundStyle(.gray))
     }
 }
 
