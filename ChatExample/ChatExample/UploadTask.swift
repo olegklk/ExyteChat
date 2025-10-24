@@ -4,7 +4,7 @@ import Foundation
 class UploadTask: NSObject, URLSessionTaskDelegate, URLSessionDataDelegate, ClientToServerDelegate {
 
     static var sWaitingForNewAuthTokens: Bool = false
-
+//этот класс перенесен из другого проекта поэтому некоторые вещи стали чужерожными, давай избавимся от наследния чужого проекта и в целом от наследния  Objective-c и UIKit и переделаем все в соответствии с нормами Swift AI!
     private var data: Data
     private var totalBytes: Int64 = 0
     private var parameters: [Any] = []
