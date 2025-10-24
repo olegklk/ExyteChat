@@ -91,9 +91,10 @@ final class UploadTask {
         return URLSession(configuration: config)
     }()
     
-    //добавь сюда автоматическое создание http header "Authorization" со значением "Bearer \(jwt)" а также header "Content-Type" используя mime и header "Content-Length" AI!
+    // JWT token provider for Authorization header
+    private var tokenProvider: (() -> String?)?
+    func setTokenProvider(_ provider: @escaping () -> String?) { self.tokenProvider = provider }
     
-
     private(set) var url: URL!
     private(set) var remoteUrl: URL?
     private(set) var mime: String!
@@ -115,7 +116,11 @@ final class UploadTask {
 
         var request = URLRequest(url: endpoint, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 240.0)
         request.httpMethod = "POST"
+        if let token = tokenProvider?(), !token.isEmpty {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
         request.setValue(mime, forHTTPHeaderField: "Content-Type")
+        request.setValue(String(data.count), forHTTPHeaderField: "Content-Length")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
 
         // Create task
