@@ -92,6 +92,13 @@ struct MessageView: View {
             || (chatType == .conversation && positionInUserGroup == .last)
             || (chatType == .comments && positionInUserGroup == .first)
     }
+    
+    var showNameRow: Bool {
+        isDisplayingMessageMenu
+            || positionInUserGroup == .single
+            || (chatType == .conversation && positionInUserGroup == .last)
+            || (chatType == .comments && positionInUserGroup == .first)
+    }
 
     var topPadding: CGFloat {
         if chatType == .comments { return 0 }
@@ -121,17 +128,51 @@ struct MessageView: View {
                         }
                 }
 
-                bubbleView(message)
-            }
-
-            if message.user.isCurrentUser, let status = message.status {
-                MessageStatusView(status: status) {
-                    if case let .error(draft) = status {
-                        viewModel.sendMessage(draft)
+                HStack(alignment: .bottom, spacing: 0) {
+                    //show send status to the left from bubble for us
+                    if message.user.isCurrentUser, let status = message.status {
+                        MessageStatusView(status: status) {
+                            if case let .error(draft) = status {
+                                viewModel.sendMessage(draft)
+                            }
+                        }
+                        .sizeGetter($statusSize)
+                        .padding(.bottom, 10)
+                    }
+                    
+                    bubbleView(message)
+                    
+                    //show send status to the right from bubble for others
+                    if !message.user.isCurrentUser, let status = message.status {
+                        MessageStatusView(status: status) {
+                            if case let .error(draft) = status {
+                                viewModel.sendMessage(draft)
+                            }
+                        }
+                        .sizeGetter($statusSize)
+                        .padding(.bottom, 10)
                     }
                 }
-                .sizeGetter($statusSize)
+                .padding(.leading, message.replyMessage != nil ? 40 : 0)
+                
+                //render date and name underneath
+                if showNameRow {
+                    HStack {
+                        if message.user.isCurrentUser {
+                            Spacer()
+                        }
+                        Text(message.user.name)
+                            .font(.system(size: 12)).fontWeight(.semibold)
+                            .foregroundStyle(.gray)
+                        
+                    }
+                }
             }
+            
+            if message.user.isCurrentUser {
+                avatarView
+            }
+
         }
         .padding(.top, topPadding)
         .padding(.bottom, bottomPadding)
@@ -166,8 +207,14 @@ struct MessageView: View {
                 }
 
                 if !message.text.isEmpty {
-                    textWithTimeView(message)
-                        .font(Font(font))
+                    MessageTextView(
+                        text: message.text, messageStyler: messageStyler,
+                        userType: message.user.type, shouldShowLinkPreview: shouldShowLinkPreview,
+                        messageLinkPreviewLimit: messageLinkPreviewLimit
+                    )
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, MessageView.horizontalTextPadding)
+                    
                 }
 
                 if let recording = message.recording {
@@ -179,7 +226,7 @@ struct MessageView: View {
                     }
                 }
             }
-            .bubbleBackground(message, theme: theme)
+            .bubbleBackground(message, theme: theme, showTail: positionInUserGroup == .last || positionInUserGroup == .single)
             .zIndex(0)
         }
         .applyIf(isDisplayingMessageMenu) {
@@ -219,11 +266,13 @@ struct MessageView: View {
             width: message.attachments.isEmpty
                 ? nil : MessageView.widthWithMedia + additionalMediaInset
         )
-        .bubbleBackground(message, theme: theme, isReply: true)
+        .bubbleBackground(message, theme: theme, isReply: true, showTail: false)
     }
 
     @ViewBuilder
     var avatarView: some View {
+        let paddingLeading = message.user.isCurrentUser ? MessageView.horizontalAvatarPadding : MessageView.horizontalScreenEdgePadding
+        let paddingTrailing = message.user.isCurrentUser ? MessageView.horizontalScreenEdgePadding : MessageView.horizontalAvatarPadding
         Group {
             if showAvatar {
                 if let url = message.user.avatarURL {
@@ -244,8 +293,8 @@ struct MessageView: View {
                 Color.clear.viewSize(avatarSize)
             }
         }
-        .padding(.leading, MessageView.horizontalScreenEdgePadding)
-        .padding(.trailing, MessageView.horizontalAvatarPadding)
+        .padding(.leading,  paddingLeading)
+        .padding(.trailing, paddingTrailing)
         .sizeGetter($avatarViewSize)
     }
 
@@ -258,12 +307,6 @@ struct MessageView: View {
             $0
                 .padding(.top, MessageView.attachmentPadding)
                 .padding(.horizontal, MessageView.attachmentPadding)
-        }
-        .overlay(alignment: .bottomTrailing) {
-            if message.text.isEmpty {
-                messageTimeView(needsCapsule: true)
-                    .padding(4)
-            }
         }
         .contentShape(Rectangle())
     }
@@ -349,9 +392,9 @@ struct MessageView: View {
 extension View {
 
     @ViewBuilder
-    func bubbleBackground(_ message: Message, theme: ChatTheme, isReply: Bool = false) -> some View
+    func bubbleBackground(_ message: Message, theme: ChatTheme, isReply: Bool = false, showTail: Bool) -> some View
     {
-        let radius: CGFloat = !message.attachments.isEmpty ? 12 : 20
+//        let radius: CGFloat = !message.attachments.isEmpty ? 12 : 20
         let additionalMediaInset: CGFloat = message.attachments.count > 1 ? 2 : 0
         self
             .frame(
@@ -361,12 +404,14 @@ extension View {
             .foregroundColor(theme.colors.messageText(message.user.type))
             .background {
                 if isReply || !message.text.isEmpty || message.recording != nil {
-                    RoundedRectangle(cornerRadius: radius)
-                        .foregroundColor(theme.colors.messageBG(message.user.type))
-                        .opacity(isReply ? theme.style.replyOpacity : 1)
+                    MessageBubbleShape(
+                        isCurrentUser: message.user.isCurrentUser,
+                        showTail: showTail
+                    )
+                    .foregroundColor(theme.colors.messageBG(message.user.type))
+                    .opacity(isReply ? theme.style.replyOpacity : 1)
                 }
             }
-            .cornerRadius(radius)
     }
 }
 

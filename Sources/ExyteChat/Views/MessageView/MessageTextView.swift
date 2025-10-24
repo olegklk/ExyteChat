@@ -45,7 +45,12 @@ struct MessageTextView: View {
         if !styledText.characters.isEmpty {
             VStack(alignment: .leading) {
                 Text(styledText)
+                    .font(.custom("ProximaNova-Light", size: 18))
+                    .padding(.vertical, 10)
+                    .frame(minHeight:35)
+                    .lineSpacing(6)
                     .sizeGetter($textSize)
+                
 
                 // We use .enumerated(), and \.offset as the id, so that a message with duplicate links will show a preview for each.
                 if !urlsToPreview.isEmpty {

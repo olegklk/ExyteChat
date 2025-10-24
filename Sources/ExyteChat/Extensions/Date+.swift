@@ -17,3 +17,19 @@ extension Date {
 extension Date {
     static let iso8601Date = Date.ISO8601FormatStyle.iso8601.year().month().day()
 }
+
+@MainActor
+class DateFormatting {
+    static let agoFormatter = RelativeDateTimeFormatter()
+}
+
+extension Date {
+    // 1 hour ago, 2 days ago...
+    @MainActor func formatAgo() -> String {
+        let result = DateFormatting.agoFormatter.localizedString(for: self, relativeTo: Date())
+        if result.contains("second") {
+            return "Just now"
+        }
+        return result
+    }
+}
