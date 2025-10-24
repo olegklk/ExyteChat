@@ -1,4 +1,5 @@
 import Foundation
+import os
 
 public enum ChatAPIError: Error, LocalizedError, Sendable {
     case server(statusCode: Int, message: String)
@@ -127,7 +128,6 @@ public actor ChatAPIClient {
         guard let url = urlComponents.url else {
             throw URLError(.badURL)
         }
-        //реализуй здесь логирование чтобы выводились и запрос и ответ при каждом запросе AI!
         var request = URLRequest(url: url)
         request.httpMethod = method
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -138,7 +138,48 @@ public actor ChatAPIClient {
             request.httpBody = try JSONSerialization.data(withJSONObject: body)
         }
         
+        #if DEBUG
+        let logger = Logger(subsystem: "ExyteChat.ChatAPIClient", category: "network")
+        let redactedHeaders: [String: String] = {
+            var h = request.allHTTPHeaderFields ?? [:]
+            if h.keys.contains("Authorization") { h["Authorization"] = "Bearer <redacted>" }
+            return h
+        }()
+        let requestBodyString: String = {
+            guard let data = request.httpBody, !data.isEmpty else { return "<empty>" }
+            if let obj = try? JSONSerialization.jsonObject(with: data),
+               let pretty = try? JSONSerialization.data(withJSONObject: obj, options: [.prettyPrinted]),
+               let str = String(data: pretty, encoding: .utf8) {
+                return str
+            } else {
+                return String(data: data, encoding: .utf8) ?? "<\(data.count) bytes>"
+            }
+        }()
+        logger.debug("➡️ Request: \(request.httpMethod ?? "") \(request.url?.absoluteString ?? "")")
+        logger.debug("Headers: \(String(describing: redactedHeaders))")
+        logger.debug("Body: \(requestBodyString)")
+        #endif
+        
         let (data, response) = try await URLSession.shared.data(for: request)
+        
+        #if DEBUG
+        do {
+            let logger = Logger(subsystem: "ExyteChat.ChatAPIClient", category: "network")
+            if let httpResponse = response as? HTTPURLResponse {
+                let responseBodyString: String = {
+                    if data.isEmpty { return "<empty>" }
+                    if let obj = try? JSONSerialization.jsonObject(with: data),
+                       let pretty = try? JSONSerialization.data(withJSONObject: obj, options: [.prettyPrinted]),
+                       let str = String(data: pretty, encoding: .utf8) {
+                        return str
+                    }
+                    return String(data: data, encoding: .utf8) ?? "<\(data.count) bytes>"
+                }()
+                logger.debug("⬅️ Response: \(httpResponse.statusCode) \(request.httpMethod ?? "") \(request.url?.absoluteString ?? "")")
+                logger.debug("Body: \(responseBodyString)")
+            }
+        }
+        #endif
         
         guard let httpResponse = response as? HTTPURLResponse else {
             throw URLError(.badServerResponse)
