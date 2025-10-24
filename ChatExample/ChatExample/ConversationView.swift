@@ -27,6 +27,7 @@ struct ConversationView: View {
     
     var body: some View {
         VStack {
+            //подскажи как извне задать avatarSize который используется в ChatView AI!
             ChatView( messages: viewModel.messages,
                       chatType: .conversation,
                       replyMode: .quote,
