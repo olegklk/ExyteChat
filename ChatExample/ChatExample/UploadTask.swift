@@ -14,8 +14,10 @@ class UploadTask: NSObject, URLSessionTaskDelegate, URLSessionDataDelegate, Clie
     private var uploadTask: URLSessionUploadTask?
     private var isCanceled = false
     private var waitingForNewAuthTokens = false
-//давай обойдемся без использования ReactiveObjectiveC (RAC) и сделай пожалуйста так чтобы этот класс можно было использовать для upload любого типа файлов, а не только images AI!
-    private let subject = RACSubject()
+    // Removed RAC; use closures for progress and completion
+    private var onProgress: ((Double) -> Void)?
+    private var onComplete: ((URL?, URL?) -> Void)?
+    private var onError: ((Error) -> Void)?
     private lazy var session: URLSession = {
         let config = URLSessionConfiguration.default
         return URLSession(configuration: config, delegate: self, delegateQueue: nil)
@@ -31,16 +33,21 @@ class UploadTask: NSObject, URLSessionTaskDelegate, URLSessionDataDelegate, Clie
         return p
     }()
 
-    var signal: RACSignal {
-        return subject
-    }
+    // Removed RAC signal API. Use setProgressHandler(_:), setCompletionHandler(_:), and setErrorHandler(_:) instead.
+    func setProgressHandler(_ handler: @escaping (Double) -> Void) { self.onProgress = handler }
+    func setCompletionHandler(_ handler: @escaping (URL?, URL?) -> Void) { self.onComplete = handler }
+    func setErrorHandler(_ handler: @escaping (Error) -> Void) { self.onError = handler }
 
     // MARK: - Initializers
 
-    init(url: URL?, data: Data, parameters: [Any], mime: String?) {
+    init(url: URL?, data: Data, parameters: [Any], mime: String?, onProgress: ((Double) -> Void)? = nil, onComplete: ((URL?, URL?) -> Void)? = nil, onError: ((Error) -> Void)? = nil) {
         self.data = data
         self.parameters = parameters
         super.init()
+
+        self.onProgress = onProgress
+        self.onComplete = onComplete
+        self.onError = onError
 
         self.url = url
 
@@ -195,7 +202,8 @@ class UploadTask: NSObject, URLSessionTaskDelegate, URLSessionDataDelegate, Clie
                             if let fileURL = (NSURL.serverResourceURLfromRelativeURLString?(urlStr.lowercased()) as URL?) {
                                 DDLogInfo("Upload <\(Unmanaged.passUnretained(self).toOpaque())> finished, server URL: \(fileURL.absoluteString)")
 
-                                if let imageToCache = UIImage(data: self.data) {
+                                if let mime = self.mime, mime.hasPrefix("image/"),
+                                   let imageToCache = UIImage(data: self.data) {
                                     ImageDownloader.store(withImage: imageToCache, forKey: urlStr)
                                 }
 
@@ -205,7 +213,8 @@ class UploadTask: NSObject, URLSessionTaskDelegate, URLSessionDataDelegate, Clie
                                     }
                                 }
 
-                                if let thumbLocalURL = (self.url as NSURL).thumbnailURL?() as URL?,
+                                if let mime = self.mime, mime.hasPrefix("image/"),
+                                   let thumbLocalURL = (self.url as NSURL).thumbnailURL?() as URL?,
                                    let thumbData = try? Data(contentsOf: thumbLocalURL),
                                    let thumbnailToCache = UIImage(data: thumbData) {
                                     if let remoteThumbnailURL = (fileURL as NSURL).thumbnailURL?() as URL? {
@@ -226,14 +235,14 @@ class UploadTask: NSObject, URLSessionTaskDelegate, URLSessionDataDelegate, Clie
                             self.remoteUrl = URL(string: urlStr)
                         }
 
-                        self.subject.sendCompleted()
+                        self.onComplete?(self.url, self.remoteUrl)
                     } else {
                         DDLogError("Upload <\(Unmanaged.passUnretained(self).toOpaque())> finished, but no server URL was provided")
-                        self.subject.sendError(NSError(domain: "DMZUploadTaskError", code: 666, userInfo: nil))
+                        self.onError?(NSError(domain: "DMZUploadTaskError", code: 666, userInfo: nil))
                     }
                 } else {
                     DDLogError("Upload <\(Unmanaged.passUnretained(self).toOpaque())> finished, but response JSON parsing failed")
-                    self.subject.sendError(NSError(domain: "DMZUploadTaskError", code: 666, userInfo: nil))
+                    self.onError?(NSError(domain: "DMZUploadTaskError", code: 666, userInfo: nil))
                 }
             } else {
                 let req = self.uploadTask?.currentRequest
@@ -255,7 +264,7 @@ class UploadTask: NSObject, URLSessionTaskDelegate, URLSessionDataDelegate, Clie
                         }
                         DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
                             if self.waitingForNewAuthTokens {
-                                self.subject.sendError(NSError(domain: "DMZUploadTaskError", code: 666, userInfo: nil))
+                                self.onError?(NSError(domain: "DMZUploadTaskError", code: 666, userInfo: nil))
                             }
                         }
                     } else {
@@ -268,14 +277,14 @@ class UploadTask: NSObject, URLSessionTaskDelegate, URLSessionDataDelegate, Clie
                         UploadTask.sWaitingForNewAuthTokens = true
                     }
                 } else if httpResponse?.statusCode == 429 {
-                    self.subject.sendError(NSError(domain: "DMZUploadTaskError", code: 0, userInfo: nil))
+                    self.onError?(NSError(domain: "DMZUploadTaskError", code: 0, userInfo: nil))
                 } else {
-                    self.subject.sendError(NSError(domain: "DMZUploadTaskError", code: 666, userInfo: nil))
+                    self.onError?(NSError(domain: "DMZUploadTaskError", code: 666, userInfo: nil))
                 }
             }
         } else {
             DDLogError("Upload <\(Unmanaged.passUnretained(self).toOpaque())> failed with error: \(String(describing: error))")
-            self.subject.sendError(error!)
+            self.onError?(error!)
         }
     }
 
@@ -335,7 +344,7 @@ class UploadTask: NSObject, URLSessionTaskDelegate, URLSessionDataDelegate, Clie
                 self.progress.totalUnitCount = self.totalBytes
             }
             self.progress.completedUnitCount = totalBytesSent
-            self.subject.sendNext(NSNumber(value: prog))
+            self.onProgress?(prog)
             #if !APP_STORE_MODE
             DDLogDebug("didSendBodyData \(prog)")
             #endif
