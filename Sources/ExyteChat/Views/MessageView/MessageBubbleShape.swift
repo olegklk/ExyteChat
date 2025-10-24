@@ -1,24 +1,35 @@
 import SwiftUI
-//измени этот класс так чтобы добавить enum со значениями rightTail, leftTail, noTail и принимать одно из этих значений в параметре избавившись от переменных isCurrentUser и showTail AI!
 struct MessageBubbleShape: Shape {
-    let isCurrentUser: Bool
-    let showTail: Bool
+    enum TailStyle {
+        case rightTail
+        case leftTail
+        case noTail
+    }
     
+    let tail: TailStyle
+    
+    init(tail: TailStyle = .leftTail) {
+        self.tail = tail
+    }
+    
+    @available(*, deprecated, message: "Use init(tail:) with TailStyle instead")
     init(isCurrentUser: Bool = false, showTail: Bool = true) {
-        self.isCurrentUser = isCurrentUser
-        self.showTail = showTail
+        if !showTail {
+            self.tail = .noTail
+        } else {
+            self.tail = isCurrentUser ? .rightTail : .leftTail
+        }
     }
     
     func path(in rect: CGRect) -> Path {
         var path = Path()
         
-        if showTail {
-            if isCurrentUser {
-                drawRightTailBubble(in: rect, path: &path)
-            } else {
-                drawLeftTailBubble(in: rect, path: &path)
-            }
-        } else {
+        switch tail {
+        case .rightTail:
+            drawRightTailBubble(in: rect, path: &path)
+        case .leftTail:
+            drawLeftTailBubble(in: rect, path: &path)
+        case .noTail:
             drawNoTailBubble(in: rect, path: &path)
         }
         
