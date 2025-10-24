@@ -150,7 +150,7 @@ public struct ChatTheme {
             messageMyText: Color = Color.white,
             messageMyTimeText: Color = Color("messageMyTimeText", bundle: .current),
             messageFriendBG: Color = Color("messageFriendBG", bundle: .current),
-            messageFriendText: Color = Color("mainText", bundle: .current),
+            messageFriendText: Color = Color("messageFriendText", bundle: .current),
             messageFriendTimeText: Color = Color("messageFriendTimeText", bundle: .current),
             messageSystemBG: Color = Color("messageFriendBG", bundle: .current),
             messageSystemText: Color = Color("mainText", bundle: .current),

@@ -137,7 +137,6 @@ struct MessageView: View {
                             }
                         }
                         .sizeGetter($statusSize)
-                        .padding(.bottom, 10)
                     }
                     
                     bubbleView(message)
@@ -149,8 +148,7 @@ struct MessageView: View {
                                 viewModel.sendMessage(draft)
                             }
                         }
-                        .sizeGetter($statusSize)
-                        .padding(.bottom, 10)
+                        .sizeGetter($statusSize)                        
                     }
                 }
                 .padding(.leading, message.replyMessage != nil ? 40 : 0)
@@ -404,9 +402,10 @@ extension View {
             .foregroundColor(theme.colors.messageText(message.user.type))
             .background {
                 if isReply || !message.text.isEmpty || message.recording != nil {
+                    let shapeStyle = showTail ? (message.user.isCurrentUser ? MessageBubbleShape.ShapeStyle.rightTail : MessageBubbleShape.ShapeStyle.leftTail )   : MessageBubbleShape.ShapeStyle.noTail
+                                        
                     MessageBubbleShape(
-                        isCurrentUser: message.user.isCurrentUser,
-                        showTail: showTail
+                        shape: shapeStyle
                     )
                     .foregroundColor(theme.colors.messageBG(message.user.type))
                     .opacity(isReply ? theme.style.replyOpacity : 1)

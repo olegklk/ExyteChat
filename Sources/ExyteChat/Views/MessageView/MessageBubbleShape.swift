@@ -1,30 +1,21 @@
 import SwiftUI
 struct MessageBubbleShape: Shape {
-    enum TailStyle {
+    enum ShapeStyle {
         case rightTail
         case leftTail
         case noTail
     }
     
-    let tail: TailStyle
+    let shape: ShapeStyle
     
-    init(tail: TailStyle = .leftTail) {
-        self.tail = tail
-    }
-    
-    @available(*, deprecated, message: "Use init(tail:) with TailStyle instead")
-    init(isCurrentUser: Bool = false, showTail: Bool = true) {
-        if !showTail {
-            self.tail = .noTail
-        } else {
-            self.tail = isCurrentUser ? .rightTail : .leftTail
-        }
+    init(shape: ShapeStyle = .noTail) {
+        self.shape = shape
     }
     
     func path(in rect: CGRect) -> Path {
         var path = Path()
         
-        switch tail {
+        switch shape {
         case .rightTail:
             drawRightTailBubble(in: rect, path: &path)
         case .leftTail:

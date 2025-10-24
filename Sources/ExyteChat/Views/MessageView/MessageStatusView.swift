@@ -37,7 +37,9 @@ struct MessageStatusView: View {
             }
         }
         .viewSize(MessageView.statusViewSize)
+        .padding(.leading, MessageView.horizontalStatusPadding)
         .padding(.trailing, MessageView.horizontalStatusPadding)
+        .padding(.bottom, 2)
     }
 
     @MainActor
