@@ -1,6 +1,5 @@
 import Foundation
 
-/// A lightweight, Swift-native upload helper with closure-based callbacks and no ObjC/UIKit dependencies.
 final class UploadTask {
 
     // MARK: Public API
@@ -91,6 +90,9 @@ final class UploadTask {
         config.timeoutIntervalForResource = 240
         return URLSession(configuration: config)
     }()
+    
+    //добавь сюда автоматическое создание http header "Authorization" со значением "Bearer \(jwt)" а также header "Content-Type" используя mime и header "Content-Length" AI!
+    
 
     private(set) var url: URL!
     private(set) var remoteUrl: URL?
