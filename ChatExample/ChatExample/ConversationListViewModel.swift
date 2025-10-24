@@ -43,7 +43,7 @@ class ConversationListViewModel: ObservableObject {
             batches = batches.sorted { $0.startedAt < $1.startedAt }
             
             var conversation = Store.ensureConversation(item.conversationId)
-            
+            //как проще всего получить значение batch.participants если нужно убедиться что оно не пустое (некоторые элементы в массиве batches могут содержать пустое значение) AI!
             if let lastBatch = batches.last {
                 conversation.batchId = lastBatch.id
                 conversation.type = (lastBatch.type).rawValue
