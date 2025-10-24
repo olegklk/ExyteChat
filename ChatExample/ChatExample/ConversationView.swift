@@ -29,14 +29,16 @@ struct ConversationView: View {
         VStack {
             ChatView( messages: viewModel.messages,
                       chatType: .conversation,
-                      replyMode: .quote) { draft in
+                      replyMode: .quote,
+                      didSendMessage: { draft in
                             Task { await viewModel.handleSend(draft) }
-                        }
-                      messageBuilder: {
-                message, positionInGroup, positionInMessagesSection, positionInCommentsGroup,
-                showContextMenuClosure, messageActionClosure, showAttachmentClosure in
-                          messageCell(message, positionInGroup, positionInCommentsGroup, showMenuClosure: showContextMenuClosure, actionClosure: messageActionClosure, attachmentClosure: showAttachmentClosure)
-            }
+                        },
+                      reactionDelegate: nil,
+//                      messageBuilder: {
+//                message, positionInGroup, positionInMessagesSection, positionInCommentsGroup,
+//                showContextMenuClosure, messageActionClosure, showAttachmentClosure in
+//                          messageCell(message, positionInGroup, positionInCommentsGroup, showMenuClosure: showContextMenuClosure, actionClosure: messageActionClosure, attachmentClosure: showAttachmentClosure)
+//            },
               messageMenuAction: { (action: DefaultMessageMenuAction, defaultActionClosure, message) in
                 
                 switch action {
@@ -48,7 +50,7 @@ struct ConversationView: View {
                     })
                     case .copy: defaultActionClosure(message, .copy)
                 }
-            }
+            })
                       
             .swipeActions(edge: .leading, performsFirstActionWithFullSwipe: true,
                           items: [
@@ -122,185 +124,6 @@ struct ConversationView: View {
             .background(Color.black)
         }
         
-    }
-    
-    fileprivate func messageBubble(_ message: Message, needsCurvyTail: Bool) -> some View {
-        return Text(message.text)
-            .font(.custom("ProximaNova-Light", size: 18))
-            .foregroundStyle(message.user.isCurrentUser ? .white : .black)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-            .frame(minHeight:40)
-            .lineSpacing(6)
-            .background(
-                MessageBubbleShape(
-                    isCurrentUser: message.user.isCurrentUser,
-                    showTail: needsCurvyTail
-                )
-                .fill(message.user.isCurrentUser
-                      ? Color(red: 0, green: 204.0/256.0, blue: 204.0/256.0)
-                      : Color(red: 0.95, green: 0.95, blue: 0.95))
-            )
-    }
-    
-    fileprivate func avatarContainer(_ message: Message, showAvatar: Bool) -> some View {
-       return VStack(alignment: .trailing, spacing: 0) {
-            Spacer()
-            HStack(alignment: .bottom, spacing: 4) {
-                
-                if showAvatar {
-                    CachedAsyncImage(
-                        url: message.user.avatarURL,
-                        cacheKey: message.user.avatarCacheKey
-                    ) { image in
-                        image
-                            .resizable()
-                            .scaledToFill()
-                    } placeholder: {
-                        Rectangle().fill(Color.gray)
-                    }
-                    .frame(width: 40, height: 40)
-                    .clipShape(Circle())
-                } else {
-                    Color.clear
-                         .frame(width: 44, height: 20)
-                }
-            }
-        }
-        .padding(.bottom,20)
-    }
-    
-    @ViewBuilder
-    func messageCell(_ message: Message, _ positionInGroup: PositionInUserGroup, _ commentsPosition: CommentsPosition?, showMenuClosure: @escaping ()->(), actionClosure: @escaping (Message, DefaultMessageMenuAction) -> Void, attachmentClosure: @escaping (Attachment) -> Void) -> some View {
-        
-        if message.user.isCurrentUser {
-            myMessageCell(message, positionInGroup, commentsPosition, showMenuClosure: showMenuClosure, actionClosure: actionClosure, attachmentClosure: attachmentClosure)
-        } else {
-            othersMessageCell(message, positionInGroup, commentsPosition, showMenuClosure: showMenuClosure, actionClosure: actionClosure, attachmentClosure: attachmentClosure)
-        }
-    }
-    
-    
-    @ViewBuilder
-    func othersMessageCell(_ message: Message, _ positionInGroup: PositionInUserGroup, _ commentsPosition: CommentsPosition?, showMenuClosure: @escaping ()->(), actionClosure: @escaping (Message, DefaultMessageMenuAction) -> Void, attachmentClosure: @escaping (Attachment) -> Void) -> some View {
-        VStack {
-            HStack(alignment: .top, spacing: 0) {
-                
-                avatarContainer(message, showAvatar: positionInGroup == .last || positionInGroup == .single)
-
-                VStack (alignment: .leading, spacing: 0) {
-
-                    if !message.text.isEmpty {
-                        VStack {
-                            HStack {
-                                messageBubble(message, needsCurvyTail: positionInGroup == .last || positionInGroup == .single)
-                                Spacer()
-                            }
-                        }
-                        .padding(.bottom,2)
-                    }
-
-                    if !message.attachments.isEmpty {
-                        LazyVGrid(columns: Array(repeating: GridItem(), count: 2), spacing: 8) {
-                            ForEach(message.attachments) { attachment in
-                                AttachmentCell(attachment: attachment, size: CGSize(width: 150, height: 150)) { _ in
-                                    attachmentClosure(attachment)
-                                }
-                                .cornerRadius(12)
-                                .clipped()
-                            }
-                        }
-                        .frame(width: 308)
-                    }
-                    if positionInGroup == .last || positionInGroup == .single {
-                        HStack {
-                            Text(message.user.name)
-                                .font(.system(size: 12)).fontWeight(.semibold)
-                                .foregroundStyle(.gray)
-                            Spacer()
-                            Text(message.createdAt.formatAgo())
-                                .font(.system(size: 12)).fontWeight(.medium)
-                                .foregroundStyle(.gray)
-                        }
-                    }
-                }
-                
-            }
-            .padding(.leading, message.replyMessage != nil ? 40 : 0)
-
-            if let commentsPosition {
-                if commentsPosition.isLastInCommentsGroup {
-                    Color.gray.frame(height: 0.5)
-                        .padding(.vertical, 10)
-                } else if commentsPosition.isLastInChat {
-                    Color.clear.frame(height: 5)
-                } else {
-                    Color.clear.frame(height: 10)
-                }
-            }
-        }
-        .padding(.horizontal, 18)
-    }
-    
-    @ViewBuilder
-    func myMessageCell(_ message: Message, _ positionInGroup: PositionInUserGroup, _ commentsPosition: CommentsPosition?, showMenuClosure: @escaping ()->(), actionClosure: @escaping (Message, DefaultMessageMenuAction) -> Void, attachmentClosure: @escaping (Attachment) -> Void) -> some View {
-        VStack {
-            HStack(alignment: .top, spacing: 0) {
-                
-                VStack (alignment: .trailing, spacing: 0) {
-
-                    if !message.text.isEmpty {
-                        VStack {
-                            HStack {
-                                Spacer()
-                                messageBubble(message, needsCurvyTail: positionInGroup == .last || positionInGroup == .single)
-                            }
-                        }
-                        .padding(.bottom,2)
-                    }
-
-                    if !message.attachments.isEmpty {
-                        LazyVGrid(columns: Array(repeating: GridItem(), count: 2), spacing: 8) {
-                            ForEach(message.attachments) { attachment in
-                                AttachmentCell(attachment: attachment, size: CGSize(width: 150, height: 150)) { _ in
-                                    attachmentClosure(attachment)
-                                }
-                                .cornerRadius(12)
-                                .clipped()
-                            }
-                        }
-                        .frame(width: 308)
-                    }
-                    if positionInGroup == .last || positionInGroup == .single {
-                        HStack {
-                            Text(message.createdAt.formatAgo())
-                                .font(.system(size: 12)).fontWeight(.medium)
-                                .foregroundStyle(.gray)
-                            Spacer()
-                            Text(message.user.name)
-                                .font(.system(size: 12)).fontWeight(.semibold)
-                                .foregroundStyle(.gray)
-                        }
-                    }
-                }
-                
-                avatarContainer(message, showAvatar: positionInGroup == .last || positionInGroup == .single)
-                
-            }
-            .padding(.leading, message.replyMessage != nil ? 40 : 0)
-
-            if let commentsPosition {
-                if commentsPosition.isLastInCommentsGroup {
-                    Color.gray.frame(height: 0.5)
-                        .padding(.vertical, 10)
-                } else if commentsPosition.isLastInChat {
-                    Color.clear.frame(height: 5)
-                } else {
-                    Color.clear.frame(height: 10)
-                }
-            }
-        }
-        .padding(.horizontal, 18)
     }
     
     // Swipe Action

@@ -38,7 +38,6 @@
 		C3622C8F2E9EAA55007FEB0E /* SRP in Frameworks */ = {isa = PBXBuildFile; productRef = C3622C8E2E9EAA55007FEB0E /* SRP */; };
 		C3622C952E9FC4DA007FEB0E /* VeroContactsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3622C942E9FC4DA007FEB0E /* VeroContactsView.swift */; };
 		C3622C992E9FDAB4007FEB0E /* Contact.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3622C982E9FDAB4007FEB0E /* Contact.swift */; };
-		C391732A2EA6860B005BDE01 /* MessageBubbleShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = C39173292EA6860B005BDE01 /* MessageBubbleShape.swift */; };
 		C39173352EA69950005BDE01 /* proximanova-extrabold.otf in Resources */ = {isa = PBXBuildFile; fileRef = C391732C2EA69950005BDE01 /* proximanova-extrabold.otf */; };
 		C39173362EA69950005BDE01 /* proximanova-semibold.otf in Resources */ = {isa = PBXBuildFile; fileRef = C39173312EA69950005BDE01 /* proximanova-semibold.otf */; };
 		C39173372EA69950005BDE01 /* proximanova-light.otf in Resources */ = {isa = PBXBuildFile; fileRef = C391732D2EA69950005BDE01 /* proximanova-light.otf */; };
@@ -104,7 +103,6 @@
 		C3622C842E9EA898007FEB0E /* VeroUtility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VeroUtility.swift; sourceTree = "<group>"; };
 		C3622C942E9FC4DA007FEB0E /* VeroContactsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VeroContactsView.swift; sourceTree = "<group>"; };
 		C3622C982E9FDAB4007FEB0E /* Contact.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Contact.swift; sourceTree = "<group>"; };
-		C39173292EA6860B005BDE01 /* MessageBubbleShape.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MessageBubbleShape.swift; sourceTree = "<group>"; };
 		C391732B2EA69950005BDE01 /* proximanova-bold.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "proximanova-bold.otf"; sourceTree = "<group>"; };
 		C391732C2EA69950005BDE01 /* proximanova-extrabold.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "proximanova-extrabold.otf"; sourceTree = "<group>"; };
 		C391732D2EA69950005BDE01 /* proximanova-light.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "proximanova-light.otf"; sourceTree = "<group>"; };
@@ -169,7 +167,6 @@
 				C3622C782E9421A2007FEB0E /* NewChatViewModel.swift */,
 				C3D61AE22E8EC36A00C78FED /* ConversationListViewModel.swift */,
 				C399520F2E8BE5D3008EF4D4 /* Utils.swift */,
-				C39173292EA6860B005BDE01 /* MessageBubbleShape.swift */,
 				C3622C7A2E99140D007FEB0E /* NavigationItem.swift */,
 				C39952092E8AE150008EF4D4 /* NewChatView.swift */,
 				C39952072E8728E8008EF4D4 /* UserSetupView.swift */,
@@ -409,7 +406,6 @@
 				5B0636D72C2E9F6100E54AEE /* CommentsExampleView.swift in Sources */,
 				C3D61AE32E8EC36A00C78FED /* ConversationListViewModel.swift in Sources */,
 				C39952082E8728E8008EF4D4 /* UserSetupView.swift in Sources */,
-				C391732A2EA6860B005BDE01 /* MessageBubbleShape.swift in Sources */,
 				5B0636DB2C2EA21900E54AEE /* Sequence+asyncMap.swift in Sources */,
 				13F1C0F2286ADD8900D25D8A /* MockAttachment.swift in Sources */,
 				135549342864620900C9459A /* ChatExampleApp.swift in Sources */,

@@ -82,7 +82,7 @@ struct ConversationListView: View {
                             
                             navigationPath.append(NavigationItem(screenType: AppScreen.chat, conversation:conversation))
                         }
-                        .foregroundColor(.black)
+                        .foregroundColor(.primary)
                         
                         Spacer()
                         Text("\(item.unreadCount)")
@@ -129,17 +129,9 @@ struct ConversationListView: View {
             case .chat:
                 if let conversation = item.conversation {
                     let vm = ConversationViewModel(conversation: conversation)
-                    if #available(iOS 18.0, *) {
                         return AnyView(
                             ConversationView(viewModel: vm, path: $navigationPath)
-                                .chatTheme(themeColor: color, background: .static(color))
                         )
-                    } else {
-                        return AnyView(
-                            ConversationView(viewModel: vm, path: $navigationPath)
-                                .chatTheme(accentColor: color, images: theme.images)
-                        )
-                    }
                 }
             case .userSetup, .chatList:
                 break
