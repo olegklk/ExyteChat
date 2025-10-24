@@ -127,7 +127,7 @@ public actor ChatAPIClient {
         guard let url = urlComponents.url else {
             throw URLError(.badURL)
         }
-        
+        //реализуй здесь логирование чтобы выводились и запрос и ответ при каждом запросе AI!
         var request = URLRequest(url: url)
         request.httpMethod = method
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
