@@ -1,366 +1,230 @@
 import Foundation
 
-@objcMembers
-class UploadTask: NSObject, URLSessionTaskDelegate, URLSessionDataDelegate, ClientToServerDelegate {
+/// A lightweight, Swift-native upload helper with closure-based callbacks and no ObjC/UIKit dependencies.
+final class UploadTask {
 
-    static var sWaitingForNewAuthTokens: Bool = false
-//этот класс перенесен из другого проекта поэтому некоторые вещи стали чужерожными, давай избавимся от наследния чужого проекта и в целом от наследния  Objective-c и UIKit и переделаем все в соответствии с нормами Swift AI!
-    private var data: Data
-    private var totalBytes: Int64 = 0
-    private var parameters: [Any] = []
-    private var response: URLResponse?
-    private var responseData = Data()
-    private var networkAccess: AnyObject?
-    private var uploadTask: URLSessionUploadTask?
-    private var isCanceled = false
-    private var waitingForNewAuthTokens = false
-    // Removed RAC; use closures for progress and completion
-    private var onProgress: ((Double) -> Void)?
-    private var onComplete: ((URL?, URL?) -> Void)?
-    private var onError: ((Error) -> Void)?
-    private lazy var session: URLSession = {
-        let config = URLSessionConfiguration.default
-        return URLSession(configuration: config, delegate: self, delegateQueue: nil)
-    }()
+    // MARK: Public API
 
-    private(set) var url: URL!
-    private(set) var remoteUrl: URL?
-    private(set) var mime: String!
-    private(set) lazy var progress: Progress = {
-        let p = Progress(totalUnitCount: 0)
-        p.isPausable = false
-        p.isCancellable = false
-        return p
-    }()
-
-    // Removed RAC signal API. Use setProgressHandler(_:), setCompletionHandler(_:), and setErrorHandler(_:) instead.
+    /// Progress handler: 0.0 ... 1.0
     func setProgressHandler(_ handler: @escaping (Double) -> Void) { self.onProgress = handler }
+
+    /// Completion handler: (localURL, remoteURL)
     func setCompletionHandler(_ handler: @escaping (URL?, URL?) -> Void) { self.onComplete = handler }
+
+    /// Error handler
     func setErrorHandler(_ handler: @escaping (Error) -> Void) { self.onError = handler }
 
-    // MARK: - Initializers
+    /// Cancels the ongoing upload
+    func cancel() {
+        isCanceled = true
+        progressObservation?.invalidate()
+        uploadTask?.cancel()
+        uploadTask = nil
+    }
 
-    init(url: URL?, data: Data, parameters: [Any], mime: String?, onProgress: ((Double) -> Void)? = nil, onComplete: ((URL?, URL?) -> Void)? = nil, onError: ((Error) -> Void)? = nil) {
+    // MARK: Initializers
+
+    /// Designated initializer
+    /// - Parameters:
+    ///   - url: Destination endpoint (full URL). If nil, you must pass one in `parameters` using "url" key in [String: String] or provide later – otherwise init will fail.
+    ///   - data: Data to upload.
+    ///   - parameters: Optional query parameters. Accepts either [URLQueryItem] or [String: String]. Any other values are ignored.
+    ///   - mime: Content-Type for the upload. Defaults to "application/octet-stream".
+    ///   - onProgress: Progress callback 0...1
+    ///   - onComplete: Completion callback with (local, remote) URLs parsed from server JSON ("uri" or "url" fields).
+    ///   - onError: Error callback
+    init(
+        url: URL?,
+        data: Data,
+        parameters: [Any],
+        mime: String?,
+        onProgress: ((Double) -> Void)? = nil,
+        onComplete: ((URL?, URL?) -> Void)? = nil,
+        onError: ((Error) -> Void)? = nil
+    ) {
         self.data = data
         self.parameters = parameters
-        super.init()
-
         self.onProgress = onProgress
         self.onComplete = onComplete
         self.onError = onError
 
         self.url = url
+        self.mime = mime ?? "application/octet-stream"
 
-        if let providedMime = mime {
-            self.mime = providedMime
-        } else if let u = url {
-            // try to resolve mime from URL via ObjC category
-            if let mimeFromURL = (u as NSURL).mimeType?() as String? {
-                self.mime = mimeFromURL
-            } else {
-                self.mime = "application/octet-stream"
-            }
-        } else {
-            self.mime = "application/octet-stream"
-        }
-
+        // Create a temporary local file URL if none provided (useful for clients expecting a file URL)
         if self.url == nil {
-            let path = NSSearchPathForDirectoriesInDomains(.applicationSupportDirectory, .userDomainMask, true).first ?? NSTemporaryDirectory()
-            let uuid = UUID().uuidString
-            let tempURL = URL(fileURLWithPath: path).appendingPathComponent("temp/\(uuid)")
-            try? FileManager.default.createDirectory(at: tempURL.deletingLastPathComponent(), withIntermediateDirectories: true, attributes: nil)
+            let tempDir = FileManager.default.temporaryDirectory
+            let tempURL = tempDir.appendingPathComponent(UUID().uuidString)
             try? data.write(to: tempURL, options: .atomic)
             self.url = tempURL
         }
 
-        responseData = Data()
-
-        DDLogInfo("Starting upload <\(Unmanaged.passUnretained(self).toOpaque())> of \(self.url.absoluteString). Parameters: \(parameters)")
-
-        let request = self.request(with: self.data)
-        self.uploadTask = session.uploadTask(with: request, from: self.data)
-        self.uploadTask?.resume()
-
-        self.networkAccess = ApplicationState.instance().beginSignalNetworkAccess()
-
-        ClientToServer.instance().addDelegate(self)
+        start()
     }
 
+    /// Convenience initializer to set MIME type by file extension (very small built-in mapping)
     convenience init(data: Data, ofType ext: String, parameters: [Any]) {
-        let mime = (NSURL.fileType(fromExtension: ext) as String?) ?? "application/octet-stream"
+        let mime = UploadTask.mimeType(forExtension: ext)
         self.init(url: nil, data: data, parameters: parameters, mime: mime)
     }
 
+    /// Convenience initializer to read data from a file URL
     convenience init(fileURL: URL, parameters: [Any]) {
         let data = (try? Data(contentsOf: fileURL)) ?? Data()
-        self.init(url: fileURL, data: data, parameters: parameters, mime: nil)
+        self.init(url: fileURL, data: data, parameters: parameters, mime: UploadTask.mimeType(forExtension: fileURL.pathExtension))
     }
 
-    // MARK: - Public
+    // MARK: Private
 
-    func cancel() {
-        DDLogDebug("cancel \(String(describing: uploadTask?.currentRequest))")
-        isCanceled = true
-        uploadTask?.cancel()
-        uploadTask = nil
-    }
+    private var data: Data
+    private var parameters: [Any] = []
+    private var uploadTask: URLSessionUploadTask?
+    private var isCanceled = false
+    private var onProgress: ((Double) -> Void)?
+    private var onComplete: ((URL?, URL?) -> Void)?
+    private var onError: ((Error) -> Void)?
+    private var progressObservation: NSKeyValueObservation?
+    private let session: URLSession = {
+        let config = URLSessionConfiguration.default
+        // Reasonable defaults
+        config.timeoutIntervalForRequest = 60
+        config.timeoutIntervalForResource = 240
+        return URLSession(configuration: config)
+    }()
 
-    // MARK: - Private
+    private(set) var url: URL!
+    private(set) var remoteUrl: URL?
+    private(set) var mime: String!
 
-    private func addBasicAuth(to request: inout URLRequest) {
-        var username = LocalUserProfile.instance().userID
-        var password = "password"
-
-        if let uploadPass = LocalUserProfile.instance().uploadAuthPass, let sessionID = LocalUserProfile.instance().sessionID {
-            username = sessionID
-            password = uploadPass
-        }
-
-        if let method = request.httpMethod, let url = request.url {
-            let message = CFHTTPMessageCreateRequest(nil, method as CFString, url as CFURL, kCFHTTPVersion1_1).takeRetainedValue()
-            CFHTTPMessageAddAuthentication(message, nil, username as CFString, password as CFString, kCFHTTPAuthenticationSchemeBasic, false)
-            if let authString = CFHTTPMessageCopyHeaderFieldValue(message, "Authorization" as CFString)?.takeRetainedValue() as String? {
-                request.setValue(authString, forHTTPHeaderField: "Authorization")
-            }
-        }
-    }
-
-    private func request(with data: Data) -> URLRequest {
-        DDLogInfo("About to upload data (length=\(UInt64(data.count)))")
-
-        let remoteName = ((self.url.lastPathComponent as NSString).deletingPathExtension).lowercased()
-
-        guard let base = URL(string: ServerAddressManager.instance().uploadURI()) else {
-            fatalError("Invalid upload URI")
-        }
-        var uploadURL = base.appendingPathComponent(remoteName)
-
-        // add query parameters via ObjC NSURL category
-        if !parameters.isEmpty {
-            if let u = NSURL.addQueryParameters?(parameters as NSArray, to: uploadURL) as URL? {
-                uploadURL = u
-            }
-        }
-
-        var request = URLRequest(url: uploadURL, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 240.0)
-
-        if let jwt = LocalUserProfile.instance().jwt(), !jwt.isEmpty {
-            request.setValue("Bearer \(jwt)", forHTTPHeaderField: "Authorization")
-        } else {
-            addBasicAuth(to: &request)
-        }
-
-        request.httpMethod = "POST"
-        if let mime = self.mime {
-            request.setValue(mime, forHTTPHeaderField: "Content-Type")
-        }
-        request.setValue(String(UInt64(data.count)), forHTTPHeaderField: "Content-Length")
-
-        return request
-    }
-
-    private func restartIfNeeded() {
-        if !waitingForNewAuthTokens { return }
-        waitingForNewAuthTokens = false
-        if isCanceled {
-            DDLogDebug("skip restarting canceled task")
+    private func start() {
+        guard var endpoint = buildEndpointURL() else {
+            onError?(URLError(.badURL))
             return
         }
 
-        uploadTask?.cancel()
-        uploadTask = nil
-
-        responseData = Data()
-        let request = self.request(with: self.data)
-        self.uploadTask = session.uploadTask(with: request, from: self.data)
-        self.uploadTask?.resume()
-
-        self.networkAccess = ApplicationState.instance().beginSignalNetworkAccess()
-    }
-
-    private func didFinish(with error: Error?) {
-        if error == nil {
-            self.networkAccess = nil
-            self.response = self.uploadTask?.response
-            let httpResponse = self.response as? HTTPURLResponse
-            let contentType = httpResponse?.allHeaderFields["Content-Type"] as? String
-
-            self.progress.completedUnitCount = self.progress.totalUnitCount
-
-            if httpResponse?.statusCode == 200 && contentType == "application/json" {
-                if let json = try? JSONSerialization.jsonObject(with: self.responseData, options: []),
-                   let dict = json as? [String: Any] {
-                    var uri = dict["uri"] as? String
-                    let urlStr = dict["url"] as? String
-
-                    if uri == nil, let urlStr = urlStr {
-                        uri = urlStr
-                    }
-
-                    if let uri = uri {
-                        if let urlStr = urlStr {
-                            if let fileURL = (NSURL.serverResourceURLfromRelativeURLString?(urlStr.lowercased()) as URL?) {
-                                DDLogInfo("Upload <\(Unmanaged.passUnretained(self).toOpaque())> finished, server URL: \(fileURL.absoluteString)")
-
-                                if let mime = self.mime, mime.hasPrefix("image/"),
-                                   let imageToCache = UIImage(data: self.data) {
-                                    ImageDownloader.store(withImage: imageToCache, forKey: urlStr)
-                                }
-
-                                if let scheme = self.url.scheme, let dmzScheme = DMZCacheScheme, scheme == dmzScheme {
-                                    if let converted = (self.url as NSURL).fileURLFromDMZCacheURL?() as URL? {
-                                        self.url = converted
-                                    }
-                                }
-
-                                if let mime = self.mime, mime.hasPrefix("image/"),
-                                   let thumbLocalURL = (self.url as NSURL).thumbnailURL?() as URL?,
-                                   let thumbData = try? Data(contentsOf: thumbLocalURL),
-                                   let thumbnailToCache = UIImage(data: thumbData) {
-                                    if let remoteThumbnailURL = (fileURL as NSURL).thumbnailURL?() as URL? {
-                                        ImageDownloader.store(withImage: thumbnailToCache, forKey: remoteThumbnailURL.absoluteString)
-                                    }
-                                }
-
-                                // delete uploaded file from temp folder
-                                try? FileManager.default.removeItem(at: self.url)
-                                if let thumbLocalURL = (self.url as NSURL).thumbnailURL?() as URL? {
-                                    try? FileManager.default.removeItem(at: thumbLocalURL)
-                                }
-                            }
-                        }
-
-                        self.url = URL(string: uri)
-                        if let urlStr = urlStr {
-                            self.remoteUrl = URL(string: urlStr)
-                        }
-
-                        self.onComplete?(self.url, self.remoteUrl)
-                    } else {
-                        DDLogError("Upload <\(Unmanaged.passUnretained(self).toOpaque())> finished, but no server URL was provided")
-                        self.onError?(NSError(domain: "DMZUploadTaskError", code: 666, userInfo: nil))
-                    }
-                } else {
-                    DDLogError("Upload <\(Unmanaged.passUnretained(self).toOpaque())> finished, but response JSON parsing failed")
-                    self.onError?(NSError(domain: "DMZUploadTaskError", code: 666, userInfo: nil))
-                }
-            } else {
-                let req = self.uploadTask?.currentRequest
-                DDLogError("Upload <\(Unmanaged.passUnretained(self).toOpaque())> finished with status code: \(httpResponse?.statusCode ?? -1) (Failed!), request URL: \(String(describing: req?.url)), has auth: \((req?.allHTTPHeaderFields?["Authorization"] != nil) ? "YES" : "NO"), task \(String(describing: self.uploadTask)), state \(self.uploadTask?.state.rawValue ?? -1)")
-
-                if httpResponse?.statusCode == 401 {
-                    if let jwt = LocalUserProfile.instance().jwt(), !jwt.isEmpty {
-                        self.waitingForNewAuthTokens = true
-                        UploadTask.sWaitingForNewAuthTokens = true
-                        PostMaster.sharedInstance().cancelAllPendingTasks()
-
-                        weak var weakSelf = self
-                        ClientToServer.instance().refreshJWT { _ in
-                            DispatchQueue.main.async {
-                                DDLogDebug("JWT refreshed \(String(describing: weakSelf))")
-                                UploadTask.repostPendingPostsIfNeeded()
-                                weakSelf?.restartIfNeeded()
-                            }
-                        }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
-                            if self.waitingForNewAuthTokens {
-                                self.onError?(NSError(domain: "DMZUploadTaskError", code: 666, userInfo: nil))
-                            }
-                        }
-                    } else {
-                        DDLogWarn("Force disconnect due to the need to upate session token.")
-                        ClientToServer.instance().disconnect()
-                        PostMaster.sharedInstance().cancelAllPendingTasks()
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                            ClientToServer.instance().connect()
-                        }
-                        UploadTask.sWaitingForNewAuthTokens = true
-                    }
-                } else if httpResponse?.statusCode == 429 {
-                    self.onError?(NSError(domain: "DMZUploadTaskError", code: 0, userInfo: nil))
-                } else {
-                    self.onError?(NSError(domain: "DMZUploadTaskError", code: 666, userInfo: nil))
-                }
-            }
-        } else {
-            DDLogError("Upload <\(Unmanaged.passUnretained(self).toOpaque())> failed with error: \(String(describing: error))")
-            self.onError?(error!)
+        // Append parameters to URL as query items if provided
+        if let items = parametersAsQueryItems(parameters), !items.isEmpty {
+            var comps = URLComponents(url: endpoint, resolvingAgainstBaseURL: false) ?? URLComponents()
+            var current = comps.queryItems ?? []
+            current.append(contentsOf: items)
+            comps.queryItems = current
+            endpoint = comps.url ?? endpoint
         }
-    }
 
-    // MARK: - Repost
+        var request = URLRequest(url: endpoint, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 240.0)
+        request.httpMethod = "POST"
+        request.setValue(mime, forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
 
-    class func repostPendingPostsIfNeeded() {
-        if UploadTask.sWaitingForNewAuthTokens {
-            UploadTask.sWaitingForNewAuthTokens = false
-            DataProvider.instance().findPendingPostsAndRepost()
-        }
-    }
+        // Create task
+        let task = session.uploadTask(with: request, from: data) { [weak self] data, response, error in
+            guard let self else { return }
+            if self.isCanceled { return }
 
-    // MARK: - ClientToServerDelegate
-
-    func clientIsLoggedIn() {
-        UploadTask.repostPendingPostsIfNeeded()
-    }
-
-    // MARK: - URLSession Delegates
-
-    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
-        DDLogDebug("task \(self) didCompleteWithError: \(String(describing: error))")
-        DispatchQueue.main.async {
-            if task != self.uploadTask {
-                DDLogWarn("no expected task \n\(task)\n\(String(describing: self.uploadTask))")
+            if let error {
+                DispatchQueue.main.async { self.onError?(error) }
                 return
             }
-            self.didFinish(with: error)
-        }
-    }
 
-    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
-        #if !APP_STORE_MODE
-        DDLogDebug("didReceiveData \(data.count)")
-        #endif
-        responseData.append(data)
-    }
-
-    func urlSession(_ session: URLSession, task: URLSessionTask, didReceive challenge: URLAuthenticationChallenge) async -> (URLSession.AuthChallengeDisposition, URLCredential?) {
-        // Default handling
-        return (.performDefaultHandling, nil)
-    }
-
-    func urlSession(_ session: URLSession, task: URLSessionTask, didReceive response: HTTPURLResponse) async {
-        DDLogDebug("didReceiveInformationalResponse \(response.statusCode)")
-        self.response = response
-    }
-
-    func urlSession(_ session: URLSession, task: URLSessionTask,
-                    didSendBodyData bytesSent: Int64,
-                    totalBytesSent: Int64,
-                    totalBytesExpectedToSend: Int64) {
-        let prog = Double(totalBytesSent) / Double(totalBytesExpectedToSend)
-        DispatchQueue.main.async {
-            if self.totalBytes != totalBytesExpectedToSend {
-                self.totalBytes = totalBytesExpectedToSend
-                self.progress.totalUnitCount = self.totalBytes
+            guard let http = response as? HTTPURLResponse else {
+                DispatchQueue.main.async { self.onError?(URLError(.badServerResponse)) }
+                return
             }
-            self.progress.completedUnitCount = totalBytesSent
-            self.onProgress?(prog)
-            #if !APP_STORE_MODE
-            DDLogDebug("didSendBodyData \(prog)")
-            #endif
+
+            guard (200...299).contains(http.statusCode) else {
+                let message: String
+                if let data, let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                   let m = (obj["message"] as? String) ?? (obj["error"] as? String) {
+                    message = m
+                } else {
+                    message = HTTPURLResponse.localizedString(forStatusCode: http.statusCode)
+                }
+                let error = NSError(domain: "UploadTask", code: http.statusCode, userInfo: [NSLocalizedDescriptionKey: message])
+                DispatchQueue.main.async { self.onError?(error) }
+                return
+            }
+
+            // Parse JSON response looking for "uri" or "url"
+            var localURL: URL? = self.url
+            var remoteURL: URL? = nil
+            if let data, !data.isEmpty,
+               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                if let uri = (json["uri"] as? String) ?? (json["url"] as? String) {
+                    remoteURL = URL(string: uri)
+                }
+            }
+
+            self.remoteUrl = remoteURL
+            DispatchQueue.main.async {
+                self.onComplete?(localURL, remoteURL)
+            }
         }
+
+        // Observe progress
+        progressObservation = task.progress.observe(\.fractionCompleted, options: [.new]) { [weak self] prog, _ in
+            guard let self else { return }
+            if self.isCanceled { return }
+            DispatchQueue.main.async {
+                self.onProgress?(prog.fractionCompleted)
+            }
+        }
+
+        uploadTask = task
+        task.resume()
     }
 
-    func urlSession(_ session: URLSession, didBecomeInvalidWithError error: Error?) {
-        DDLogError("didBecomeInvalidWithError \(String(describing: error))")
-        DispatchQueue.main.async {
-            self.didFinish(with: error ?? NSError(domain: "DMZUploadTaskError", code: 666, userInfo: nil))
+    private func buildEndpointURL() -> URL? {
+        // If `parameters` contains a "url" string, use it; otherwise rely on a fixed endpoint per use-site.
+        // The previous implementation used external managers; we now expect a full URL to be passed in.
+        // If `url` property holds a file URL (most common), it is NOT the endpoint, just the local file.
+        // So we check parameters first, then fall back to `url` if it's actually a network URL.
+        if let endpointFromParams = endpointURLFromParameters(parameters) {
+            return endpointFromParams
         }
+        if let u = url, u.scheme?.lowercased().hasPrefix("http") == true {
+            return u
+        }
+        return nil
     }
 
-    // MARK: - Deinit
+    private func parametersAsQueryItems(_ params: [Any]) -> [URLQueryItem]? {
+        if let items = params as? [URLQueryItem] {
+            return items
+        }
+        if let dict = params.first as? [String: String] {
+            return dict.map { URLQueryItem(name: $0.key, value: $0.value) }
+        }
+        return nil
+    }
 
-    deinit {
-        ClientToServer.instance().removeDelegate(self)
+    private func endpointURLFromParameters(_ params: [Any]) -> URL? {
+        // Accept either [String: String] with "url": "https://..." or a direct URL passed as the first element
+        if let dict = params.first as? [String: String], let urlString = dict["url"], let url = URL(string: urlString) {
+            return url
+        }
+        if let u = params.first as? URL {
+            return u
+        }
+        return nil
+    }
+
+    private static func mimeType(forExtension ext: String) -> String {
+        let lower = ext.lowercased()
+        switch lower {
+        case "jpg", "jpeg": return "image/jpeg"
+        case "png": return "image/png"
+        case "gif": return "image/gif"
+        case "heic": return "image/heic"
+        case "webp": return "image/webp"
+        case "mp4": return "video/mp4"
+        case "mov": return "video/quicktime"
+        case "m4a": return "audio/m4a"
+        case "mp3": return "audio/mpeg"
+        case "wav": return "audio/wav"
+        case "pdf": return "application/pdf"
+        case "txt": return "text/plain"
+        case "json": return "application/json"
+        default: return "application/octet-stream"
+        }
     }
 }
