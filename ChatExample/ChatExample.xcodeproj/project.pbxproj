@@ -25,6 +25,7 @@
 		5B0636DB2C2EA21900E54AEE /* Sequence+asyncMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B0636DA2C2EA21900E54AEE /* Sequence+asyncMap.swift */; };
 		5B6467A02D96F4FC00FFD920 /* ExyteChat in Frameworks */ = {isa = PBXBuildFile; productRef = 5B64679F2D96F4FC00FFD920 /* ExyteChat */; };
 		5B6D3A732987D85A00765148 /* Color+hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B6D3A722987D85A00765148 /* Color+hex.swift */; };
+		C325FE942EAFBB370065291A /* UploadingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C325FE922EAFBB370065291A /* UploadingManager.swift */; };
 		C34601E82E8D253A0080D49D /* ExyteChat in Frameworks */ = {isa = PBXBuildFile; productRef = C34601E72E8D253A0080D49D /* ExyteChat */; };
 		C3622C792E9421A2007FEB0E /* NewChatViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3622C782E9421A2007FEB0E /* NewChatViewModel.swift */; };
 		C3622C7B2E99140D007FEB0E /* NavigationItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3622C7A2E99140D007FEB0E /* NavigationItem.swift */; };
@@ -93,6 +94,7 @@
 		5B0636D52C2E9F6100E54AEE /* CommentsExampleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommentsExampleView.swift; sourceTree = "<group>"; };
 		5B0636DA2C2EA21900E54AEE /* Sequence+asyncMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sequence+asyncMap.swift"; sourceTree = "<group>"; };
 		5B6D3A722987D85A00765148 /* Color+hex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+hex.swift"; sourceTree = "<group>"; };
+		C325FE922EAFBB370065291A /* UploadingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UploadingManager.swift; sourceTree = "<group>"; };
 		C3622C782E9421A2007FEB0E /* NewChatViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NewChatViewModel.swift; sourceTree = "<group>"; };
 		C3622C7A2E99140D007FEB0E /* NavigationItem.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NavigationItem.swift; sourceTree = "<group>"; };
 		C3622C7E2E9EA898007FEB0E /* ChallengeTokenResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeTokenResponse.swift; sourceTree = "<group>"; };
@@ -160,6 +162,7 @@
 		135549322864620900C9459A /* ChatExample */ = {
 			isa = PBXGroup;
 			children = (
+				C325FE932EAFBB370065291A /* Managers */,
 				C3EC18212EAC0FDB0088DF03 /* UploadTask.swift */,
 				C39173402EA773A8005BDE01 /* ConversationListView.swift */,
 				C391733E2EA77398005BDE01 /* ConversationDetailsView.swift */,
@@ -258,6 +261,14 @@
 			children = (
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		C325FE932EAFBB370065291A /* Managers */ = {
+			isa = PBXGroup;
+			children = (
+				C325FE922EAFBB370065291A /* UploadingManager.swift */,
+			);
+			path = Managers;
 			sourceTree = "<group>";
 		};
 		C3622C852E9EA898007FEB0E /* VeroKit */ = {
@@ -394,6 +405,7 @@
 				5B6D3A732987D85A00765148 /* Color+hex.swift in Sources */,
 				13E17B6F2869E983004DF140 /* MockChatData.swift in Sources */,
 				C39173412EA773A8005BDE01 /* ConversationListView.swift in Sources */,
+				C325FE942EAFBB370065291A /* UploadingManager.swift in Sources */,
 				1376F7BB286472530016CD1B /* ChatError.swift in Sources */,
 				135987B82869F369006388CF /* Lorem.swift in Sources */,
 				135987BA2869F3AE006388CF /* MockMessage.swift in Sources */,

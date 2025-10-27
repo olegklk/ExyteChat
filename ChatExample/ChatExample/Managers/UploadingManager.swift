@@ -5,18 +5,18 @@ class UploadingManager {
     // Configure once at app startup to provide the destination endpoint and optional token provider
     private actor UploadingConfig {
         var endpointURL: URL?
-        var tokenProvider: (() -> String?)?
-        func set(endpointURL: URL, tokenProvider: (() -> String?)?) {
+        var tokenProvider: (@Sendable () -> String?)?
+        func set(endpointURL: URL, tokenProvider: (@Sendable () -> String?)?) {
             self.endpointURL = endpointURL
             self.tokenProvider = tokenProvider
         }
-        func get() -> (URL?, (() -> String?)?) {
+        func get() -> (URL?, (@Sendable () -> String?)?) {
             (endpointURL, tokenProvider)
         }
     }
     private static let config = UploadingConfig()
 
-    static func configure(endpointURL: URL, tokenProvider: (() -> String?)? = nil) {
+    static func configure(endpointURL: URL, tokenProvider: (@Sendable () -> String?)? = nil) {
         Task { await config.set(endpointURL: endpointURL, tokenProvider: tokenProvider) }
     }
 

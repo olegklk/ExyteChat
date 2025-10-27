@@ -20,7 +20,7 @@ final class UploadTask {
         data: Data,
         ofType ext: String,
         to endpoint: URL,
-        tokenProvider: (() -> String?)? = nil
+        tokenProvider: (@Sendable () -> String?)? = nil
     ) async throws -> URL {
         var request = URLRequest(url: endpoint, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 240.0)
         request.httpMethod = "POST"
@@ -60,7 +60,7 @@ final class UploadTask {
     static func upload(
         fileURL: URL,
         to endpoint: URL,
-        tokenProvider: (() -> String?)? = nil
+        tokenProvider: (@Sendable () -> String?)? = nil
     ) async throws -> URL {
         let data = try Data(contentsOf: fileURL)
         return try await upload(data: data, ofType: fileURL.pathExtension, to: endpoint, tokenProvider: tokenProvider)

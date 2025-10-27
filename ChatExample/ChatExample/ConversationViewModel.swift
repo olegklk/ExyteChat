@@ -94,7 +94,6 @@ class ConversationViewModel: ObservableObject {
             }
 
             if let thumbURL, let fullURL {
-                
                 result.append(
                     Attachment(
                         id: media.id.uuidString,
@@ -103,8 +102,6 @@ class ConversationViewModel: ObservableObject {
                         type: media.type == .video ? AttachmentType.video : AttachmentType.image
                     )
                 )
-                
-                
             }
         }
         

@@ -73,7 +73,7 @@ public final class Store {
     
     public static func batchId() -> String? { _batchId }
     
-    public static func userDisplayName() -> String {
+    public static func selfDisplayName() -> String {
         if let profile = _selfProfile {
             return "\(profile.firstName) \(profile.lastName ?? "")".trimmingCharacters(in: .whitespaces)
         }
