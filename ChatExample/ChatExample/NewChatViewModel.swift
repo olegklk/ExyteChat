@@ -66,7 +66,7 @@ class NewChatViewModel: ObservableObject {
         
         setupSocketListeners()
         
-        SocketIOManager.shared.setAuthData(userId: currentUserId, participants: participants, conversationId: nil, chatType: chatType, batchId: nil)
+        SocketIOManager.shared.setAuthData(participants: participants, chatType: chatType)
         SocketIOManager.shared.connect() // connection should trigger onConversationAssigned with conversationId
     }
     

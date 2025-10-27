@@ -133,7 +133,7 @@ class ConversationViewModel: ObservableObject {
         
         setupSocketListeners()
         
-        SocketIOManager.shared.setAuthData(userId: currentUserId, participants: conversation.participants, conversationId: conversationId, chatType: conversation.type, batchId: conversation.batchId)
+        SocketIOManager.shared.setAuthData( participants: conversation.participants, chatType: conversation.type)
         SocketIOManager.shared.connect() // connection should trigger onConversationAssigned with conversationId
                 
 //        Task { await loadChatHistory() }
