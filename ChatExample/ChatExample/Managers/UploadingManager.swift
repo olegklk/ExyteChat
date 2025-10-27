@@ -17,7 +17,7 @@ class UploadingManager {
     private static let config = UploadingConfig()
 
     static func configure(endpointURL: URL, tokenProvider: (() -> String?)? = nil) {
-         config.set(endpointURL: endpointURL, tokenProvider: tokenProvider) 
+         config.set(endpointURL: endpointURL, tokenProvider: tokenProvider) //Call to actor-isolated instance method 'set(endpointURL:tokenProvider:)' in a synchronous nonisolated context AI!
     }
 
     static func uploadImageMedia(_ media: Media?) async -> URL? {
