@@ -56,6 +56,10 @@ password)
         await MainActor.run {
             Store.setContacts(contacts)
             if let profile { Store.setSelfProfile(profile) }
+            
+            UploadingManager.configure(
+                endpointURL: URL(string:EnvironmentConstants.currentUploadURL())!,
+                tokenProvider: { KeychainHelper.standard.read(service: .token, type: CompleteLoginResponse.self)?.veroPass?.jwt })
         }
                 
     }
