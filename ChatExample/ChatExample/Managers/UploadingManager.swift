@@ -43,29 +43,17 @@ class UploadingManager {
             return nil
         }
 
-        return await withCheckedContinuation { continuation in
-            var task: UploadTask? = UploadTask(
+        do {
+            let url = try await UploadTask.upload(
                 data: data,
                 ofType: ext,
-                parameters: [
-                    ["url": endpoint.absoluteString]
-                ]
+                to: endpoint,
+                tokenProvider: tokenProvider
             )
-
-            if let provider = tokenProvider {
-                task?.setTokenProvider(provider)
-            }
-
-            task?.setCompletionHandler { _, remote in
-                continuation.resume(returning: remote)
-                task = nil
-            }
-
-            task?.setErrorHandler { error in
-                print("Upload error: \(error.localizedDescription)")
-                continuation.resume(returning: nil)
-                task = nil
-            }
+            return url
+        } catch {
+            print("Upload error: \(error.localizedDescription)")
+            return nil
         }
     }
 }
