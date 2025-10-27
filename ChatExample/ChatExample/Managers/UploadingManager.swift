@@ -3,7 +3,7 @@ import Foundation
 class UploadingManager {
 
     // Configure once at app startup to provide the destination endpoint and optional token provider
-    private static var endpointURL: URL?
+    private static var endpointURL: URL? //Static property 'endpointURL' is not concurrency-safe because it is nonisolated global shared mutable state AI!
     private static var tokenProvider: (() -> String?)?
 
     static func configure(endpointURL: URL, tokenProvider: (() -> String?)? = nil) {
