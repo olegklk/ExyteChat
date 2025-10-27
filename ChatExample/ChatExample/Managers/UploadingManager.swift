@@ -15,7 +15,7 @@ class UploadingManager {
         }
     }
     private static let config = UploadingConfig()
-
+//измени этот класс так чтобы в нем endpointURL был привязан к значению VeroEnvironment.uploadURL, а tokenProvider был задан всегда одинаково в виде KeychainHelper.standard.read(service: .token, type: CompleteLoginResponse.self)?.veroPass?.jwt AI!
     static func configure(endpointURL: URL, tokenProvider: (() -> String?)? = nil) {
         Task { await config.set(endpointURL: endpointURL, tokenProvider: tokenProvider) }
     }
