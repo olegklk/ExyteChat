@@ -48,7 +48,7 @@ struct MessageTextView: View {
                     .font(.custom("ProximaNova-Light", size: 18))
                     .padding(.vertical, 10)
                     .frame(minHeight:35)
-                    .lineSpacing(6)
+                    .lineSpacing(2)
                     .sizeGetter($textSize)
                 
 

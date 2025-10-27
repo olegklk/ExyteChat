@@ -37,9 +37,9 @@ struct MessageView: View {
     @State var bubbleSize: CGSize = .zero
 
     static let widthWithMedia: CGFloat = 204
-    static let horizontalScreenEdgePadding: CGFloat = 12
+    static let horizontalScreenEdgePadding: CGFloat = 5
     static let horizontalNoAvatarPadding: CGFloat = horizontalScreenEdgePadding / 2
-    static let horizontalAvatarPadding: CGFloat = 8
+    static let horizontalAvatarPadding: CGFloat = 0
     static let horizontalTextPadding: CGFloat = 12
     static let attachmentPadding: CGFloat = 1  // for multiple attachments
     static let statusViewSize: CGFloat = 10
@@ -273,20 +273,28 @@ struct MessageView: View {
         let paddingTrailing = message.user.isCurrentUser ? MessageView.horizontalScreenEdgePadding : MessageView.horizontalAvatarPadding
         Group {
             if showAvatar {
-                if let url = message.user.avatarURL {
-                    AvatarImageView(url: url, avatarSize: avatarSize, avatarCacheKey: message.user.avatarCacheKey)
-                        .contentShape(Circle())
-                        .onTapGesture {
-                            tapAvatarClosure?(message.user, message.id)
-                        }
-                } else {
-                    AvatarNameView(name: message.user.name, avatarSize: avatarSize)
-                        .contentShape(Circle())
-                        .onTapGesture {
-                            tapAvatarClosure?(message.user, message.id)
-                        }
-                }
-
+                
+                VStack {
+                     Spacer()
+                     HStack(alignment: .bottom, spacing: 4) {
+                         if let url = message.user.avatarURL {
+                             AvatarImageView(url: url, avatarSize: avatarSize, avatarCacheKey: message.user.avatarCacheKey)
+                                 .contentShape(Circle())
+                                 .onTapGesture {
+                                     tapAvatarClosure?(message.user, message.id)
+                                 }
+                         } else {
+                             AvatarNameView(name: message.user.name, avatarSize: avatarSize)
+                                 .contentShape(Circle())
+                                 .onTapGesture {
+                                     tapAvatarClosure?(message.user, message.id)
+                                 }
+                         }
+                         
+                     }
+                 }
+                 .padding(.bottom,15)
+                
             } else {
                 Color.clear.viewSize(avatarSize)
             }

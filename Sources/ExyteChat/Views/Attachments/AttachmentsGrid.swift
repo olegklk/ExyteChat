@@ -46,7 +46,7 @@ struct AttachmentsGrid: View {
             if let attachment = single {
                 AttachmentCell(attachment: attachment, size: CGSize(width: 204, height: grid.isEmpty ? 200 : 100), onTap: onTap)
                     .clipped()
-                    .cornerRadius(onlyOne ? 0 : 12)
+                    .cornerRadius(onlyOne ? 8 : 12)
             }
             if !grid.isEmpty {
                 ForEach(pair(), id: \.id) { pair in
