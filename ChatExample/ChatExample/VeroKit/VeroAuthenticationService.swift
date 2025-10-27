@@ -36,6 +36,12 @@ enum VeroEnvironment: String, CaseIterable {
         case .staging:    return "https://gateway-stg.veroapi.com"
         }
     }
+    var uploadURL: String {
+        switch self {
+            case .production : return "https://gateway.veroapi.com/content-upload"
+            case .staging: return "https://gateway-stg.veroapi.com/content-upload"
+        }
+    }
 }
 struct EnvironmentConstants {
     private static let key = "vero.environment"
@@ -54,6 +60,10 @@ struct EnvironmentConstants {
     
     static func currentBaseURL() -> String {
         currentEnvironment().baseURL
+    }
+    
+    static func currentUploadURL() -> String {
+        currentEnvironment().uploadURL
     }
 }
 
