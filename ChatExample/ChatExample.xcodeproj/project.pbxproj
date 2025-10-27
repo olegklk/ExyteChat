@@ -56,6 +56,7 @@
 		C3D61ADD2E8EB1F600C78FED /* ConversationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3D61ADC2E8EB1F600C78FED /* ConversationViewModel.swift */; };
 		C3D61ADF2E8EB22400C78FED /* ConversationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3D61ADE2E8EB22400C78FED /* ConversationView.swift */; };
 		C3D61AE32E8EC36A00C78FED /* ConversationListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3D61AE22E8EC36A00C78FED /* ConversationListViewModel.swift */; };
+		C3EC18222EAC0FDB0088DF03 /* UploadTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3EC18212EAC0FDB0088DF03 /* UploadTask.swift */; };
 		FF220E5D2DD9F0B700BE315E /* .editorconfig in Resources */ = {isa = PBXBuildFile; fileRef = FF220E5C2DD9F0AF00BE315E /* .editorconfig */; };
 /* End PBXBuildFile section */
 
@@ -121,6 +122,7 @@
 		C3D61ADC2E8EB1F600C78FED /* ConversationViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationViewModel.swift; sourceTree = "<group>"; };
 		C3D61ADE2E8EB22400C78FED /* ConversationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationView.swift; sourceTree = "<group>"; };
 		C3D61AE22E8EC36A00C78FED /* ConversationListViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ConversationListViewModel.swift; sourceTree = "<group>"; };
+		C3EC18212EAC0FDB0088DF03 /* UploadTask.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UploadTask.swift; sourceTree = "<group>"; };
 		FF220E5C2DD9F0AF00BE315E /* .editorconfig */ = {isa = PBXFileReference; lastKnownFileType = text; path = .editorconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -158,6 +160,7 @@
 		135549322864620900C9459A /* ChatExample */ = {
 			isa = PBXGroup;
 			children = (
+				C3EC18212EAC0FDB0088DF03 /* UploadTask.swift */,
 				C39173402EA773A8005BDE01 /* ConversationListView.swift */,
 				C391733E2EA77398005BDE01 /* ConversationDetailsView.swift */,
 				C3622C942E9FC4DA007FEB0E /* VeroContactsView.swift */,
@@ -414,6 +417,7 @@
 				13E17B6D2869E940004DF140 /* MockUser.swift in Sources */,
 				135987BD2869F6F2006388CF /* ChatInteractorProtocol.swift in Sources */,
 				C3622C952E9FC4DA007FEB0E /* VeroContactsView.swift in Sources */,
+				C3EC18222EAC0FDB0088DF03 /* UploadTask.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
