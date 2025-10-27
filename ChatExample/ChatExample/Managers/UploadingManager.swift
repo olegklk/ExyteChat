@@ -3,12 +3,21 @@ import Foundation
 class UploadingManager {
 
     // Configure once at app startup to provide the destination endpoint and optional token provider
-    private static var endpointURL: URL? //Static property 'endpointURL' is not concurrency-safe because it is nonisolated global shared mutable state AI!
-    private static var tokenProvider: (() -> String?)?
+    private actor UploadingConfig {
+        var endpointURL: URL?
+        var tokenProvider: (() -> String?)?
+        func set(endpointURL: URL, tokenProvider: (() -> String?)?) {
+            self.endpointURL = endpointURL
+            self.tokenProvider = tokenProvider
+        }
+        func get() -> (URL?, (() -> String?)?) {
+            (endpointURL, tokenProvider)
+        }
+    }
+    private static let config = UploadingConfig()
 
     static func configure(endpointURL: URL, tokenProvider: (() -> String?)? = nil) {
-        self.endpointURL = endpointURL
-        self.tokenProvider = tokenProvider
+        Task { await config.set(endpointURL: endpointURL, tokenProvider: tokenProvider) }
     }
 
     static func uploadImageMedia(_ media: Media?) async -> URL? {
@@ -38,7 +47,8 @@ class UploadingManager {
     // MARK: - Private
 
     private static func performUpload(data: Data, ext: String) async -> URL? {
-        guard let endpoint = endpointURL else {
+        let (endpointOpt, tokenProvider) = await config.get()
+        guard let endpoint = endpointOpt else {
             print("UploadingManager not configured with endpointURL")
             return nil
         }
