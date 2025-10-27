@@ -81,7 +81,8 @@ class ConversationViewModel: ObservableObject {
         var result: [Attachment] = []
                 
         for media in draftMessage.medias {
-            let thumbURL, fullURL : URL?
+            var thumbURL: URL?
+            var fullURL: URL?
             switch media.type {
                 case .image:
                     fullURL = await UploadingManager.uploadImageMedia(media)
@@ -92,7 +93,7 @@ class ConversationViewModel: ObservableObject {
                     (thumbURL, fullURL) = await UploadingManager.uploadVideoMedia(media)
             }
 
-            if let thumbURL, let fullURL {//Constant 'thumbURL' used before being initialized AI!
+            if let thumbURL, let fullURL {
                 
                 result.append(
                     Attachment(
