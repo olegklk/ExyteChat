@@ -1,54 +1,70 @@
-
 import Foundation
-//нужно изменить этот класс поскольку он был импортирован из другого проекта где использовался FirebaseStorage, но здесь нужно использовать наш класс UploadTask для аплоада данных. Если потребуется, внеси изменеия в класс UploadTask тоже AI!
+
 class UploadingManager {
+
+    // Configure once at app startup to provide the destination endpoint and optional token provider
+    private static var endpointURL: URL?
+    private static var tokenProvider: (() -> String?)?
+
+    static func configure(endpointURL: URL, tokenProvider: (() -> String?)? = nil) {
+        self.endpointURL = endpointURL
+        self.tokenProvider = tokenProvider
+    }
 
     static func uploadImageMedia(_ media: Media?) async -> URL? {
         guard let data = await media?.getData() else { return nil }
-        let ref = Storage.storage().reference()
-            .child("\(UUID().uuidString).jpg")
-        return await uploadData(data, ref)
+        return await performUpload(data: data, ext: "jpg")
     }
 
-    static func uploadVideoMedia(_ media: Media?) async -> (URL?, URL?) { // thumbnailURL, fullURL
-        guard let thumbData = await media?.getThumbnailData(), let data = await media?.getData() else { return (nil, nil) }
-        let thumbRef = Storage.storage().reference()
-            .child("\(UUID().uuidString).jpg")
-        let ref = Storage.storage().reference()
-            .child("\(UUID().uuidString).mov")
-        return (await uploadData(thumbData, thumbRef), await uploadData(data, ref))
+    // Returns (thumbnailURL, fullURL)
+    static func uploadVideoMedia(_ media: Media?) async -> (URL?, URL?) {
+        guard let thumbData = await media?.getThumbnailData(),
+              let data = await media?.getData() else { return (nil, nil) }
+        let thumbURL = await performUpload(data: thumbData, ext: "jpg")
+        let fullURL = await performUpload(data: data, ext: "mov")
+        return (thumbURL, fullURL)
     }
 
     static func uploadRecording(_ recording: Recording?) async -> URL? {
         guard let url = recording?.url, let data = try? Data(contentsOf: url) else { return nil }
-        let ref = Storage.storage().reference()
-            .child("\(UUID().uuidString).aac")
-        return await uploadData(data, ref)
+        return await performUpload(data: data, ext: "aac")
     }
 
     static func uploadImageData(_ data: Data?) async -> URL? {
         guard let data = data else { return nil }
-        let ref = Storage.storage().reference()
-            .child("\(UUID().uuidString).jpg")
-        return await uploadData(data, ref)
+        return await performUpload(data: data, ext: "jpg")
     }
 
-    static private func uploadData(_ data: Data, _ ref: StorageReference) async -> URL? {
-        await withCheckedContinuation { continuation in
-            ref.putData(data, metadata: nil) { metadata, error in
-                guard let _ = metadata else {
-                    print(error.debugDescription)
-                    continuation.resume(returning: nil)
-                    return
-                }
-                ref.downloadURL { (url, error) in
-                    guard let downloadURL = url else {
-                        print(error.debugDescription)
-                        continuation.resume(returning: nil)
-                        return
-                    }
-                    continuation.resume(returning: downloadURL)
-                }
+    // MARK: - Private
+
+    private static func performUpload(data: Data, ext: String) async -> URL? {
+        guard let endpoint = endpointURL else {
+            print("UploadingManager not configured with endpointURL")
+            return nil
+        }
+
+        return await withCheckedContinuation { continuation in
+            var task: UploadTask? = UploadTask(
+                data: data,
+                ofType: ext,
+                parameters: [
+                    ["url": endpoint.absoluteString]
+                ]
+            )
+
+            if let provider = tokenProvider {
+                task?.setTokenProvider(provider)
+            }
+
+            task?.setCompletionHandler { _, remote in
+                continuation.resume(returning: remote)
+                task = nil
+            }
+
+            task?.setErrorHandler { error in
+                print("Upload error: \(error.localizedDescription)")
+                continuation.resume(returning: nil)
+                task = nil
             }
         }
     }
