@@ -1,4 +1,5 @@
 import Foundation
+import ImageIO
 
 enum UploadTaskError: Error {
     case missingRemoteURL
@@ -22,8 +23,18 @@ final class UploadTask {
         to endpoint: URL,
         tokenProvider: (@Sendable () -> String?)? = nil
     ) async throws -> URL {
-        //если ext=="jpg" то нужно получить размеры изображения из data (с учетом масштаба) и добавить query параметры width и height к upload запросу AI!
-        var request = URLRequest(url: endpoint, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 240.0)
+        var finalURL = endpoint
+        if ext.lowercased() == "jpg",
+           let (w, h) = imagePixelSize(from: data) {
+            if var comps = URLComponents(url: endpoint, resolvingAgainstBaseURL: false) {
+                var items = comps.queryItems ?? []
+                items.append(URLQueryItem(name: "width", value: String(w)))
+                items.append(URLQueryItem(name: "height", value: String(h)))
+                comps.queryItems = items
+                finalURL = comps.url ?? endpoint
+            }
+        }
+        var request = URLRequest(url: finalURL, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 240.0)
         request.httpMethod = "POST"
         if let token = tokenProvider?(), !token.isEmpty {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
@@ -68,6 +79,21 @@ final class UploadTask {
     }
 
     // MARK: - Private
+
+    private static func imagePixelSize(from data: Data) -> (Int, Int)? {
+        let cfData = data as CFData
+        guard let source = CGImageSourceCreateWithData(cfData, nil) else { return nil }
+        guard let props = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any] else { return nil }
+        if let w = props[kCGImagePropertyPixelWidth] as? Int,
+           let h = props[kCGImagePropertyPixelHeight] as? Int {
+            return (w, h)
+        }
+        if let w = props[kCGImagePropertyPixelWidth] as? CGFloat,
+           let h = props[kCGImagePropertyPixelHeight] as? CGFloat {
+            return (Int(w), Int(h))
+        }
+        return nil
+    }
 
     private static func parseRemoteURL(from data: Data) throws -> URL? {
         guard !data.isEmpty else { return nil }
