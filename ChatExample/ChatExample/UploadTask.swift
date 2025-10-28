@@ -22,6 +22,7 @@ final class UploadTask {
         to endpoint: URL,
         tokenProvider: (@Sendable () -> String?)? = nil
     ) async throws -> URL {
+        //если ext=="jpg" то нужно получить размеры изображения из data (с учетом масштаба) и добавить query параметры width и height к upload запросу AI!
         var request = URLRequest(url: endpoint, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 240.0)
         request.httpMethod = "POST"
         if let token = tokenProvider?(), !token.isEmpty {
