@@ -1,5 +1,17 @@
 import Foundation
-
+/*{
+ “id”: “att_unique_id”,
+ “kind”: “image”,
+ “meta”: {
+   “images”: [
+     {
+       “url”: “https://cdn.example.com/image.jpg”,
+       “alt”: “optional description”,
+       “expiresAt”: null
+     }
+   ]
+ }
+}*/
 public struct ServerAttachment: Codable, Hashable, Sendable {
     public enum AttachmentKind: String, Codable, Sendable {
         case gif
@@ -7,15 +19,17 @@ public struct ServerAttachment: Codable, Hashable, Sendable {
         case file
         case image
     }
-    
+
+    public let id: String
     public let kind: AttachmentKind
-    public let url: String?
+    public let url: String
     public let href: String?
     public let lat: Double?
     public let lng: Double?
     public let meta: [String: JSONValue]?
     
-    public init(kind: AttachmentKind, url: String?, href: String?, lat: Double?, lng: Double?, meta: [String: JSONValue]?) {
+    public init(id: String, kind: AttachmentKind, url: String, href: String?, lat: Double?, lng: Double?, meta: [String: JSONValue]?) {
+        self.id = id
         self.kind = kind
         self.url = url
         self.href = href
@@ -24,7 +38,8 @@ public struct ServerAttachment: Codable, Hashable, Sendable {
         self.meta = meta
     }
 
-    public init(kind: AttachmentKind, url: String?, href: String?, lat: Double?, lng: Double?, metaAny: [String: Any]?) {
+    public init(id: String, kind: AttachmentKind, url: String, href: String?, lat: Double?, lng: Double?, metaAny: [String: Any]?) {
+        self.id = id
         self.kind = kind
         self.url = url
         self.href = href
@@ -34,6 +49,7 @@ public struct ServerAttachment: Codable, Hashable, Sendable {
     }
     
     enum CodingKeys: String, CodingKey {
+        case id
         case kind
         case url
         case href
@@ -44,8 +60,9 @@ public struct ServerAttachment: Codable, Hashable, Sendable {
     
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try container.decode(String.self, forKey: .id)
         self.kind = try container.decode(AttachmentKind.self, forKey: .kind)
-        self.url = try container.decodeIfPresent(String.self, forKey: .url)
+        self.url = try container.decode(String.self, forKey: .url)
         self.href = try container.decodeIfPresent(String.self, forKey: .href)
         self.lat = try container.decodeIfPresent(Double.self, forKey: .lat)
         self.lng = try container.decodeIfPresent(Double.self, forKey: .lng)
@@ -54,6 +71,7 @@ public struct ServerAttachment: Codable, Hashable, Sendable {
     
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
         try container.encode(kind.rawValue, forKey: .kind)
         try container.encodeIfPresent(url, forKey: .url)
         try container.encodeIfPresent(href, forKey: .href)
@@ -69,7 +87,8 @@ extension ServerAttachment {
         guard let kindRaw = dict["kind"] as? String,
               let kind = AttachmentKind(rawValue: kindRaw) else { return nil }
         self.kind = kind
-        self.url = dict["url"] as? String
+        self.id = dict["id"] as! String
+        self.url = dict["url"] as! String
         self.href = dict["href"] as? String
         self.lat = dict["lat"] as? Double
         self.lng = dict["lng"] as? Double
@@ -82,7 +101,8 @@ extension ServerAttachment {
 
     func toDictionary() -> [String: Any] {
         var result: [String: Any] = ["kind": kind.rawValue]
-        if let url { result["url"] = url }
+        result["id"] = id
+        result["url"] = url
         if let href { result["href"] = href }
         if let lat { result["lat"] = lat }
         if let lng { result["lng"] = lng }

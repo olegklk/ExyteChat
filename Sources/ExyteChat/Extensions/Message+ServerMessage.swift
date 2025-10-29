@@ -12,15 +12,18 @@ extension Message {
     public func toServerMessage() -> ServerMessage {
         let sender = SenderRef(userId: user.id, displayName: user.name)
         
-        let serverAttachments: [ServerAttachment] = attachments.compactMap { attachment in
-            guard attachment.type == .image else { return nil }
+        let serverAttachments: [ServerAttachment] = attachments.map { attachment in
+            // Если сервер поддерживает видео — замените .image на .file или нужный тип.
+            let kind: ServerAttachment.AttachmentKind = .image
+            
             return ServerAttachment(
-                kind: .image,
+                id: attachment.id,
+                kind: kind,
                 url: attachment.full.absoluteString,
                 href: nil,
                 lat: nil,
                 lng: nil,
-                meta: nil
+                meta: makeMeta(from: attachment)
             )
         }
         
@@ -35,5 +38,25 @@ extension Message {
             editedAt: nil,
             deletedAt: nil
         )
+    }
+    
+    private func makeMeta(from attachment: Attachment) -> [String: JSONValue]? {
+        var components = DateComponents()
+        components.day = 30
+        let expiresAt = Calendar.current.date(byAdding: components, to: Date()) ?? Date()
+        let expiresAtString = ISO8601DateFormatter().string(from: expiresAt)
+        
+        switch attachment.type {
+        case .image:
+            let imageObject: [String: JSONValue] = [
+                "url": .string(attachment.full.absoluteString),
+                "alt": .string(""),
+                "expiresAt": .string(expiresAtString)
+            ]
+            return ["images": .array([.object(imageObject)])]
+        case .video:
+            // Нет требований к метаданным видео — не отправляем meta
+            return nil
+        }
     }
 }

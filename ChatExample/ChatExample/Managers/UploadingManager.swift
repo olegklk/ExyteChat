@@ -21,16 +21,20 @@ class UploadingManager {
     }
 
     static func uploadImageMedia(_ media: Media?) async -> URL? {
-        guard let data = await media?.getData() else { return nil }
-        let fileName = UUID().uuidString + ".jpg"
+        guard let media = media else { return nil }
+        guard let data = await media.getData() else { return nil }
+        
+        let fileName = media.id.uuidString //+ ".jpg"
         return await performUpload(data: data, ext: "jpg", fileName: fileName)
     }
 
     // Returns (thumbnailURL, fullURL)
     static func uploadVideoMedia(_ media: Media?) async -> (URL?, URL?) {
-        guard let thumbData = await media?.getThumbnailData(),
-              let data = await media?.getData() else { return (nil, nil) }
-        let base = (media?.id).flatMap { $0.isEmpty ? nil : $0 } ?? UUID().uuidString
+        guard let media = media else { return (nil,nil)}
+        guard let thumbData = await media.getThumbnailData(),
+              let data = await media.getData() else { return (nil, nil) }
+        
+        let base = media.id.uuidString
         let thumbURL = await performUpload(data: thumbData, ext: "jpg", fileName: "\(base)-thumb.jpg")
         let fullURL = await performUpload(data: data, ext: "mov", fileName: "\(base).mov")
         return (thumbURL, fullURL)

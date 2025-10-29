@@ -104,8 +104,9 @@ final class UploadTask {
     private static func parseRemoteURL(from data: Data) throws -> URL? {
         guard !data.isEmpty else { return nil }
         if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
-            if let uri = (json["uri"] as? String) ?? (json["url"] as? String) {
-                return URL(string: uri)
+//            let uri = json["uri"] as? String //internal URI used during post creation in Vero backend
+            if let url = (json["url"] as? String) {
+                return URL(string: url)
             }
         }
         return nil

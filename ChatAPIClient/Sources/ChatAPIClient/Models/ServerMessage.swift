@@ -68,22 +68,6 @@ public struct ServerMessage: Codable, Identifiable, Hashable, Sendable {
         try container.encodeIfPresent(editedAt, forKey: .editedAt)
         try container.encodeIfPresent(deletedAt, forKey: .deletedAt)
     }
-
-    private static func parseDate(_ any: Any?) -> Date? {
-        switch any {
-        case let s as String:
-            if let t = TimeInterval(s) { return Date(timeIntervalSince1970: t) }
-            let isoFS = ISO8601DateFormatter()
-            isoFS.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-            return isoFS.date(from: s) ?? ISO8601DateFormatter().date(from: s)
-        case let d as Double:
-            return Date(timeIntervalSince1970: d)
-        case let i as Int:
-            return Date(timeIntervalSince1970: TimeInterval(i))
-        default:
-            return nil
-        }
-    }
     
     public init?(from dict: [String: Any]) {
         guard let id = (dict["_id"] as? String) ?? (dict["messageId"] as? String) else { return nil }
@@ -96,16 +80,16 @@ public struct ServerMessage: Codable, Identifiable, Hashable, Sendable {
         }
         guard let sender = senderRef else { return nil }
 
-        guard let createdAt = Self.parseDate(dict["createdAt"]) else { return nil }
+        guard let createdAt = JSONValue.parseDate(dict["createdAt"]) else { return nil }
 
         self.id = id
         self.sender = sender
         self.text = dict["text"] as? String
         self.replyTo = dict["replyTo"] as? String
-        self.expiresAt = Self.parseDate(dict["expiresAt"])
+        self.expiresAt = JSONValue.parseDate(dict["expiresAt"])
         self.createdAt = createdAt
-        self.editedAt = Self.parseDate(dict["editedAt"])
-        self.deletedAt = Self.parseDate(dict["deletedAt"])
+        self.editedAt = JSONValue.parseDate(dict["editedAt"])
+        self.deletedAt = JSONValue.parseDate(dict["deletedAt"])
 
         if let attachmentsArray = dict["attachments"] as? [[String: Any]] {
             self.attachments = attachmentsArray.compactMap { ServerAttachment(dict: $0) }
