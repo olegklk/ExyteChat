@@ -30,7 +30,7 @@ class UploadingManager {
     static func uploadVideoMedia(_ media: Media?) async -> (URL?, URL?) {
         guard let thumbData = await media?.getThumbnailData(),
               let data = await media?.getData() else { return (nil, nil) }
-        let base = UUID().uuidString
+        let base = UUID().uuidString //в качестве имени файла используй имеющуюся информацию - для Media - объект уже содержит id AI!
         let thumbURL = await performUpload(data: thumbData, ext: "jpg", fileName: "\(base)-thumb.jpg")
         let fullURL = await performUpload(data: data, ext: "mov", fileName: "\(base).mov")
         return (thumbURL, fullURL)
