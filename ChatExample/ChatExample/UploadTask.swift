@@ -21,17 +21,21 @@ final class UploadTask {
         data: Data,
         ofType ext: String,
         to endpoint: URL,
+        fileName: String? = nil,
         tokenProvider: (@Sendable () -> String?)? = nil
     ) async throws -> URL {
         var finalURL = endpoint
+        if let fileName = fileName, !fileName.isEmpty {
+            finalURL = finalURL.appendingPathComponent(fileName)
+        }
         if ext.lowercased() == "jpg",
            let (w, h) = imagePixelSize(from: data) {
-            if var comps = URLComponents(url: endpoint, resolvingAgainstBaseURL: false) {
+            if var comps = URLComponents(url: finalURL, resolvingAgainstBaseURL: false) {
                 var items = comps.queryItems ?? []
                 items.append(URLQueryItem(name: "width", value: String(w)))
                 items.append(URLQueryItem(name: "height", value: String(h)))
                 comps.queryItems = items
-                finalURL = comps.url ?? endpoint
+                finalURL = comps.url ?? finalURL
             }
         }
         var request = URLRequest(url: finalURL, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 240.0)
@@ -72,10 +76,12 @@ final class UploadTask {
     static func upload(
         fileURL: URL,
         to endpoint: URL,
+        fileName: String? = nil,
         tokenProvider: (@Sendable () -> String?)? = nil
     ) async throws -> URL {
         let data = try Data(contentsOf: fileURL)
-        return try await upload(data: data, ofType: fileURL.pathExtension, to: endpoint, tokenProvider: tokenProvider)
+        let name = fileName ?? fileURL.lastPathComponent
+        return try await upload(data: data, ofType: fileURL.pathExtension, to: endpoint, fileName: name, tokenProvider: tokenProvider)
     }
 
     // MARK: - Private
