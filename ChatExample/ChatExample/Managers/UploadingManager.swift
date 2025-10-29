@@ -38,7 +38,7 @@ class UploadingManager {
         guard let url = recording?.url, let data = try? Data(contentsOf: url) else { return nil }
         return await performUpload(data: data, ext: "aac")
     }
-
+//нужно внести изменения так чтобы при аплоаде передавать в UploadTask еще и имя файла, оно в дальнейшем используется для того чтобы сформировать endpoint URL (оно добавляется к нему через /имя_файла AI!
     static func uploadImageData(_ data: Data?) async -> URL? {
         guard let data = data else { return nil }
         return await performUpload(data: data, ext: "jpg")
