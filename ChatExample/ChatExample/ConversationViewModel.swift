@@ -85,7 +85,7 @@ class ConversationViewModel: ObservableObject {
             var fullURL: URL?
             switch media.type {
                 case .image:
-                    fullURL = await UploadingManager.uploadImageMedia(media)
+                    fullURL = await UploadingManager.uploadImageMedia(media) //доработай этот класс так как методы UploadingManager возвращают Result теперь AI!
                     if fullURL != nil {
                         thumbURL = URL(string:fullURL!.absoluteString + "_thumb.jpg")
                     }
