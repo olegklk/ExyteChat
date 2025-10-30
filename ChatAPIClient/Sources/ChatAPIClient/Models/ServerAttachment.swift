@@ -22,26 +22,23 @@ public struct ServerAttachment: Codable, Hashable, Sendable {
 
     public let id: String
     public let kind: AttachmentKind
-    public let url: String
     public let href: String?
     public let lat: Double?
     public let lng: Double?
     public let meta: [String: JSONValue]?
     
-    public init(id: String, kind: AttachmentKind, url: String, href: String?, lat: Double?, lng: Double?, meta: [String: JSONValue]?) {
+    public init(id: String, kind: AttachmentKind, href: String?, lat: Double?, lng: Double?, meta: [String: JSONValue]?) {
         self.id = id
         self.kind = kind
-        self.url = url
         self.href = href
         self.lat = lat
         self.lng = lng
         self.meta = meta
     }
 
-    public init(id: String, kind: AttachmentKind, url: String, href: String?, lat: Double?, lng: Double?, metaAny: [String: Any]?) {
+    public init(id: String, kind: AttachmentKind, href: String?, lat: Double?, lng: Double?, metaAny: [String: Any]?) {
         self.id = id
         self.kind = kind
-        self.url = url
         self.href = href
         self.lat = lat
         self.lng = lng
@@ -51,7 +48,6 @@ public struct ServerAttachment: Codable, Hashable, Sendable {
     enum CodingKeys: String, CodingKey {
         case id
         case kind
-        case url
         case href
         case lat
         case lng
@@ -62,7 +58,6 @@ public struct ServerAttachment: Codable, Hashable, Sendable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.id = try container.decode(String.self, forKey: .id)
         self.kind = try container.decode(AttachmentKind.self, forKey: .kind)
-        self.url = try container.decode(String.self, forKey: .url)
         self.href = try container.decodeIfPresent(String.self, forKey: .href)
         self.lat = try container.decodeIfPresent(Double.self, forKey: .lat)
         self.lng = try container.decodeIfPresent(Double.self, forKey: .lng)
@@ -73,7 +68,6 @@ public struct ServerAttachment: Codable, Hashable, Sendable {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(id, forKey: .id)
         try container.encode(kind.rawValue, forKey: .kind)
-        try container.encodeIfPresent(url, forKey: .url)
         try container.encodeIfPresent(href, forKey: .href)
         try container.encodeIfPresent(lat, forKey: .lat)
         try container.encodeIfPresent(lng, forKey: .lng)
@@ -83,12 +77,20 @@ public struct ServerAttachment: Codable, Hashable, Sendable {
 
 
 extension ServerAttachment {
+    //перепиши этот метод нормально так чтобы url извлекался из структуры meta которая может быть одной из следюущих meta”: {“files”: [{“url”: “https://cdn.example.com/docs/manual.pdf”,} или “meta”: {    “images”: [      {“url”: “https://cdn.example.com/images/pic1.jpg”,} или “meta”: {“url”: “https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif”} AI!
+    var url : String? {
+        switch kind {
+            case .image:
+                let images = meta!["images"] as Array<Any>?,
+            default:
+                return nil
+        }
+    }
     init?(dict: [String: Any]) {
         guard let kindRaw = dict["kind"] as? String,
               let kind = AttachmentKind(rawValue: kindRaw) else { return nil }
         self.kind = kind
         self.id = dict["id"] as! String
-        self.url = dict["url"] as! String
         self.href = dict["href"] as? String
         self.lat = dict["lat"] as? Double
         self.lng = dict["lng"] as? Double
@@ -101,8 +103,7 @@ extension ServerAttachment {
 
     func toDictionary() -> [String: Any] {
         var result: [String: Any] = ["kind": kind.rawValue]
-        result["id"] = id
-        result["url"] = url
+        result["id"] = id        
         if let href { result["href"] = href }
         if let lat { result["lat"] = lat }
         if let lng { result["lng"] = lng }
