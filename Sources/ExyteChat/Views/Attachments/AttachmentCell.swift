@@ -21,7 +21,14 @@ public struct AttachmentCell: View {
     public var body: some View {
         Group {
             if attachment.type == .image {
-                content
+                ZStack {
+                    content
+
+                    if attachment.status == .uploading {
+                        ActivityIndicator(size: 30, showBackground: true)
+                            .animation(.easeInOut(duration: 0.3), value: attachment.status)
+                    }
+                }
             } else if attachment.type == .video {
                 content
                     .overlay {
@@ -47,7 +54,14 @@ public struct AttachmentCell: View {
     }
 
     var content: some View {
-        AsyncImageView(attachment: attachment, size: size)
+        Group {
+            if attachment.status == .uploading || attachment.status == .failed {
+                AsyncImageView(attachment: attachment, size: size)
+                    .colorMultiply(Color(red: 0.5, green: 0.5, blue: 0.5))
+            } else {
+                AsyncImageView(attachment: attachment, size: size)
+            }
+        }
     }
 }
 

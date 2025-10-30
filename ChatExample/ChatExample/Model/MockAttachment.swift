@@ -15,7 +15,8 @@ struct MockImage {
             id: id,
             thumbnail: thumbnail,
             full: full,
-            type: .image
+            type: .image,
+            status: .uploaded
         )
     }
 }
@@ -30,7 +31,8 @@ struct MockVideo {
             id: id,
             thumbnail: thumbnail,
             full: full,
-            type: .video
+            type: .video,
+            status: .uploaded
         )
     }
 }

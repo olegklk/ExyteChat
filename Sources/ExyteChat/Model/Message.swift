@@ -91,14 +91,26 @@ public struct Message: Identifiable, Hashable, Sendable {
                     return nil
                 }
                 
+                var uploadStatus : Attachment.UploadStatus = Attachment.UploadStatus.uploading
+                switch status {
+                    case .sending, .none:
+                        uploadStatus = Attachment.UploadStatus.uploading
+                    case .sent, .read:
+                        uploadStatus = Attachment.UploadStatus.uploaded
+                    case .error(_):
+                        uploadStatus = Attachment.UploadStatus.failed
+                    
+                }
+                
                 switch media.type {
                 case .image:
-                    return Attachment(id: UUID().uuidString, url: thumbnailURL, type: .image)
+                    return Attachment(id: UUID().uuidString, url: thumbnailURL, type: .image, status: uploadStatus)
                 case .video:
                     guard let fullURL = await media.getURL() else {
                         return nil
                     }
-                    return Attachment(id: UUID().uuidString, thumbnail: thumbnailURL, full: fullURL, type: .video)
+                        
+                    return Attachment(id: UUID().uuidString, thumbnail: thumbnailURL, full: fullURL, type: .video,status: uploadStatus)
                 }
             }
             

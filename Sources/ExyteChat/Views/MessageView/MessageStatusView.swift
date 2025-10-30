@@ -26,7 +26,7 @@ struct MessageStatusView: View {
                 theme.images.message.read
                     .resizable()
                     .foregroundColor(getTheme().colors.messageMyBG)
-            case .error:
+            case .error(_):
                 Button {
                     onRetry()
                 } label: {

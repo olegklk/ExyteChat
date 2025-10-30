@@ -29,6 +29,7 @@ extension ServerMessage {
                     thumbnail: urlObj,
                     full: urlObj,
                     type: .image,
+                    status: .uploaded,
                     thumbnailCacheKey: nil,
                     fullCacheKey: nil
                 )
