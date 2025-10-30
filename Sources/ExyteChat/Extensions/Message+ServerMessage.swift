@@ -18,8 +18,7 @@ extension Message {
             
             return ServerAttachment(
                 id: attachment.id,
-                kind: kind,
-                url: attachment.full.absoluteString,
+                kind: kind,                
                 href: nil,
                 lat: nil,
                 lng: nil,
@@ -55,7 +54,7 @@ extension Message {
             ]
             return ["images": .array([.object(imageObject)])]
         case .video:
-            // Нет требований к метаданным видео — не отправляем meta
+            
             return nil
         }
     }

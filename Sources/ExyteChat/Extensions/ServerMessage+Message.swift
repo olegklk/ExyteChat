@@ -20,7 +20,7 @@ extension ServerMessage {
         
         // Convert attachments
         let chatAttachments = attachments.compactMap { attachment -> Attachment? in
-            guard let urlObj = URL(string: attachment.url) else { return nil }
+            guard let url = attachment.url, let urlObj = URL(string: url) else { return nil }
             
             switch attachment.kind {
             case .image, .gif:

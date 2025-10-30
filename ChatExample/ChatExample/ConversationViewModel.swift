@@ -330,11 +330,11 @@ class ConversationViewModel: ObservableObject {
         
         // Convert ServerAttachment to Attachment
         let attachments: [Attachment] = serverMessage.attachments.compactMap { sa in
-            guard let url = URL(string: sa.url) else { return nil }
+            guard let url = sa.url, let urlObj = URL(string: url) else { return nil }
             return Attachment(
                 id: UUID().uuidString,
-                thumbnail: url,
-                full: url,
+                thumbnail: urlObj,
+                full: urlObj,
                 type: .image,
                 thumbnailCacheKey: nil,
                 fullCacheKey: nil

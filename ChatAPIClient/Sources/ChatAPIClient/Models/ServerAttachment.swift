@@ -77,13 +77,12 @@ public struct ServerAttachment: Codable, Hashable, Sendable {
 
 
 extension ServerAttachment {
-    var url: String? {
+    public var url: String? {
         // Prefer extracting URL from `meta` in supported shapes:
         // 1) meta["url"] as .string
         // 2) meta["images"] as .array of .object each having "url": .string
         // 3) meta["files"] as .array of .object each having "url": .string
-        // Fallback to `href` if nothing found.
-        guard let meta = meta else { return href }
+        guard let meta = meta else { return nil }
 
         if case let .string(u)? = meta["url"] {
             return u
@@ -105,8 +104,9 @@ extension ServerAttachment {
             }
         }
 
-        return href
+        return nil
     }
+    
     init?(dict: [String: Any]) {
         guard let kindRaw = dict["kind"] as? String,
               let kind = AttachmentKind(rawValue: kindRaw) else { return nil }
