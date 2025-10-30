@@ -19,7 +19,7 @@ class UploadingManager {
     static func configure(endpointURL: URL, tokenProvider: (@Sendable () -> String?)? = nil) {
         Task { await config.set(endpointURL: endpointURL, tokenProvider: tokenProvider) }
     }
-
+//доработай этот класс так чтобы возвращать Result success failure и корректно получать url из success и error из failure и обрабатывать это в классе, который использует этот класс AI!
     static func uploadImageMedia(_ media: Media?) async -> URL? {
         guard let media = media else { return nil }
         guard let data = await media.getData() else { return nil }
