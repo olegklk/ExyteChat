@@ -13,7 +13,7 @@ extension Message {
         let sender = SenderRef(userId: user.id, displayName: user.name)
         
         let serverAttachments: [ServerAttachment] = attachments.map { attachment in
-            // Если сервер поддерживает видео — замените .image на .file или нужный тип.
+            
             let kind: ServerAttachment.AttachmentKind = .image
             
             return ServerAttachment(

@@ -77,38 +77,51 @@ class ConversationViewModel: ObservableObject {
         
     }
     
-    private func attachmentsFromDraft(_ draftMessage: DraftMessage) async -> [Attachment]? {
-        var result: [Attachment] = []
-                
+    //returns list of failed attachment IDs
+    private func uploadAttachmentsFromDraft(_ draftMessage: DraftMessage) async -> [String] {
+        var result: [String] = []
+        
         for media in draftMessage.medias {
-            var thumbURL: URL?
-            var fullURL: URL?
+            
             switch media.type {
                 case .image:
                     switch await UploadingManager.uploadImageMedia(media) {
-                    case .success(let url):
-                        fullURL = url
-                        thumbURL = URL(string: url.absoluteString + "_thumb.jpg")
-                    case .failure(let error):
-                        print("Image upload failed: \(error)")
+                        case .success(let url):
+                            break
+                        case .failure(let error):
+                            print("Image upload failed: \(error)")
+                            result.append(media.id.uuidString)
                     }
                 case .video:
                     switch await UploadingManager.uploadVideoMedia(media) {
-                    case .success(let pair):
-                        thumbURL = pair.0
-                        fullURL = pair.1
-                    case .failure(let error):
-                        print("Video upload failed: \(error)")
+                        case .success(let pair):
+                            break
+                        case .failure(let error):
+                            print("Video upload failed: \(error)")
+                            result.append(media.id.uuidString)
                     }
+                    
             }
-
-            if let thumbURL, let fullURL {
+        }
+            
+        return result
+    }
+        
+    private func attachmentsFromDraft(_ draftMessage: DraftMessage) async -> [Attachment]? {
+        var result: [Attachment] = []
+        
+        for media in draftMessage.medias {
+            
+            if let fullURL = await media.getURL()  {
+                let thumbURL = await media.getThumbnailURL() ?? fullURL
+                
                 result.append(
                     Attachment(
                         id: media.id.uuidString,
                         thumbnail: thumbURL,
                         full: fullURL,
-                        type: media.type == .video ? AttachmentType.video : AttachmentType.image
+                        type: media.type == .video ? AttachmentType.video : AttachmentType.image,
+                        status: .uploading
                     )
                 )
             }
@@ -116,19 +129,23 @@ class ConversationViewModel: ObservableObject {
         
         return result
     }
-    
+        
     func handleSend(_ draft: DraftMessage) async {
+        
+        var draft = draft
+        
+        if  draft.id == nil {
+            draft.id = UUID().uuidString
+        }
+        
         guard let batchId = conversation.batchId else { return }
         
         guard let selfProfile = selfProfile else { return }
         
-        /// convert to  dictionary: replace users with userIds, upload medias and get urls, replace urls with strings
-//        let dict = await makeDraftMessageDictionary(draft)
-        
         let attachments = await attachmentsFromDraft(draft) ?? []
         
         let tempMessage = Message(
-            id: draft.id ?? UUID().uuidString,
+            id: draft.id!,
             user: User(id: selfProfile.id, name: Store.selfDisplayName(), avatarURL: selfProfile.picture != nil ? URL(string:selfProfile.picture!) : nil, isCurrentUser: true),
             status: .sending,
             createdAt: draft.createdAt,
@@ -137,78 +154,45 @@ class ConversationViewModel: ObservableObject {
             recording: draft.recording,
             replyMessage: draft.replyMessage
         )
-        self.messages.append(tempMessage)
-
-        let serverMessage = tempMessage.toServerMessage()
-        SocketIOManager.shared.sendMessage(conversationId: conversationId, batchId: batchId, message: serverMessage)
+        if let index = self.messages.firstIndex(where: { $0.id == draft.id! }) {
+            self.messages[index] = tempMessage
+        } else {
+            self.messages.append(tempMessage)
+        }
+        
+        let failedAttachments = await uploadAttachmentsFromDraft(draft)
+        let hasFailed = failedAttachments.count > 0
+        
+        if !hasFailed { //all attachments uploaded successfully
+            let serverMessage = tempMessage.toServerMessage()
+            SocketIOManager.shared.sendMessage(conversationId: conversationId, batchId: batchId, message: serverMessage)
+        } else {
+            
+            var updatedAttachments = attachments
+            for i in updatedAttachments.indices {
+                if failedAttachments.contains(where: { $0 == updatedAttachments[i].id }) {
+                    updatedAttachments[i].status = .failed
+                } else {
+                    updatedAttachments[i].status = .uploaded
+                }
+            }
+            
+            let failedMessage = Message(
+                id: draft.id!,
+                user: User(id: selfProfile.id, name: Store.selfDisplayName(), avatarURL: selfProfile.picture != nil ? URL(string:selfProfile.picture!) : nil, isCurrentUser: true),
+                status: .error(draft),
+                createdAt: draft.createdAt,
+                text: draft.text,
+                attachments: updatedAttachments,
+                recording: draft.recording,
+                replyMessage: draft.replyMessage
+            )
+            
+            if let index = self.messages.firstIndex(where: { $0.id == draft.id! }) {
+                self.messages[index] = failedMessage
+            }
+        }
     }
-    
-//    private func makeDraftMessageDictionary(_ draft: DraftMessage) async -> [String: Any] {
-//        
-//        guard let selfProfile = selfProfile else { return [:]}
-//        
-//        var attachments = [[String: Any]]()
-//        for media in draft.medias {
-//            let thumbURL, fullURL : URL?
-//            switch media.type {
-//            case .image:
-//                thumbURL = await UploadingManager.uploadImageMedia(media)
-//                fullURL = thumbURL
-//            case .video:
-//                (thumbURL, fullURL) = await UploadingManager.uploadVideoMedia(media)
-//            }
-//
-//            if let thumbURL, let fullURL {
-//                attachments.append([
-//                    "thumbURL": thumbURL.absoluteString,
-//                    "url": fullURL.absoluteString,
-//                    "type": AttachmentType(mediaType: media.type).rawValue
-//                ])
-//            }
-//        }
-//
-//        var recordingDict: [String: Any]? = nil
-//        if let recording = draft.recording, let url = await UploadingManager.uploadRecording(recording) {
-//            recordingDict = [
-//                "duration": recording.duration,
-//                "waveformSamples": recording.waveformSamples,
-//                "url": url.absoluteString
-//            ]
-//        }
-//
-//        var replyDict: [String: Any]? = nil
-//        if let reply = draft.replyMessage {
-//            var replyRecordingDict: [String: Any]? = nil
-//            if let recording = reply.recording {
-//                replyRecordingDict = [
-//                    "duration": recording.duration,
-//                    "waveformSamples": recording.waveformSamples,
-//                    "url": recording.url?.absoluteString ?? ""
-//                ]
-//            }
-//
-//            replyDict = [
-//                "id": reply.id,
-//                "userId": reply.user.id,
-//                "text": reply.text,
-//                "attachments": reply.attachments.map { [
-//                    "url": $0.full.absoluteString,
-//                    "type": $0.type.rawValue
-//                ] },
-//                "recording": replyRecordingDict as Any
-//            ]
-//        }
-//
-//        return [
-//            "userId": selfProfile.id,
-//            "createdAt": draft.createdAt,
-//            "isRead": Timestamp(date: draft.createdAt),
-//            "text": draft.text,
-//            "attachments": attachments,
-//            "recording": recordingDict as Any,
-//            "replyMessage": replyDict as Any
-//        ]
-//    }
     
     func handleEdit(_ messageId: String, _ newText: String) {
         guard let batchId = conversation.batchId else { return }
@@ -345,6 +329,7 @@ class ConversationViewModel: ObservableObject {
                 thumbnail: urlObj,
                 full: urlObj,
                 type: .image,
+                status: .uploaded,
                 thumbnailCacheKey: nil,
                 fullCacheKey: nil
             )
@@ -375,3 +360,4 @@ class ConversationViewModel: ObservableObject {
         return ref.toReplyMessage()
     }
 }
+
