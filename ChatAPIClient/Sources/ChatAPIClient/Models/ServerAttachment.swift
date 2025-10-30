@@ -77,14 +77,35 @@ public struct ServerAttachment: Codable, Hashable, Sendable {
 
 
 extension ServerAttachment {
-    //перепиши этот метод нормально так чтобы url извлекался из структуры meta которая может быть одной из следюущих meta”: {“files”: [{“url”: “https://cdn.example.com/docs/manual.pdf”,} или “meta”: {    “images”: [      {“url”: “https://cdn.example.com/images/pic1.jpg”,} или “meta”: {“url”: “https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif”} AI!
-    var url : String? {
-        switch kind {
-            case .image:
-                let images = meta!["images"] as Array<Any>?,
-            default:
-                return nil
+    var url: String? {
+        // Prefer extracting URL from `meta` in supported shapes:
+        // 1) meta["url"] as .string
+        // 2) meta["images"] as .array of .object each having "url": .string
+        // 3) meta["files"] as .array of .object each having "url": .string
+        // Fallback to `href` if nothing found.
+        guard let meta = meta else { return href }
+
+        if case let .string(u)? = meta["url"] {
+            return u
         }
+
+        if case let .array(items)? = meta["images"] {
+            for item in items {
+                if case let .object(obj) = item, case let .string(u)? = obj["url"] {
+                    return u
+                }
+            }
+        }
+
+        if case let .array(items)? = meta["files"] {
+            for item in items {
+                if case let .object(obj) = item, case let .string(u)? = obj["url"] {
+                    return u
+                }
+            }
+        }
+
+        return href
     }
     init?(dict: [String: Any]) {
         guard let kindRaw = dict["kind"] as? String,
