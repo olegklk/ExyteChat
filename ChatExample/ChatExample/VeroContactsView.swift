@@ -21,7 +21,8 @@ struct VeroContactsView: View {
         NavigationView {
             Group {
                 if isLoading {
-                    ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                    VeroActivitySpinnerView(isAnimating: .constant(true))
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                 } else if contacts.isEmpty {
                     Text("No contacts").foregroundColor(.secondary)
                 } else {

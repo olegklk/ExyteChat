@@ -1,4 +1,5 @@
 import SwiftUI
+import ActivityIndicatorView
 
 struct UserSetupView: View {
     @State private var veroEmail: String = ""
@@ -44,9 +45,10 @@ struct UserSetupView: View {
                             HStack {
                                 Text("Login")
                                     .frame(maxWidth: .infinity)
-                                if isLoggingIn {
-                                    ProgressView().padding(.leading, 8)
-                                }
+                                VeroActivitySpinnerView(isAnimating: $isLoggingIn)
+                                    .frame(width: 25, height: 25)
+                                    .padding(.leading, 8)
+                                
                             }
                         }
                         .disabled(veroEmail.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || veroPassword.isEmpty)
