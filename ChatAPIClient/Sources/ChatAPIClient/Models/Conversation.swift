@@ -29,7 +29,7 @@ public struct Conversation: Codable, Identifiable, Hashable, Sendable {
         self.title = title
         self.participants = []
     }
-    //давай доработаем этот класс так чтобы каждый раз когда ему присваивают свойство participants (и только если количество элементов в participants >1) инициализировалось свойство title следующим образом: если type == "direct", то title присваивается имя второго участника чата (назодим его id в массиве participants, отличающееся от нвшего (Store.getSelfProfile) и затем получаем параметры Contact из Store.getContact(id) находем его firstName + LastName AI!
+    
     public mutating func clearMessages() {
         self.messages.removeAll()
     }

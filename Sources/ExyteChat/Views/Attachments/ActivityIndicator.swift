@@ -6,15 +6,19 @@
 //
 
 import SwiftUI
-import ActivityIndicatorView
+//import ActivityIndicatorView
 
-struct ActivityIndicator: View {
+public struct ActivityIndicator: View {
 
     @Environment(\.chatTheme) var theme
-    var size: CGFloat = 50
+    var size: CGFloat = 30
     var showBackground = true
+    
+    public init(size: CGFloat = 30) {
+        self.size = size
+    }
 
-    var body: some View {
+    public var body: some View {
         ZStack {
             if showBackground {
                 Color(UIColor.secondarySystemBackground).opacity(0.8)
@@ -22,8 +26,10 @@ struct ActivityIndicator: View {
                     .cornerRadius(8)
             }
 
-            ActivityIndicatorView(isVisible: .constant(true), type: .flickeringDots())
-                .foregroundColor(theme.colors.activityIndicator)
+//            ActivityIndicatorView(isVisible: .constant(true), type: .flickeringDots())
+//                .foregroundColor(theme.colors.activityIndicator)
+//                .frame(width: size, height: size)
+            VeroActivitySpinnerView(isAnimating: .constant(true))
                 .frame(width: size, height: size)
         }
     }

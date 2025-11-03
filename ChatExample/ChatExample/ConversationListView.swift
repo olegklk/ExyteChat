@@ -38,11 +38,11 @@ struct ConversationListView: View {
             } header: {
                 HStack {
                     Text("Chats")
-                    
-                    VeroActivitySpinnerView(isAnimating: $viewModel.isLoading)
-                        .frame(width: 20, height: 20)
-                        .padding(.leading, 8)
-                    
+                    if viewModel.isLoading {
+                        ExyteChat.ActivityIndicator()
+                            .frame(width: 20, height: 20)
+                            .padding(.leading, 8)
+                    }
                 }
             }
         }

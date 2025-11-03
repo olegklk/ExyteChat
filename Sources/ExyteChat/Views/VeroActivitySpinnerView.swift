@@ -2,13 +2,12 @@
 //  VeroActivitySpinnerView.swift
 //  YourSwiftUIProject
 //
-//  Created by AI Assistant
 //
 
 import SwiftUI
 
 /// A native SwiftUI view for displaying a rotating activity spinner.
-struct VeroActivitySpinnerView: View {
+public struct VeroActivitySpinnerView: View {
     
     // MARK: - Properties
     
@@ -27,24 +26,24 @@ struct VeroActivitySpinnerView: View {
     /// - Parameters:
     ///   - isAnimating: A binding to the animation's state.
     ///   - imageName: The name of the image in the Asset Catalogs or Bundle.
-    init(isAnimating: Binding<Bool>, imageName: String) {
+    public init(isAnimating: Binding<Bool>, imageName: String) {
         self._isAnimating = isAnimating
         self.imageName = imageName
     }
     
     /// Initializes the spinner with the default image name.
     /// - Parameter isAnimating: A binding to the animation's state.
-    init(isAnimating: Binding<Bool>) {
+    public init(isAnimating: Binding<Bool>) {
         self._isAnimating = isAnimating
         self.imageName = "spinner"
     }
 
     // MARK: - Body
     
-    var body: some View {
+    public var body: some View {
         Group {
             if isAnimating {
-                Image(imageName)
+                Image(imageName, bundle: .current)
                     .resizable()
                     .scaledToFit()
                     .rotationEffect(.degrees(isSpinning ? 360 : 0))

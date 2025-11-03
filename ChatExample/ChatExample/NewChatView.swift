@@ -1,4 +1,5 @@
 import SwiftUI
+import ExyteChat
 
 struct NewChatView: View {
     private enum ChatType: String, CaseIterable {
@@ -16,6 +17,11 @@ struct NewChatView: View {
     @State private var conversationURL: String = ""
     @State private var conversationId: String?
     @State private var batchId: String?
+    
+    // helper to render full name
+    private func displayName(_ c: Contact) -> String {
+        return Store.displayName(fName: c.firstname, lName: c.lastname)
+    }
     
     @StateObject private var viewModel = NewChatViewModel()
     
@@ -54,7 +60,7 @@ struct NewChatView: View {
                 ForEach(participants, id: \.id) { contact in
                     if contact.id == currentUserId {
                         VStack(alignment: .leading) { // Non-removable current user row
-                            Text("\(Store.displayName(fName:contact.firstName,lName:contact.lastName)) (You)")
+                            Text("\(displayName(contact)) (You)")
                             if let username = contact.username, !username.isEmpty {
                                 Text("@\(username)")
                                     .font(.caption)
@@ -64,7 +70,7 @@ struct NewChatView: View {
                     } else {
                         HStack {
                             VStack(alignment: .leading) {
-                                Text(Store.displayName(fName:contact.firstName,lName:contact.lastName))
+                                Text(displayName(contact))
                                 if let username = contact.username, !username.isEmpty {
                                     Text("@\(username)")
                                         .font(.caption)
@@ -96,11 +102,11 @@ struct NewChatView: View {
                     HStack {
                         Text("Start chat")
                             .frame(maxWidth: .infinity, alignment: .center)
-                        
-                        VeroActivitySpinnerView(isAnimating: $viewModel.isLoading)
-                            .frame(width: 20, height: 20)
-                            .padding(.leading, 8)
-                        
+                        if viewModel.isLoading {
+                            ExyteChat.ActivityIndicator(size:20)
+                                .frame(width: 20, height: 20)
+                                .padding(.leading, 8)
+                        }
                     }
                 }
                 .disabled(participants.count < 2)

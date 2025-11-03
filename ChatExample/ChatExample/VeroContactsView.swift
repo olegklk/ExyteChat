@@ -1,4 +1,5 @@
 import SwiftUI
+import ExyteChat
 
 struct VeroContactsView: View {
     @Environment(\.dismiss) private var dismiss
@@ -21,8 +22,8 @@ struct VeroContactsView: View {
         NavigationView {
             Group {
                 if isLoading {
-                    VeroActivitySpinnerView(isAnimating: .constant(true))
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                    ExyteChat.ActivityIndicator()
+                        .frame(width: 20, height: 20)                        
                 } else if contacts.isEmpty {
                     Text("No contacts").foregroundColor(.secondary)
                 } else {

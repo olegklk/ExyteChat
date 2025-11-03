@@ -98,7 +98,7 @@ struct ConversationView: View {
                             }
                             
                             VStack(alignment: .leading, spacing: 0) {
-                                Text(viewModel.conversation.title)
+                                Text(Store.makeConversationTitle(viewModel.conversation))
                                     .font(.subheadline)
                                     .foregroundStyle(.white)
                             }

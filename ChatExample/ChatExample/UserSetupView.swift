@@ -1,9 +1,10 @@
 import SwiftUI
-import ActivityIndicatorView
+import ExyteChat
 
 struct UserSetupView: View {
     @State private var veroEmail: String = ""
     @State private var veroPassword: String = ""
+    
     @State private var isLoggingIn: Bool = false
     @State private var loginError: String? = nil
     @State private var navigationPath = NavigationPath()
@@ -45,10 +46,11 @@ struct UserSetupView: View {
                             HStack {
                                 Text("Login")
                                     .frame(maxWidth: .infinity)
-                                VeroActivitySpinnerView(isAnimating: $isLoggingIn)
-                                    .frame(width: 25, height: 25)
-                                    .padding(.leading, 8)
-                                
+                                if isLoggingIn {
+                                    ExyteChat.ActivityIndicator(size:20)
+                                        .frame(width: 20, height: 20)
+                                        .padding(.leading, 8)
+                                }
                             }
                         }
                         .disabled(veroEmail.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || veroPassword.isEmpty)
