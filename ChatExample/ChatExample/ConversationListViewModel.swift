@@ -11,6 +11,23 @@ import ExyteChat
 import ExyteMediaPicker
 import ChatAPIClient
 
+enum ConversationInitError: Error {
+    case generalError
+    case notEnoughParticipants
+    case emptyConversation
+    
+    var errorDescription: String? {
+            switch self {
+            case .generalError:
+                return "Unknown error"
+            case .notEnoughParticipants:
+                return "There should be at least 2 participants in a chat"
+            case .emptyConversation:
+                return "There is no data for the given month"
+            }
+        }
+}
+
 @MainActor
 class ConversationListViewModel: ObservableObject {
     @Published var conversationItems: [ServerConversationListItem] = []
@@ -23,7 +40,7 @@ class ConversationListViewModel: ObservableObject {
             let items = try await ChatAPIClient.shared.getAllConversations(limit: nil, perConv: 1)
             
             for item in items {
-                await loadChatHistory(item)
+                await populateConversation(item)
             }
             self.conversationItems = items
             
@@ -35,31 +52,60 @@ class ConversationListViewModel: ObservableObject {
         }
     }
     
-    func loadChatHistory(_ item: ServerConversationListItem) async {
+    func populateConversation(_ item: ServerConversationListItem) async {
+                
+        switch await findNonEmptyBatchRecurcively(for:item, month:0) {
+            case .success(let (batch,participants)):
+                var conversation = Store.ensureConversation(item.conversationId)
+                if let batch = batch {
+                    conversation.batchId = batch.id
+                    conversation.type = (batch.type).rawValue
+                    conversation.participants = participants
+                }
+                
+                let newMessages = batch.flatMap { $0.messages }
+                
+                conversation.mergeMessages(newMessages ?? [])
+                    
+                Store.upsertConversation(conversation)
+                
+            case .failure(let error):
+                print("Couldn't find non-empty month history in all scannable periods. Error: \(error)")
+                return
+        }
+            
+        
+        
+    }
+    
+    func findNonEmptyBatchRecurcively(for c: ServerConversationListItem, month: Int) async -> Result<(batch:ServerBatchDocument?,participants:[String]),Error>{
+        
+        guard month < 24 else {
+            return .failure(ConversationInitError.emptyConversation)
+        }
         
         do {
-            var batches = try await ChatAPIClient.shared.getHistory(conversationId: item.conversationId, month: nil)
-            
-            batches = batches.sorted { $0.startedAt < $1.startedAt }
-            
-            var conversation = Store.ensureConversation(item.conversationId)
-            let nonEmptyParticipants = batches.reversed().first(where: { !$0.participants.isEmpty })?.participants ?? conversation.participants
-            if let lastBatch = batches.last {
-                conversation.batchId = lastBatch.id
-                conversation.type = (lastBatch.type).rawValue
-                conversation.participants = nonEmptyParticipants
+            var batches = try await ChatAPIClient.shared.getHistory(conversationId: c.conversationId, month: Date.yyyyMM(monthsAgo: month))
+                        
+            if batches.isEmpty {
+//                try await Task.sleep(until: .now + .seconds(2), clock: .suspending)
+                return await findNonEmptyBatchRecurcively(for: c, month: month+1)
             }
             
-            let newMessages = batches.flatMap { $0.messages }
+            batches = batches.sorted { $0.startedAt > $1.startedAt }
             
-            conversation.mergeMessages(newMessages)
-                
-            Store.upsertConversation(conversation)
-
+            let conversation = Store.ensureConversation(c.conversationId)
+            let batch = batches.first(where: { !$0.participants.isEmpty })
             
+            let nonEmptyParticipants = batch?.participants ?? conversation.participants
+            
+            guard nonEmptyParticipants.count > 1 else  {
+                return .failure(ConversationInitError.notEnoughParticipants)
+            }
+            
+            return .success((batch: batch, participants: nonEmptyParticipants))
         } catch {
-            print("Failed to load details(unread history) for chat:\(item.conversationId) error: \(error)")
-            isLoading = false
+            return .failure(ConversationInitError.generalError)
         }
     }
         
