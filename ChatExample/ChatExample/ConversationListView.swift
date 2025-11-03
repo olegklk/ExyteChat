@@ -15,16 +15,6 @@ struct ConversationListView: View {
     
     var body: some View {
         List {
-
-            Section {
-                VStack {
-                    Button("Create New Chat") { //перенеси эту функцию в навигационную панель - правую кнопку в форме плюсика цвета Color(red:0.34, green:0.78, blue:0.78) AI!
-                        navigationPath.append(NavigationItem(screenType: AppScreen.newChat, conversation: nil))
-                    }
-                }
-            } header: {
-                Text("")
-            }
             Section {
                 ForEach(
                     viewModel.conversationItems.sorted { $0.latestStartedAt > $1.latestStartedAt },
@@ -62,6 +52,14 @@ struct ConversationListView: View {
         .navigationTitle("Chats ")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button {
+                    navigationPath.append(NavigationItem(screenType: AppScreen.newChat, conversation: nil))
+                } label: {
+                    Image(systemName: "plus")
+                        .foregroundColor(Color(red: 0.34, green: 0.78, blue: 0.78))
+                }
+            }
 //            ToolbarItem(placement: .navigationBarTrailing) {
 //                HStack {
 //                    Button(theme.title) {
