@@ -29,7 +29,7 @@ public struct ActivityIndicator: View {
 //            ActivityIndicatorView(isVisible: .constant(true), type: .flickeringDots())
 //                .foregroundColor(theme.colors.activityIndicator)
 //                .frame(width: size, height: size)
-            VeroActivitySpinnerView(isAnimating: .constant(true))
+            VeroActivitySpinnerView(isAnimating: .constant(true)) //почему несмотря на isAnimating being true этот индикатор показываеться как статичная картинка везде в проекте? AI!
                 .frame(width: size, height: size)
         }
     }
