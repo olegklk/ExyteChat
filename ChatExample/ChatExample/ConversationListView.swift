@@ -23,7 +23,7 @@ struct ConversationListView: View {
                     let conversation = Store.ensureConversation(item.conversationId)
                     HStack {
 //
-                        Button(conversation.title) {
+                        Button(Store.makeConversationTitle(conversation)) {
                             
                             navigationPath.append(NavigationItem(screenType: AppScreen.chat, conversation:conversation))
                         }

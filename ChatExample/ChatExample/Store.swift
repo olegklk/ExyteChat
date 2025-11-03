@@ -75,9 +75,14 @@ public final class Store {
     
     public static func selfDisplayName() -> String {
         if let profile = _selfProfile {
-            return "\(profile.firstName) \(profile.lastName ?? "")".trimmingCharacters(in: .whitespaces)
+            return displayName(fName: profile.firstName, lName: profile.lastName)
         }
         return "You"
+    }
+    
+    // helper to render full name
+    public static func displayName(fName: String, lName: String?) -> String {
+        "\(fName) \(lName ?? "")".trimmingCharacters(in: .whitespaces)
     }
     
     static func setContacts(_ contacts: [Contact]) {
@@ -92,4 +97,14 @@ public final class Store {
         return _contacts.first(where: { $0.id == id })
     }
         
+    static func makeConversationTitle(_ c: Conversation) -> String {
+        var title = c.title
+        if c.type == "direct", c.participants.count > 1, let myProfile = _selfProfile {
+            if let userId = c.participants.first(where: {$0 != myProfile.id}),
+             let user = getContact(userId) {
+                title = displayName(fName: user.firstname, lName: user.lastname)
+            }
+        }
+        return title ?? c.id
+    }
 }

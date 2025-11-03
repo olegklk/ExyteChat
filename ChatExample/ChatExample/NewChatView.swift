@@ -17,10 +17,6 @@ struct NewChatView: View {
     @State private var conversationId: String?
     @State private var batchId: String?
     
-    // helper to render full name
-    private func displayName(_ c: Contact) -> String {
-        "\(c.firstname) \(c.lastname ?? "")".trimmingCharacters(in: .whitespaces)
-    }
     @StateObject private var viewModel = NewChatViewModel()
     
     var body: some View {
@@ -58,7 +54,7 @@ struct NewChatView: View {
                 ForEach(participants, id: \.id) { contact in
                     if contact.id == currentUserId {
                         VStack(alignment: .leading) { // Non-removable current user row
-                            Text("\(displayName(contact)) (You)")
+                            Text("\(Store.displayName(fName:contact.firstName,lName:contact.lastName)) (You)")
                             if let username = contact.username, !username.isEmpty {
                                 Text("@\(username)")
                                     .font(.caption)
@@ -68,7 +64,7 @@ struct NewChatView: View {
                     } else {
                         HStack {
                             VStack(alignment: .leading) {
-                                Text(displayName(contact))
+                                Text(Store.displayName(fName:contact.firstName,lName:contact.lastName))
                                 if let username = contact.username, !username.isEmpty {
                                     Text("@\(username)")
                                         .font(.caption)
