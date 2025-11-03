@@ -38,7 +38,7 @@ public final class Store {
         
         var conversation = conversationsById[id]
         if conversation == nil {
-            conversation = Conversation(id: id, title: id)
+            conversation = Conversation(id: id, title: nil)
             if let userId = _selfProfile?.id {
                 conversation!.participants = [userId]
             } else {

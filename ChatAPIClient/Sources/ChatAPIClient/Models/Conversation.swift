@@ -2,7 +2,7 @@ import Foundation
 
 public struct Conversation: Codable, Identifiable, Hashable, Sendable {
     public let id: String
-    public var title: String
+    public var title: String?
     public var coverURL: URL?
     public var batchId: String?
     public var type: String?  //direct or group
@@ -50,7 +50,7 @@ public struct Conversation: Codable, Identifiable, Hashable, Sendable {
     }
     
     public init(id: String,
-                title: String) {
+                title: String?) {
         self.id = id
         self.title = title
         self.participants = []
