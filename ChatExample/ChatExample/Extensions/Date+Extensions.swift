@@ -45,4 +45,24 @@ extension Date {
         }
         return result
     }
+    
+    private static let yyyyMMFormatter: DateFormatter = {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM"
+            formatter.locale = Locale(identifier: "en_US_POSIX")
+            formatter.timeZone = TimeZone(secondsFromGMT: 0) // optional: fixing UTC
+            return formatter
+        }()
+        
+    /// returns YYYY-MM for a date at monthsAgo back in time
+    static func yyyyMM(monthsAgo: Int) -> String {
+        let calendar = Calendar.current
+        let today = Date()
+        
+        guard let pastDate = calendar.date(byAdding: .month, value: -monthsAgo, to: today) else {
+            return "Invalid Date"
+        }
+        
+        return yyyyMMFormatter.string(from: pastDate)
+    }
 }
