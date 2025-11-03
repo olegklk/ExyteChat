@@ -87,5 +87,9 @@ public final class Store {
     static func getContacts() -> [Contact] {
         _contacts
     }
+    
+    static func getContact(_ id: String) -> Contact? {
+        return _contacts.first(where: { $0.id == id })
+    }
         
 }
