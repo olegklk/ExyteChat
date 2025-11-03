@@ -6,37 +6,11 @@ public struct Conversation: Codable, Identifiable, Hashable, Sendable {
     public var coverURL: URL?
     public var batchId: String?
     public var type: String?  //direct or group
-    public var participants: [String] {
-        didSet {
-            // If this is a direct chat with more than one participant, update the title.
-            if self.type == "direct" && participants.count > 1 {
-                updateTitleForDirectChat()
-            }
-        }
-    }
+    public var participants: [String]
     public var unreadCount: Int = 0
     public var messages: [ServerMessage] = []
     
-    // Helper function to update the title for a direct chat.
-    // NOTE: This introduces a dependency on `Store`, which is part of the application layer,
-    // not the `ChatAPIClient` library. This is done based on the specific request.
-    private mutating func updateTitleForDirectChat() {
-        // Find the other participant's ID.
-        // Assumes `Store.getSelfProfile()` is available and returns an object with an `id` property.
-        guard let selfProfile = Store.getSelfProfile(),
-              let otherParticipantId = participants.first(where: { $0 != selfProfile.id }) else {
-            return
-        }
-        
-        // Get the other participant's contact details.
-        // Assumes `Store.getContact(id)` is available and returns an object with `firstName` and `lastName`.
-        guard let contact = Store.getContact(otherParticipantId) else {
-            return
-        }
-        
-        // Set the title to the full name of the other participant.
-        self.title = "\(contact.firstName) \(contact.lastName)"
-    }
+    
     
     enum CodingKeys: String, CodingKey {
         case id = "_id"
@@ -55,7 +29,7 @@ public struct Conversation: Codable, Identifiable, Hashable, Sendable {
         self.title = title
         self.participants = []
     }
-    
+    //давай доработаем этот класс так чтобы каждый раз когда ему присваивают свойство participants (и только если количество элементов в participants >1) инициализировалось свойство title следующим образом: если type == "direct", то title присваивается имя второго участника чата (назодим его id в массиве participants, отличающееся от нвшего (Store.getSelfProfile) и затем получаем параметры Contact из Store.getContact(id) находем его firstName + LastName AI!
     public mutating func clearMessages() {
         self.messages.removeAll()
     }
@@ -75,13 +49,13 @@ public struct Conversation: Codable, Identifiable, Hashable, Sendable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.id = try container.decode(String.self, forKey: .id)
-        self.title = try container.decodeIfPresent(String.self, forKey: .title)
+        self.title = try container.decode(String.self, forKey: .title)
         self.coverURL = try container.decodeIfPresent(URL.self, forKey: .coverURL)
         self.type = try container.decodeIfPresent(String.self, forKey: .type)
         self.participants = try container.decode([String].self, forKey: .participants)
         self.unreadCount = try container.decode(Int.self, forKey: .unreadCount)
         self.messages = try container.decode([ServerMessage].self, forKey: .messages)
-        self.batchId = try container.decodeIfPresent(String.self, forKey: .batchId)
+        self.batchId = try container.decode(String.self, forKey: .batchId)
         
         
     }
@@ -89,7 +63,7 @@ public struct Conversation: Codable, Identifiable, Hashable, Sendable {
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(id, forKey: .id)
-        try container.encodeIfPresent(title, forKey: .title)
+        try container.encode(title, forKey: .title)
         try container.encodeIfPresent(coverURL, forKey: .coverURL)
         try container.encodeIfPresent(type, forKey: .type)
         try container.encode(unreadCount, forKey: .unreadCount)
