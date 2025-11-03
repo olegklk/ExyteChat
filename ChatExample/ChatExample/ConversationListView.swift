@@ -10,60 +10,15 @@ struct ConversationListView: View {
     
     @State private var theme: ExampleThemeState = .accent
     @State private var color = Color(.black)
-    
-    @State private var conversationURL: String = ""
-    @State private var debounceTask: Task<Void, Never>?
-    
+        
     @State private var conversationId: String?
-    @State private var batchId: String?
     
     var body: some View {
         List {
-            Section {
-                VStack {
-                    Text("Insert conversation URL to join:")
-                        .font(.headline)
-                        .foregroundColor(.secondary)
-                    ZStack(alignment: .topLeading) {
-                        TextEditor(text: $conversationURL)
-                            .frame(minHeight: 40, maxHeight: 200)
-                            .padding(4)
-                            .onChange(of: conversationURL) { oldValue, newValue in
-                                debounceConversationIdChange(newValue: newValue)
-                            }
-                        
-                        if conversationURL.isEmpty {
-                            Text("http://..")
-                                .foregroundColor(.secondary)
-                                .padding(12)
-                                .allowsHitTesting(false)
-                        }
-                    }
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                    )
-//                        NavigationLink("Join conversation", value: Route.join)
-                    
-                    Button("Join conversation") { //Button instead of NavigationLink because this way it performs only on click and allows to set some values before navigation
-                        if let conversationId, let batchId {
-                            var conversation = Store.ensureConversation(conversationId)
-                            conversation.batchId = batchId
-                            
-                            navigationPath.append(NavigationItem(screenType: AppScreen.chat, conversation:conversation))
-                        }
-                    }
-                    .disabled(conversationId == nil || conversationURL.isEmpty)
-                    
-                    
-                }
-            } header: {
-                Text("Join by URL")
-            }
 
             Section {
                 VStack {
-                    Button("Create New Chat") {
+                    Button("Create New Chat") { //перенеси эту функцию в навигационную панель - правую кнопку в форме плюсика цвета Color(red:0.34, green:0.78, blue:0.78) AI!
                         navigationPath.append(NavigationItem(screenType: AppScreen.newChat, conversation: nil))
                     }
                 }
@@ -94,10 +49,10 @@ struct ConversationListView: View {
                 HStack {
                     Text("Chats")
                     
-                    if viewModel.isLoading {
-                        ProgressView()
-                            .padding(.leading, 8)
-                    }
+                    VeroActivitySpinnerView(isAnimating: $viewModel.isLoading)
+                        .frame(width: 20, height: 20)
+                        .padding(.leading, 8)
+                    
                 }
             }
         }
@@ -150,21 +105,7 @@ struct ConversationListView: View {
         viewModel.onAppear()
         
     }
-    
-    private func debounceConversationIdChange(newValue: String) {
-        debounceTask?.cancel()
-        debounceTask = Task {
-            try? await Task.sleep(nanoseconds: 500_000_000) // 0.5s
-                            
-            guard !Task.isCancelled else { return }
-            
-            await MainActor.run {
-                let (convId, bId) = ChatUtils.idsFromURLString(newValue)
-                if convId != nil {conversationId = convId}
-                if bId != nil {batchId = bId}
-            }
-        }
-    }
+        
 }
 
 /// An enum that lets us iterate through the different ChatTheme styles
