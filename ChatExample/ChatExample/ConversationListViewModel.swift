@@ -80,7 +80,7 @@ class ConversationListViewModel: ObservableObject {
     
     func findNonEmptyBatchRecurcively(for c: ServerConversationListItem, month: Int) async -> Result<(batch:ServerBatchDocument?,participants:[String]),Error>{
         
-        guard month < 24 else {
+        guard month < 12 else { //maximum scan for year ago
             return .failure(ConversationInitError.emptyConversation)
         }
         

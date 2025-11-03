@@ -33,31 +33,54 @@ class ConversationViewModel: ObservableObject {
         guard isHistoryLoaded == false else {return}
         
         isHistoryLoaded = true
-        do {
-            
-            var batches = try await ChatAPIClient.shared.getHistory(conversationId: conversationId, month: nil) //current month by default
-            
-            conversation.clearMessages()
-            
-            batches = batches.sorted { $0.startedAt < $1.startedAt }
-            if let lastBatch = batches.last {
-                DispatchQueue.main.async {
-                    self.conversation.batchId = lastBatch.id
-                    self.conversationURL = self.conversation.url()
-                    self.conversation.type = (lastBatch.type).rawValue
-                    self.conversation.participants = lastBatch.participants
+        switch await findNonEmptyMonthRecurcively(for:conversationId, month:0) {
+            case .success(let batches):
+                conversation.clearMessages()
+                let batches = batches.sorted { $0.startedAt < $1.startedAt }
+                if let lastBatch = batches.last {
+                    DispatchQueue.main.async {
+                        self.conversation.batchId = lastBatch.id
+                        self.conversationURL = self.conversation.url()
+                        self.conversation.type = (lastBatch.type).rawValue
+                        if lastBatch.participants.count > 1 { self.conversation.participants = lastBatch.participants
+                        }
+                    }
                 }
+                
+                // combine server messages from all batches into a single flat array
+                let newMessages = batches.flatMap { $0.messages }
+                
+                await MainActor.run {
+                    self.updateMessages(newMessages)
+                }
+                
+            case .failure(let error):
+                print("Couldn't find non-empty month history in all scannable periods. Error: \(error)")
+                return
+        }
+                    
+    }
+    
+    func findNonEmptyMonthRecurcively(for cId: String, month: Int) async -> Result<[ServerBatchDocument],Error>{
+        
+        //
+        guard month < 12 else { //maximum scan for year ago
+            return .failure(ConversationInitError.emptyConversation)
+        }
+        
+        do {
+            var batches = try await ChatAPIClient.shared.getHistory(conversationId: cId, month: Date.yyyyMM(monthsAgo: month))
+                        
+            if batches.isEmpty {
+//                try await Task.sleep(until: .now + .seconds(2), clock: .suspending)
+                return await findNonEmptyMonthRecurcively(for: cId, month: month+1)
             }
             
-            // combine server messages from all batches into a single flat array
-            let newMessages = batches.flatMap { $0.messages }
+//            let conversation = await Store.ensureConversation(cId)
             
-            await MainActor.run {
-                self.updateMessages(newMessages)
-            }
-            
+            return .success(batches)
         } catch {
-            print("Failed to load chat history: \(error)")
+            return .failure(ConversationInitError.generalError)
         }
     }
     
