@@ -45,7 +45,7 @@ public enum DefaultMessageMenuAction: MessageMenuAction, Sendable {
         case .reply:
             Image(systemName: "arrowshape.turn.up.left")
         case .delete:
-            Image(systemName: "arrowshape.turn.up.left")//вставь сюда подходящее системное изображение для контекстного меню Delete AI!
+            Image(systemName: "trash")
         case .edit:
             if #available(iOS 18.0, macCatalyst 18.0, *) {
                 Image(systemName: "bubble.and.pencil")
