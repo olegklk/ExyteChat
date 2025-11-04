@@ -222,6 +222,13 @@ class ConversationViewModel: ObservableObject {
         
         SocketIOManager.shared.editMessage(conversationId: conversationId, batchId: batchId, messageId: messageId, newText: newText)
     }
+    
+    func handleDelete(_ message: Message) {
+        guard let batchId = conversation.batchId else { return }
+        
+        SocketIOManager.shared.deleteMessage(conversationId: conversationId, batchId: batchId, messageId: message.id)
+    }
+
 
     func onAppear() {
         

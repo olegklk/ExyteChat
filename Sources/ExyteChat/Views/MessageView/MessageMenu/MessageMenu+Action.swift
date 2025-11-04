@@ -22,7 +22,7 @@ public enum DefaultMessageMenuAction: MessageMenuAction, Sendable {
 
     case copy
     case reply
-    case delete
+    case delete(deleteClosure: @Sendable (Message) -> Void)
     case edit(saveClosure: @Sendable (String) -> Void)
 
     public func title() -> String {
@@ -59,6 +59,7 @@ public enum DefaultMessageMenuAction: MessageMenuAction, Sendable {
         switch (lhs, rhs) {
         case (.copy, .copy),
              (.reply, .reply),
+             (.delete, .delete),
              (.edit(_), .edit(_)):
             return true
         default:
@@ -67,7 +68,7 @@ public enum DefaultMessageMenuAction: MessageMenuAction, Sendable {
     }
 
     public static let allCases: [DefaultMessageMenuAction] = [
-        .copy, .reply, .edit(saveClosure: {_ in})
+        .copy, .reply, .delete(deleteClosure: {_ in}), .edit(saveClosure: {_ in})
     ]
     
     static public func menuItems(for message: Message) -> [DefaultMessageMenuAction] {

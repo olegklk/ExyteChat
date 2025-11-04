@@ -24,6 +24,7 @@ final class ChatViewModel: ObservableObject {
     let inputFieldId = UUID()
 
     var didSendMessage: (DraftMessage) -> Void = {_ in}
+    var didDeleteMessage: (Message) -> Void = {_ in}
     var inputViewModel: InputViewModel?
     var globalFocusState: GlobalFocusState?
 
@@ -40,6 +41,10 @@ final class ChatViewModel: ObservableObject {
     func sendMessage(_ message: DraftMessage) {
         didSendMessage(message)
     }
+    
+    func deleteMessage(_ message: Message) {
+        didDeleteMessage(message)
+    }
 
     func messageMenuAction() -> (Message, DefaultMessageMenuAction) -> Void {
         { [weak self] message, action in
@@ -54,6 +59,9 @@ final class ChatViewModel: ObservableObject {
         case .reply:
             inputViewModel?.attachments.replyMessage = message.toReplyMessage()
             globalFocusState?.focus = .uuid(inputFieldId)
+        case .delete(let deleteClosure):
+            deleteClosure(message)
+                break
         case .edit(let saveClosure):
             inputViewModel?.text = message.text
             inputViewModel?.edit(saveClosure)

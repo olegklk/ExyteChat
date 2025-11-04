@@ -48,6 +48,10 @@ struct ConversationView: View {
                         Task {await viewModel.handleEdit(message.id, editedText) }
                         
                     })
+                    case .delete: defaultActionClosure(message, .delete { msg in
+                        Task {await viewModel.handleDelete(msg) }
+                        
+                    })
                     case .copy: defaultActionClosure(message, .copy)
                 }
             })
