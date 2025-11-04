@@ -39,7 +39,7 @@ struct ConversationListView: View {
                 HStack {
                     Text("Chats")
                     if viewModel.isLoading {
-                        ExyteChat.ActivityIndicator()
+                    ExyteChat.ActivityIndicator()
                             .frame(width: 20, height: 20)
                             .padding(.leading, 8)
                     }

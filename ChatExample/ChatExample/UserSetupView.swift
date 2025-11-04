@@ -47,7 +47,7 @@ struct UserSetupView: View {
                                 Text("Login")
                                     .frame(maxWidth: .infinity)
                                 if isLoggingIn {
-                                    ExyteChat.ActivityIndicator(size:20)
+                                    ExyteChat.ActivityIndicator()
                                         .frame(width: 20, height: 20)
                                         .padding(.leading, 8)
                                 }

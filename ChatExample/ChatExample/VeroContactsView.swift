@@ -23,7 +23,7 @@ struct VeroContactsView: View {
             Group {
                 if isLoading {
                     ExyteChat.ActivityIndicator()
-                        .frame(width: 20, height: 20)                        
+                        .frame(width: 20, height: 20)
                 } else if contacts.isEmpty {
                     Text("No contacts").foregroundColor(.secondary)
                 } else {

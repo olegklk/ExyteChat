@@ -11,12 +11,13 @@ import SwiftUI
 public struct ActivityIndicator: View {
 
     @Environment(\.chatTheme) var theme
-    var size: CGFloat = 30
-    var showBackground = true
+    var size: CGFloat = 20
+    var showBackground = false
     @State private var isSpinnerAnimating = false
     
-    public init(size: CGFloat = 30) {
+    public init(size: CGFloat = 20, showBackground: Bool = false) {
         self.size = size
+        self.showBackground = showBackground
     }
 
     public var body: some View {

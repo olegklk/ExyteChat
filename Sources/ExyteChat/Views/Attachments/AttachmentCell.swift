@@ -25,8 +25,8 @@ public struct AttachmentCell: View {
                     content
 
                     if attachment.status == .uploading {
-                        ExyteChat.ActivityIndicator(size:20)
-                            .frame(width: 20, height: 20)
+                        ExyteChat.ActivityIndicator(size:30, showBackground:true)
+                            .frame(width: 30, height: 30)
                     }
                 }
             } else if attachment.type == .video {
@@ -87,7 +87,8 @@ struct AsyncImageView: View {
                 Rectangle()
                     .foregroundColor(theme.colors.inputBG)
                     .frame(width: size.width, height: size.height)
-                ExyteChat.ActivityIndicator(size:20)
+                ExyteChat.ActivityIndicator(size:30, showBackground:true)
+                    .frame(width: 30, height: 30)
                     
             }
         }

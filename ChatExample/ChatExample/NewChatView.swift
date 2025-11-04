@@ -103,7 +103,7 @@ struct NewChatView: View {
                         Text("Start chat")
                             .frame(maxWidth: .infinity, alignment: .center)
                         if viewModel.isLoading {
-                            ExyteChat.ActivityIndicator(size:20)
+                            ExyteChat.ActivityIndicator()
                                 .frame(width: 20, height: 20)
                                 .padding(.leading, 8)
                         }
