@@ -22,6 +22,7 @@ public enum DefaultMessageMenuAction: MessageMenuAction, Sendable {
 
     case copy
     case reply
+    case delete
     case edit(saveClosure: @Sendable (String) -> Void)
 
     public func title() -> String {
@@ -32,6 +33,8 @@ public enum DefaultMessageMenuAction: MessageMenuAction, Sendable {
             "Reply"
         case .edit:
             "Edit"
+        case .delete:
+            "Delete"
         }
     }
 
@@ -41,6 +44,8 @@ public enum DefaultMessageMenuAction: MessageMenuAction, Sendable {
             Image(systemName: "doc.on.doc")
         case .reply:
             Image(systemName: "arrowshape.turn.up.left")
+        case .delete:
+            Image(systemName: "arrowshape.turn.up.left")//вставь сюда подходящее системное изображение для контекстного меню Delete AI!
         case .edit:
             if #available(iOS 18.0, macCatalyst 18.0, *) {
                 Image(systemName: "bubble.and.pencil")
