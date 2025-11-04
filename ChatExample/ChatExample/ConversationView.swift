@@ -82,7 +82,7 @@ struct ConversationView: View {
                     
                     ToolbarItem(placement: .principal) {
                         HStack {
-                            if let url = URL(string:"https://avatars.mds.yandex.net/i?id=6ce3b81ea6739ebd0e70ca6b7b057b37e115e17c-5354373-images-thumbs&n=13")/*viewModel.conversation.coverURL*/ {
+                            if let url = viewModel.conversation.coverURL {
                                 CachedAsyncImage(url: url) { phase in
                                     switch phase {
                                         case .success(let image):
@@ -98,7 +98,7 @@ struct ConversationView: View {
                             }
                             
                             VStack(alignment: .leading, spacing: 0) {
-                                Text(Store.makeConversationTitle(viewModel.conversation))
+                                Text(viewModel.conversation.title ?? viewModel.conversation.id)
                                     .font(.subheadline)
                                     .foregroundStyle(.white)
                             }

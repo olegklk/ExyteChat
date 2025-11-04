@@ -46,6 +46,8 @@ public final class Store {
             }
             upsertConversation(conversation!)
         }
+        conversation!.title = makeConversationTitle(conversation!)
+        conversation!.coverURL = makeConversationCoverURL(conversation!)
         return conversation!
     }
     
@@ -63,8 +65,8 @@ public final class Store {
         return conversation
     }
     
-    public static func conversation(for id: String) -> Conversation? {
-        return conversationsById[id]
+    public static func conversation(for id: String) -> Conversation {
+        return ensureConversation(id)
     }
     
     public static func upsertConversation(_ conversation: Conversation) {
@@ -106,5 +108,18 @@ public final class Store {
             }
         }
         return title ?? c.id
+    }
+    
+    static func makeConversationCoverURL(_ c: Conversation) -> URL? {
+        var coverURL = c.coverURL
+        if c.type == "direct", c.participants.count > 1, let myProfile = _selfProfile {
+            if let userId = c.participants.first(where: {$0 != myProfile.id}),
+             let user = getContact(userId) {
+                if let picture = user.picture {
+                    coverURL = URL(string: picture)
+                }
+            }
+        }
+        return coverURL
     }
 }
