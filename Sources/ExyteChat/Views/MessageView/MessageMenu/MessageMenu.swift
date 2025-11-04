@@ -368,7 +368,7 @@ struct MessageMenu<MainButton: View, ActionEnum: MessageMenuAction>: View {
                 ty -= off
             }
             
-            return ty + (mHeight / 2) - (rHeight / 2)
+            return ty - (mHeight / 2) + (rHeight / 2)
             
         case .keyboard:
             /// Store our vertical offset
