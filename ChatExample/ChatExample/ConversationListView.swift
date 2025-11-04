@@ -22,13 +22,33 @@ struct ConversationListView: View {
                 ) { item in
                     let conversation = Store.ensureConversation(item.conversationId)
                     HStack {
-//
-                        Button(conversation.title ?? conversation.id) {
-                            
-                            navigationPath.append(NavigationItem(screenType: AppScreen.chat, conversation:conversation))
-                        }
-                        .foregroundColor(.primary)
                         
+                        Button(action: {
+                            navigationPath.append(NavigationItem(screenType: AppScreen.chat, conversation:conversation))
+                        }) {
+                            HStack {
+                                
+                                if let url = conversation.coverURL {
+                                    CachedAsyncImage(url: url) { phase in
+                                        switch phase {
+                                            case .success(let image):
+                                                image
+                                                    .resizable()
+                                                    .scaledToFill()
+                                            default:
+                                                Rectangle().fill(Color(hex: "AFB3B8"))
+                                        }
+                                    }
+                                    .frame(width: 35, height: 35)
+                                    .clipShape(Circle())
+                                    .padding(.trailing, 5)
+                                }
+                                
+                                Text(conversation.title ?? conversation.id)
+                                    .foregroundColor(.primary)
+                            }
+                        }
+                                                                                                                        
                         Spacer()
                         Text("\(item.unreadCount)")
                             .foregroundColor(.secondary)
