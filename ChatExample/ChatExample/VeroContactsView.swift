@@ -17,7 +17,48 @@ struct VeroContactsView: View {
             return name.contains(q) || uname.contains(q)
         }
     }
-
+/*
+ Printing description of contact:
+ ▿ Contact
+   - id : "e764ce90-d15b-11e4-ae7e-4109879f609b"
+   - username : nil
+   - firstname : "O"
+   ▿ lastname : Optional<String>
+     - some : "K"
+   - picture : nil
+ Printing description of contact:
+ ▿ Contact
+   - id : "d05f2f50-d2b5-11e4-92c6-e365c4562176"
+   - username : nil
+   - firstname : "O-test"
+   ▿ lastname : Optional<String>
+     - some : "K"
+   - picture : nil
+ Printing description of contact:
+ ▿ Contact
+   - id : "f24e3310-d2cc-11e4-a8c4-4109879f609b"
+   - username : nil
+   - firstname : "O2 K"
+   - lastname : nil
+   - picture : nil
+ Printing description of contact:
+ ▿ Contact
+   - id : "d5c78030-fd50-11e4-8f87-e365c4562176"
+   ▿ username : Optional<String>
+     - some : "oleg5"
+   - firstname : "Oleg5 Klk"
+   - lastname : nil
+   ▿ picture : Optional<String>
+     - some : "https://d12p2d3hz1zns.cloudfront.net/d5c78030-fd50-11e4-8f87-e365c4562176/6c325af9-77ad-465c-8b52-7d493efc3b18"
+ Printing description of contact:
+ ▿ Contact
+   - id : "46f89ea0-1e4a-11e5-916b-693194eb50e3"
+   - username : nil
+   - firstname : "Oleg-test2"
+   ▿ lastname : Optional<String>
+     - some : "Klk"
+   - picture : nil
+ */
     var body: some View {
         NavigationView {
             Group {
@@ -51,13 +92,13 @@ struct VeroContactsView: View {
                     }
                 }
             }
-            .navigationTitle("Vero Contacts")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { dismiss() }
-                }
-            }
-            .searchable(
+//            .navigationTitle("Vero Contacts")
+//            .toolbar {
+//                ToolbarItem(placement: .cancellationAction) {
+//                    Button("Close") { dismiss() }
+//                }
+//            }
+            .searchable( //в этом экране почему-то сверху оставлено широкое пустое пространство как будто зарезервированное для показан navigationTitle или еще чего-то в этом роде но там ничего нет, как его убрать чтобы search был прижат к верху формы AI!
                 text: $searchText,
                 placement: .navigationBarDrawer(displayMode: .automatic),
                 prompt: "Search contacts"
