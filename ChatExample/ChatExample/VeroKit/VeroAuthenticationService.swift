@@ -491,7 +491,7 @@ extension VeroAuthenticationService {
         }
     }
 }
-
+//вынеси в отдельный класс VeroAPIManager методы не связанная с authentication (такие как getUserProfile, getProfiles, getContacts) и сделай в нем унификацию вызовов хотя бы минимальную чтобы не так много кода повторялось AI!
 
 public struct SelfProfile: Codable {
     let id: String
