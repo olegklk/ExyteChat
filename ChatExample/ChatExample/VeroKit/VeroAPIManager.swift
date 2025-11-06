@@ -16,7 +16,7 @@
 
 import Foundation
 
-final class VeroAPIManager: ObservableObject {
+final class VeroAPIManager: ObservableObject, Sendable {
     static let shared = VeroAPIManager()
     
     private let baseURL: String
