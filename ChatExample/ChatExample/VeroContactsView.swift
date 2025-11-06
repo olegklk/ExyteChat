@@ -44,7 +44,7 @@ struct VeroContactsView: View {
  Printing description of contact:
  ▿ Contact
    - id : "d5c78030-fd50-11e4-8f87-e365c4562176"
-   ▿ username : Optional<String>
+   - ▿ username : Optional<String>
      - some : "oleg5"
    - firstname : "Oleg5 Klk"
    - lastname : nil
@@ -55,7 +55,7 @@ struct VeroContactsView: View {
    - id : "46f89ea0-1e4a-11e5-916b-693194eb50e3"
    - username : nil
    - firstname : "Oleg-test2"
-   ▿ lastname : Optional<String>
+   - ▿ lastname : Optional<String>
      - some : "Klk"
    - picture : nil
  */
@@ -92,13 +92,8 @@ struct VeroContactsView: View {
                     }
                 }
             }
-//            .navigationTitle("Vero Contacts")
-//            .toolbar {
-//                ToolbarItem(placement: .cancellationAction) {
-//                    Button("Close") { dismiss() }
-//                }
-//            }
-            .searchable( //в этом экране почему-то сверху оставлено широкое пустое пространство как будто зарезервированное для показан navigationTitle или еще чего-то в этом роде но там ничего нет, как его убрать чтобы search был прижат к верху формы AI!
+            .navigationTitleDisplayMode(.inline)
+            .searchable(
                 text: $searchText,
                 placement: .navigationBarDrawer(displayMode: .automatic),
                 prompt: "Search contacts"
