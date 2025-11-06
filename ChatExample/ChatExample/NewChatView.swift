@@ -46,9 +46,19 @@ struct NewChatView: View {
                         let pid = participantInput.trimmingCharacters(in: .whitespacesAndNewlines)
                         guard !pid.isEmpty else { return }
                         if pid != currentUserId,
-                           !participants.contains(where: { $0.id == pid }),
-                           let contact = Store.getContacts().first(where: { $0.id == pid }) {
-                            participants.append(contact)
+                           !participants.contains(where: { $0.id == pid }) {
+                           if let contact = Store.getContacts().first(where: { $0.id == pid }) {
+                                participants.append(contact)
+                           } else {
+                               Task {//давай переделаем эту часть чтобы вместо этого вызывалась отдельная функция AI!
+                                   if let token = KeychainHelper.standard.read(service: .token, type: CompleteLoginResponse.self)?.veroPass?.jwt,
+                                      let profile = await VeroAuthenticationService.shared.getProfiles(forIDs: [pid], accessToken: token)?.first {
+                                       DispatchQueue.main.async {
+                                           participants.append(Contact(id: pid, firstname: profile.firstName))
+                                       }
+                                   }
+                               }
+                           }
                         }
                         participantInput = ""
                     } label: {
