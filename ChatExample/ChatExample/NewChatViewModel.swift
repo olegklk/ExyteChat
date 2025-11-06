@@ -93,11 +93,12 @@ class NewChatViewModel: ObservableObject {
                 self.conversation = Store.createConversation(conversationId!, type: chatType!, participants: participants, title: nil)
                 
             } else {
-                self.conversation = Store.conversation(for: conversationId!)
+                self.conversation = Store.conversation(conversationId!)
             }
-                        
+            
             self.conversation?.batchId = batchId
             Store.upsertConversation(self.conversation!)
+            
             
             if isHistoryLoaded {
                 self.finish()
@@ -119,11 +120,15 @@ class NewChatViewModel: ObservableObject {
         SocketIOManager.shared.disconnect()
         
         if let conversationId = self.conversationId {
-            
-            let navigationItem = NavigationItem(
-                screenType: .chat,
-                conversation: Store.ensureConversation(conversationId))
-            self.navigationItem = navigationItem
+            Task {
+                let conversation = await Store.ensureConversation(conversationId)
+                let navigationItem = NavigationItem(
+                    screenType: .chat,
+                    conversation: conversation)
+                DispatchQueue.main.async { [self] in
+                    self.navigationItem = navigationItem
+                }
+            }
         }
         
     }

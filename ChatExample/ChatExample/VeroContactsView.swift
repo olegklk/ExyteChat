@@ -92,7 +92,8 @@ struct VeroContactsView: View {
                     }
                 }
             }
-            .navigationTitleDisplayMode(.inline)
+            .navigationTitle("")
+            .navigationBarTitleDisplayMode(.inline)
             .searchable(
                 text: $searchText,
                 placement: .navigationBarDrawer(displayMode: .automatic),

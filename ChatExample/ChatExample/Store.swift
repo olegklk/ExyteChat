@@ -34,7 +34,11 @@ public final class Store {
         
     }
     
-    public static func ensureConversation(_ id: String) -> Conversation {
+    public static func conversation(_ id: String) -> Conversation? {
+        return conversationsById[id]
+    }
+    
+    public static func ensureConversation(_ id: String) async -> Conversation {
         
         var conversation = conversationsById[id]
         if conversation == nil {
@@ -46,8 +50,10 @@ public final class Store {
             }
             upsertConversation(conversation!)
         }
-        conversation!.title = makeConversationTitle(conversation!)
         conversation!.coverURL = makeConversationCoverURL(conversation!)
+        
+        conversation!.title = await makeConversationTitle(conversation!)
+        
         return conversation!
     }
     
@@ -63,10 +69,6 @@ public final class Store {
         if let allParticipants { conversation.participants = allParticipants }
         upsertConversation(conversation)
         return conversation
-    }
-    
-    public static func conversation(for id: String) -> Conversation {
-        return ensureConversation(id)
     }
     
     public static func upsertConversation(_ conversation: Conversation) {
@@ -98,13 +100,30 @@ public final class Store {
     static func getContact(_ id: String) -> Contact? {
         return _contacts.first(where: { $0.id == id })
     }
+    
+    static func fetchRemoteContact(_ id: String) async -> Contact? {
+        if let token = KeychainHelper.standard.read(service: .token, type: CompleteLoginResponse.self)?.veroPass?.jwt,
+           let p = await VeroAuthenticationService.shared.getProfiles(forIDs: [id], accessToken: token)?.first {
+            
+                let contact = Contact(id: id, username: p.username, firstname: p.firstName, lastname: p.lastName, picture: p.picture)
+            
+                _contacts.append(contact)
+                return contact
+        }
+        return nil
+    }
         
-    static func makeConversationTitle(_ c: Conversation) -> String {
+    static func makeConversationTitle(_ c: Conversation) async -> String {
         var title = c.title
         if c.type == "direct", c.participants.count > 1, let myProfile = _selfProfile {
-            if let userId = c.participants.first(where: {$0 != myProfile.id}),
-             let user = getContact(userId) {
-                title = displayName(fName: user.firstname, lName: user.lastname)
+            if let userId = c.participants.first(where: {$0 != myProfile.id}) {
+                if let user = getContact(userId) {
+                    title = displayName(fName: user.firstname, lName: user.lastname)
+                } else {
+                    if let user = await fetchRemoteContact(userId) {
+                        title = displayName(fName: user.firstname, lName: user.lastname)
+                    }
+                }
             }
         }
         return title ?? c.id

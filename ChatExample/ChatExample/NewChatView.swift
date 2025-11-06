@@ -51,7 +51,7 @@ struct NewChatView: View {
                                 participants.append(contact)
                            } else {
                                Task {
-                                   await fetchAndAddParticipant(withID: pid)
+                                   await fetchAndAddParticipant(withID:pid)
                                }
                            }
                         }
@@ -144,10 +144,9 @@ struct NewChatView: View {
                     
                     Button("Join conversation") { //Button instead of NavigationLink because this way it performs only on click and allows to set some values before navigation
                         if let conversationId, let batchId {
-                            var conversation = Store.ensureConversation(conversationId)
-                            conversation.batchId = batchId
-                            
-                            navigationPath.append(NavigationItem(screenType: AppScreen.chat, conversation:conversation))
+                            Task {
+                                await populateConversationAndNavigate(conversationId,batchId)
+                            }
                         }
                     }
                     .disabled(conversationId == nil || conversationURL.isEmpty)
@@ -195,11 +194,19 @@ struct NewChatView: View {
             }
         }
     }
+    
+    private func populateConversationAndNavigate(_ conversationId: String, _ batchId: String) async {
+        var conversation = await Store.ensureConversation(conversationId)
+        conversation.batchId = batchId
+        
+        navigationPath.append(NavigationItem(screenType: AppScreen.chat, conversation:conversation))
+    }
 
     private func fetchAndAddParticipant(withID pid: String) async {
-        if let token = KeychainHelper.standard.read(service: .token, type: CompleteLoginResponse.self)?.veroPass?.jwt,
-           let profile = await VeroAuthenticationService.shared.getProfiles(forIDs: [pid], accessToken: token)?.first {
-            participants.append(Contact(id: pid, firstname: profile.firstName))
+        if let contact = await Store.fetchRemoteContact(pid) {
+            DispatchQueue.main.async { [self] in
+                self.participants.append(contact)
+            }
         }
     }
 

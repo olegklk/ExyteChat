@@ -149,11 +149,12 @@ struct ConversationView_Previews: PreviewProvider {
             
             var body: some View {
                 let conversationid = ChatUtils.generateRandomConversationId()
-                let conversation = Store.ensureConversation(conversationid)
-                ConversationView(
-                    viewModel: ConversationViewModel(conversation: conversation),
-                    path: $previewPath
-                )
+                if let conversation = Store.conversation(conversationid) {
+                    ConversationView(
+                        viewModel: ConversationViewModel(conversation: conversation),
+                        path: $previewPath
+                    )
+                }
             }
         }
         return PreviewWrapper()

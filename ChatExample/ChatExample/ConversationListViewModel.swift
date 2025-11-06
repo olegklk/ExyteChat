@@ -56,18 +56,22 @@ class ConversationListViewModel: ObservableObject {
                 
         switch await findNonEmptyBatchRecurcively(for:item, month:0) {
             case .success(let (batch,participants)):
-                var conversation = Store.ensureConversation(item.conversationId)
+                var conversation = await Store.ensureConversation(item.conversationId)
                 if let batch = batch {
                     conversation.batchId = batch.id
                     conversation.type = (batch.type).rawValue
                     conversation.participants = participants
+                    conversation.title = await Store.makeConversationTitle(conversation)
+                    conversation.coverURL = Store.makeConversationCoverURL(conversation)
                 }
+                
                 
                 let newMessages = batch.flatMap { $0.messages }
                 
                 conversation.mergeMessages(newMessages ?? [])
-                    
+                
                 Store.upsertConversation(conversation)
+                
                 
             case .failure(let error):
                 print("Couldn't find non-empty month history in all scannable periods. Error: \(error)")
@@ -93,17 +97,16 @@ class ConversationListViewModel: ObservableObject {
             }
             
             batches = batches.sorted { $0.startedAt > $1.startedAt }
-            
-            let conversation = Store.ensureConversation(c.conversationId)
+                        
             let batch = batches.first(where: { !$0.participants.isEmpty })
             
-            let nonEmptyParticipants = batch?.participants ?? conversation.participants
+            let nonEmptyParticipants = batch?.participants
             
-            guard nonEmptyParticipants.count > 1 else  {
+            guard nonEmptyParticipants != nil, nonEmptyParticipants!.count > 1 else  {
                 return .failure(ConversationInitError.notEnoughParticipants)
             }
             
-            return .success((batch: batch, participants: nonEmptyParticipants))
+            return .success((batch: batch, participants: nonEmptyParticipants!))
         } catch {
             return .failure(ConversationInitError.generalError)
         }
