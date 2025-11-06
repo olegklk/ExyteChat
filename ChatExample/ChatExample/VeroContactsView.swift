@@ -92,12 +92,11 @@ struct VeroContactsView: View {
                     }
                 }
             }
-            .navigationTitle("")
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarHidden(true)
             .searchable(
                 text: $searchText,
-                placement: .navigationBarDrawer(displayMode: .automatic),
-                prompt: "Search contacts"
+                placement: .automatic,
+                prompt: "Search Vero Contacts"
             )
         }
         .task { await loadContacts() }
