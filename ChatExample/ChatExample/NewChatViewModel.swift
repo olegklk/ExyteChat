@@ -38,7 +38,7 @@ class NewChatViewModel: ObservableObject {
             else {
                 batches = batches.sorted { $0.startedAt < $1.startedAt }
                 if let lastBatch = batches.last, var conversation = self.conversation {
-                    DispatchQueue.main.async {
+                    await MainActor.run {
                         conversation.batchId = lastBatch.id
                         conversation.type = (lastBatch.type).rawValue
                         conversation.participants = lastBatch.participants

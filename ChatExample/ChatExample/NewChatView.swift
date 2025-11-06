@@ -203,15 +203,9 @@ struct NewChatView: View {
     }
 
     private func fetchAndAddParticipant(withID pid: String) async {
-        guard let token = KeychainHelper.standard.read(service: .token, type: CompleteLoginResponse.self)?.veroPass?.jwt else {
-            return
-        }
-
-        if let profiles = await VeroAPIManager.shared.getProfiles(forIDs: [pid], accessToken: token),
-           let profile = profiles.first {
-            let newContact = Contact(id: pid, firstname: profile.firstName)
+        if let contact = await Store.fetchRemoteContact(pid) {
             await MainActor.run {
-                self.participants.append(newContact)
+                self.participants.append(contact)
             }
         }
     }

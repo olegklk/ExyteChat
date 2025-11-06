@@ -50,8 +50,8 @@ password)
     
     func configVeroInfo(forUserID userID: String, email: String, accessToken: String) async {
         
-        let profile = await veroAuthenticationService.getUserProfile(forID: userID, email: email, accessToken: accessToken)
-        let contacts = await veroAuthenticationService.getContacts(accessToken) ?? []
+        let profile = await VeroAPIManager.shared.getUserProfile(forID: userID, email: email, accessToken: accessToken)
+        let contacts = await VeroAPIManager.shared.getContacts(accessToken) ?? []
         
         await MainActor.run {
             Store.setContacts(contacts)

@@ -27,6 +27,7 @@
 		5B6D3A732987D85A00765148 /* Color+hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B6D3A722987D85A00765148 /* Color+hex.swift */; };
 		C325FE942EAFBB370065291A /* UploadingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C325FE922EAFBB370065291A /* UploadingManager.swift */; };
 		C34601E82E8D253A0080D49D /* ExyteChat in Frameworks */ = {isa = PBXBuildFile; productRef = C34601E72E8D253A0080D49D /* ExyteChat */; };
+		C354523B2EBCEBC4004677A7 /* VeroAPIManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C354523A2EBCEBC4004677A7 /* VeroAPIManager.swift */; };
 		C3622C792E9421A2007FEB0E /* NewChatViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3622C782E9421A2007FEB0E /* NewChatViewModel.swift */; };
 		C3622C7B2E99140D007FEB0E /* NavigationItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3622C7A2E99140D007FEB0E /* NavigationItem.swift */; };
 		C3622C862E9EA898007FEB0E /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3622C802E9EA898007FEB0E /* KeychainHelper.swift */; };
@@ -95,6 +96,7 @@
 		5B0636DA2C2EA21900E54AEE /* Sequence+asyncMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sequence+asyncMap.swift"; sourceTree = "<group>"; };
 		5B6D3A722987D85A00765148 /* Color+hex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+hex.swift"; sourceTree = "<group>"; };
 		C325FE922EAFBB370065291A /* UploadingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UploadingManager.swift; sourceTree = "<group>"; };
+		C354523A2EBCEBC4004677A7 /* VeroAPIManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VeroAPIManager.swift; sourceTree = "<group>"; };
 		C3622C782E9421A2007FEB0E /* NewChatViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NewChatViewModel.swift; sourceTree = "<group>"; };
 		C3622C7A2E99140D007FEB0E /* NavigationItem.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NavigationItem.swift; sourceTree = "<group>"; };
 		C3622C7E2E9EA898007FEB0E /* ChallengeTokenResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeTokenResponse.swift; sourceTree = "<group>"; };
@@ -274,6 +276,7 @@
 		C3622C852E9EA898007FEB0E /* VeroKit */ = {
 			isa = PBXGroup;
 			children = (
+				C354523A2EBCEBC4004677A7 /* VeroAPIManager.swift */,
 				C39173342EA69950005BDE01 /* Fonts */,
 				C3622C982E9FDAB4007FEB0E /* Contact.swift */,
 				C3622C7E2E9EA898007FEB0E /* ChallengeTokenResponse.swift */,
@@ -407,6 +410,7 @@
 				C39173412EA773A8005BDE01 /* ConversationListView.swift in Sources */,
 				C325FE942EAFBB370065291A /* UploadingManager.swift in Sources */,
 				1376F7BB286472530016CD1B /* ChatError.swift in Sources */,
+				C354523B2EBCEBC4004677A7 /* VeroAPIManager.swift in Sources */,
 				135987B82869F369006388CF /* Lorem.swift in Sources */,
 				135987BA2869F3AE006388CF /* MockMessage.swift in Sources */,
 				1376133E28782F8E00E7CF67 /* Date+Extensions.swift in Sources */,

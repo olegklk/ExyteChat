@@ -38,11 +38,12 @@ class ConversationViewModel: ObservableObject {
                 conversation.clearMessages()
                 let batches = batches.sorted { $0.startedAt < $1.startedAt }
                 if let lastBatch = batches.last {
-                    DispatchQueue.main.async {
+                    await MainActor.run {
                         self.conversation.batchId = lastBatch.id
                         self.conversationURL = self.conversation.url()
                         self.conversation.type = (lastBatch.type).rawValue
-                        if lastBatch.participants.count > 1 { self.conversation.participants = lastBatch.participants
+                        if lastBatch.participants.count > 1 {
+                            self.conversation.participants = lastBatch.participants
                         }
                     }
                 }

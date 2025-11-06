@@ -26,7 +26,7 @@ final class VeroAPIManager: ObservableObject, Sendable {
     }
     
     /// A generic helper method to perform authenticated GET requests.
-    private func performGETRequest<T: Codable>(
+    private func performGETRequest<T: Decodable>(
         path: String,
         queryItems: [URLQueryItem] = [],
         accessToken: String,

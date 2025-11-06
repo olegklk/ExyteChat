@@ -123,7 +123,7 @@ struct VeroContactsView: View {
         if service.needRefreshToken(token: token) {
             _ = try? await service.refresh()
         }
-        let contacts = await service.getContacts(token) ?? []
+        let contacts = await VeroAPIManager.shared.getContacts(token) ?? []
         
         await MainActor.run {
             self.contacts = contacts

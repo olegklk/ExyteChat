@@ -102,13 +102,16 @@ public final class Store {
     }
     
     static func fetchRemoteContact(_ id: String) async -> Contact? {
-        if let token = KeychainHelper.standard.read(service: .token, type: CompleteLoginResponse.self)?.veroPass?.jwt,
-           let p = await VeroAuthenticationService.shared.getProfiles(forIDs: [id], accessToken: token)?.first {
-            
-                let contact = Contact(id: id, username: p.username, firstname: p.firstName, lastname: p.lastName, picture: p.picture)
-            
-                _contacts.append(contact)
-                return contact
+        
+        guard let token = KeychainHelper.standard.read(service: .token, type: CompleteLoginResponse.self)?.veroPass?.jwt else {
+            return nil
+        }
+
+        if let profiles = await VeroAPIManager.shared.getProfiles(forIDs: [id], accessToken: token),
+           let p = profiles.first {
+            let newContact = Contact(id: id, username: p.username, firstname: p.firstName, lastname: p.lastName, picture: p.picture)
+                _contacts.append(newContact)
+                return newContact
         }
         return nil
     }
