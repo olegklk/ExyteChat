@@ -52,17 +52,21 @@ public class SocketIOManager: ObservableObject {
     @Published public private(set) var isConnected = false
     @Published public private(set) var connectionError: String?
     
-    private var messageAppendedHandler: ((ServerMessage) -> Void)?
-    private var messageEditedHandler: ((String, String?) -> Void)?
-    private var messageDeletedHandler: ((String) -> Void)?
-    private var batchAssignedHandler: ((String, String?) -> Void)?
-    private var conversationAssignedHandler: ((String) -> Void)?
-    private var unreadBatchesHandler: (([ServerBatchDocument], String?) -> Void)?
-    private var errorHandler: ((String, String) -> Void)?
+    // MARK: - New Handler Storage
+    private var messageAppendedHandlers: [UUID: (ServerMessage) -> Void] = [:]
+    private var messageEditedHandlers: [UUID: (String, String?) -> Void] = [:]
+    private var messageDeletedHandlers: [UUID: (String) -> Void] = [:]
+    private var batchAssignedHandlers: [UUID: (String, String?) -> Void] = [:]
+    private var conversationAssignedHandlers: [UUID: (String) -> Void] = [:]
+    private var unreadBatchesHandlers: [UUID: ([ServerBatchDocument], String?) -> Void] = [:]
+    private var errorHandlers: [UUID: (String, String) -> Void] = [:]
     
     private init() {}
     
     public func connect() {
+        // Prevent reconnecting if already connected with the same auth data
+        if isConnected { return }
+        
         guard let url = URL(string: socketURLString) else {
             connectionError = "Invalid URL"
             return
@@ -83,6 +87,14 @@ public class SocketIOManager: ObservableObject {
         socket = nil
         isConnected = false
         authData = [:]
+        // Clear all handlers on full disconnect
+        messageAppendedHandlers.removeAll()
+        messageEditedHandlers.removeAll()
+        messageDeletedHandlers.removeAll()
+        batchAssignedHandlers.removeAll()
+        conversationAssignedHandlers.removeAll()
+        unreadBatchesHandlers.removeAll()
+        errorHandlers.removeAll()
     }
     
     private func setupSocketHandlers() {
@@ -125,74 +137,86 @@ public class SocketIOManager: ObservableObject {
             }
 
             if let message = ServerMessage(from: m) {
-                self.messageAppendedHandler?(message)
+                // Notify all registered handlers
+                for handler in self.messageAppendedHandlers.values {
+                    handler(message)
+                }
             }
         }
         
         let edited = eventName(.edited)
         socket?.on(edited) { [weak self] data, _ in
-            guard let self = self,
-                  let handler = self.messageEditedHandler,
-                  let dict = data.first as? [String: Any],
+            guard let dict = data.first as? [String: Any],
                   let messageId = dict["messageId"] as? String else { return }
             let newText = dict["newText"] as? String
-            handler(messageId, newText)
+            
+            // Notify all registered handlers
+            for handler in self?.messageEditedHandlers.values ?? [:] {
+                handler(messageId, newText)
+            }
         }
         
         let deleted = eventName(.deleted)
         socket?.on(deleted) { [weak self] data, _ in
-            guard let self = self,
-                  let handler = self.messageDeletedHandler,
-                  let dict = data.first as? [String: Any],
+            guard let dict = data.first as? [String: Any],
                   let messageId = dict["messageId"] as? String else { return }
 
-            handler(messageId)
+            // Notify all registered handlers
+            for handler in self?.messageDeletedHandlers.values ?? [:] {
+                handler(messageId)
+            }
         }
         
         let batchAssigned = eventName(.batchAssigned)
         socket?.on(batchAssigned) { [weak self] data, ack in
-            guard let self = self,
-                  let handler = self.batchAssignedHandler,
-                  let dict = data.first as? [String: Any],
+            guard let dict = data.first as? [String: Any],
                   let batchId = dict["batchId"] as? String else { return }
 
             let conversationId = dict["conversationId"] as? String
-            handler(batchId, conversationId)
+            
+            // Notify all registered handlers
+            for handler in self?.batchAssignedHandlers.values ?? [:] {
+                handler(batchId, conversationId)
+            }
         }
         
         let convAssigned = eventName(.conversationAssigned)
         
         socket?.on(convAssigned) { [weak self] data, ack in
-            guard let self = self,
-                  let handler = self.conversationAssignedHandler,
-                  let dict = data.first as? [String: Any],
+            guard let dict = data.first as? [String: Any],
                   let conversationId = dict["conversationId"] as? String else { return }
 
-            handler(conversationId)
+            // Notify all registered handlers
+            for handler in self?.conversationAssignedHandlers.values ?? [:] {
+                handler(conversationId)
+            }
         }
         
         let unread = eventName(.unreadBatches)
         socket?.on(unread) { [weak self] data, ack in
-            guard let self = self,
-                  let handler = self.unreadBatchesHandler,
-                  let dict = data.first as? [String: Any],
+            guard let dict = data.first as? [String: Any],
                   let items = dict["items"] as? [[String: Any]] else { return }
                   
             let cId = dict["conversationId"] as? String
 
             let batches = items.compactMap { ServerBatchDocument(from: $0) }
-            handler(batches, cId)
+            
+            // Notify all registered handlers
+            for handler in self?.unreadBatchesHandlers.values ?? [:] {
+                handler(batches, cId)
+            }
         }
         
         let errEv = eventName(.error)
         socket?.on(errEv) { [weak self] data, ack in
-            guard let self = self,
-                  let handler = self.errorHandler,
-                  let dict = data.first as? [String: Any],
+            guard let dict = data.first as? [String: Any],
                   let code = dict["code"] as? String,
                   let message = dict["message"] as? String else { return }
 
-            handler(code, message)
+            // Notify all registered handlers
+            for handler in self?.errorHandlers.values ?? [:] {
+                handler(code, message)
+            }
         }
     }
     
@@ -248,33 +272,75 @@ public class SocketIOManager: ObservableObject {
         socket?.emit(eventName(.seen), payload)
     }
     
-    // MARK: - Server Events
+    // MARK: - Server Event Listeners (New API)
     
-    public func onMessageAppended(handler: @escaping (ServerMessage) -> Void) {
-        messageAppendedHandler = handler
+    public func onMessageAppended(handler: @escaping (ServerMessage) -> Void) -> UUID {
+        let id = UUID()
+        messageAppendedHandlers[id] = handler
+        return id
     }
     
-    public func onMessageEdited(handler: @escaping (String, String?) -> Void) {
-        messageEditedHandler = handler
+    public func offMessageAppended(id: UUID) {
+        messageAppendedHandlers.removeValue(forKey: id)
     }
     
-    public func onMessageDeleted(handler: @escaping (String) -> Void) {
-        messageDeletedHandler = handler
+    public func onMessageEdited(handler: @escaping (String, String?) -> Void) -> UUID {
+        let id = UUID()
+        messageEditedHandlers[id] = handler
+        return id
     }
     
-    public func onBatchAssigned(handler: @escaping (String, String?) -> Void) {
-        batchAssignedHandler = handler
+    public func offMessageEdited(id: UUID) {
+        messageEditedHandlers.removeValue(forKey: id)
     }
     
-    public func onConversationAssigned(handler: @escaping (String) -> Void) { 
-        conversationAssignedHandler = handler
+    public func onMessageDeleted(handler: @escaping (String) -> Void) -> UUID {
+        let id = UUID()
+        messageDeletedHandlers[id] = handler
+        return id
     }
     
-    public func onUnreadBatches(handler: @escaping ([ServerBatchDocument], String?) -> Void) {
-        unreadBatchesHandler = handler
+    public func offMessageDeleted(id: UUID) {
+        messageDeletedHandlers.removeValue(forKey: id)
     }
     
-    public func onError(handler: @escaping (String, String) -> Void) {
-        errorHandler = handler
+    public func onBatchAssigned(handler: @escaping (String, String?) -> Void) -> UUID {
+        let id = UUID()
+        batchAssignedHandlers[id] = handler
+        return id
+    }
+    
+    public func offBatchAssigned(id: UUID) {
+        batchAssignedHandlers.removeValue(forKey: id)
+    }
+    
+    public func onConversationAssigned(handler: @escaping (String) -> Void) -> UUID { 
+        let id = UUID()
+        conversationAssignedHandlers[id] = handler
+        return id
+    }
+    
+    public func offConversationAssigned(id: UUID) {
+        conversationAssignedHandlers.removeValue(forKey: id)
+    }
+    
+    public func onUnreadBatches(handler: @escaping ([ServerBatchDocument], String?) -> Void) -> UUID {
+        let id = UUID()
+        unreadBatchesHandlers[id] = handler
+        return id
+    }
+    
+    public func offUnreadBatches(id: UUID) {
+        unreadBatchesHandlers.removeValue(forKey: id)
+    }
+    
+    public func onError(handler: @escaping (String, String) -> Void) -> UUID {
+        let id = UUID()
+        errorHandlers[id] = handler
+        return id
+    }
+    
+    public func offError(id: UUID) {
+        errorHandlers.removeValue(forKey: id)
     }
 }

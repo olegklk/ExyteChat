@@ -27,7 +27,6 @@ class NewChatViewModel: ObservableObject {
     private var hasStarted = false // Флаг для предотвращения повторного запуска
 
     // Идентификаторы для удаления слушателей сокета
-    // Предполагается, что методы SocketIOManager.on... возвращают UUID или подобный идентификатор
     private var conversationAssignedHandlerId: UUID?
     private var batchAssignedHandlerId: UUID?
             
@@ -75,16 +74,17 @@ class NewChatViewModel: ObservableObject {
         
         setupSocketListeners()
         
+        // Устанавливаем данные для аутентификации и подключаемся.
+        // ViewModel теперь отвечает только за инициирование подключения.
         SocketIOManager.shared.setAuthData(participants: participants, chatType: chatType)
-        SocketIOManager.shared.connect() // connection should trigger onConversationAssigned with conversationId
+        SocketIOManager.shared.connect() 
     }
     
     func setupSocketListeners() {
-        // Сначала удаляем старые слушатели, если они есть
+        // Удаляем старые слушатели, если они есть, чтобы избежать дублирования
         removeSocketListeners()
         
         //sent after connection
-        // Предполагается, что onConversationAssigned возвращает UUID
         conversationAssignedHandlerId = SocketIOManager.shared.onConversationAssigned { [weak self] conversationId in
             guard let self = self else { return }
             
@@ -97,7 +97,6 @@ class NewChatViewModel: ObservableObject {
         }
         
         //sent after connection
-        // Предполагается, что onBatchAssigned возвращает UUID
         batchAssignedHandlerId = SocketIOManager.shared.onBatchAssigned { [weak self] batchId, conversationId in
             guard let self = self else { return }
             if let conversationId  {
@@ -127,32 +126,28 @@ class NewChatViewModel: ObservableObject {
     }
     
     private func removeSocketListeners() {
-        // ВНИМАНИЕ: Этот код предполагает, что у SocketIOManager есть методы
-        // для удаления слушателей по их идентификатору, например:
-        // SocketIOManager.shared.offConversationAssigned(handlerId)
-        // Если API отличается, этот блок нужно адаптировать.
-        
+        // Корректно удаляем конкретные слушатели сокета, используя их ID
         if let handlerId = conversationAssignedHandlerId {
-            // SocketIOManager.shared.offConversationAssigned(handlerId)
+            SocketIOManager.shared.offConversationAssigned(id: handlerId)
             conversationAssignedHandlerId = nil
         }
         
         if let handlerId = batchAssignedHandlerId {
-            // SocketIOManager.shared.offBatchAssigned(handlerId)
+            SocketIOManager.shared.offBatchAssigned(id: handlerId)
             batchAssignedHandlerId = nil
         }
     }
     
     private func finish() {
-        // Важно очищаем слушателей, чтобы они не "висели" в общем менеджере
+        // Очищаем только своих слушателей. НЕ отключаем сокет.
         removeSocketListeners()
         
         isLoading = false
         isHistoryLoaded = false
         hasStarted = false // Сбрасываем флаг на случай переиспользования
         
-        //let's end this socket connection to reconnect later with the proper batchId (that we fetched with loadHistory() if any)
-        SocketIOManager.shared.disconnect()
+        // ВАЖНО: Удален вызов SocketIOManager.shared.disconnect()
+        // Сокет должен оставаться подключенным для всего приложения.
         
         if let conversationId = self.conversationId {
             Task {
