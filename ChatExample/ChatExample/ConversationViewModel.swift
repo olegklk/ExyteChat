@@ -33,7 +33,7 @@ class ConversationViewModel: ObservableObject {
         guard isHistoryLoaded == false else {return}
         
         isHistoryLoaded = true
-        switch await findNonEmptyMonthRecurcively(for:conversationId, month:0) {
+        switch await findNonEmptyMonthRecurcively(for:conversationId, monthDelta:0) {
             case .success(let batches):
                 conversation.clearMessages()
                 let batches = batches.sorted { $0.startedAt < $1.startedAt }
@@ -62,22 +62,19 @@ class ConversationViewModel: ObservableObject {
                     
     }
     
-    func findNonEmptyMonthRecurcively(for cId: String, month: Int) async -> Result<[ServerBatchDocument],Error>{
+    func findNonEmptyMonthRecurcively(for cId: String, monthDelta: Int) async -> Result<[ServerBatchDocument],Error>{
         
         //
-        guard month < 12 else { //maximum scan for year ago
+        guard monthDelta < 12 else { //maximum scan for year ago
             return .failure(ConversationInitError.emptyConversation)
         }
         
         do {
-            var batches = try await ChatAPIClient.shared.getHistory(conversationId: cId, month: Date.yyyyMM(monthsAgo: month))
+            let batches = try await ChatAPIClient.shared.getHistory(conversationId: cId, month: Date.yyyyMM(monthsAgo: monthDelta))
                         
             if batches.isEmpty {
-//                try await Task.sleep(until: .now + .seconds(2), clock: .suspending)
-                return await findNonEmptyMonthRecurcively(for: cId, month: month+1)
+                return await findNonEmptyMonthRecurcively(for: cId, monthDelta: monthDelta+1)
             }
-            
-//            let conversation = await Store.ensureConversation(cId)
             
             return .success(batches)
         } catch {
@@ -240,8 +237,8 @@ class ConversationViewModel: ObservableObject {
         
         setupSocketListeners()
         
-        SocketIOManager.shared.setAuthData( participants: conversation.participants, chatType: conversation.type)
-        SocketIOManager.shared.connect() // connection should trigger onConversationAssigned with conversationId
+        SocketIOManager.shared.setAuthData( participants: conversation.participants, chatType: conversation.type, conversationId: conversationId)
+        SocketIOManager.shared.connect()
                 
 //        Task { await loadChatHistory() }
         

@@ -76,7 +76,7 @@ class NewChatViewModel: ObservableObject {
         
         // Устанавливаем данные для аутентификации и подключаемся.
         // ViewModel теперь отвечает только за инициирование подключения.
-        SocketIOManager.shared.setAuthData(participants: participants, chatType: chatType)
+        SocketIOManager.shared.setAuthData(participants: participants, chatType: chatType, conversationId: nil)
         SocketIOManager.shared.connect() 
     }
     

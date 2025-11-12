@@ -77,8 +77,6 @@ class ConversationListViewModel: ObservableObject {
                 print("Couldn't find non-empty month history in all scannable periods. Error: \(error)")
                 return
         }
-            
-        
         
     }
     

@@ -17,11 +17,14 @@ public class SocketIOManager: ObservableObject {
     }
     
     public func setAuthData(participants: [String],
-                            chatType: String?                            ) {
+                            chatType: String? ,
+                            conversationId: String?) {
         var data: [String: Any] = [
             "participants": participants,
         ]
         if let chatType { data["chatType"] =  chatType }        
+        if let conversationId { data["conversationId"] =  conversationId }
+        
         if let token = tokenProvider?(), !token.isEmpty {
             data["token"] = token
         }
