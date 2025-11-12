@@ -128,6 +128,16 @@ public final class Store {
                     }
                 }
             }
+        } else if c.participants.count > 2, let myProfile = _selfProfile { //group or channel
+            if let userId = c.participants.first(where: {$0 != myProfile.id}) {//переделай этот блок так чтобы для каждого участника чата кроме меня самого его имя (созданное через displayName() добавлялось через запятую в title AI!
+                if let user = getContact(userId) {
+                    title = displayName(fName: user.firstname, lName: user.lastname)
+                } else {
+                    if let user = await fetchRemoteContact(userId) {
+                        title = displayName(fName: user.firstname, lName: user.lastname)
+                    }
+                }
+            }
         }
         return title ?? c.id
     }
