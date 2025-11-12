@@ -144,7 +144,7 @@ public class SocketIOManager: ObservableObject {
             }
         }
         
-        let edited = eventName(.edited)
+        let edited:String = eventName(.edited)
         socket?.on(edited) { [weak self] data, _ in
             guard let dict = data.first as? [String: Any],
                   let messageId = dict["messageId"] as? String else { return }
