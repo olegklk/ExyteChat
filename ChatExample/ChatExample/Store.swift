@@ -129,14 +129,25 @@ public final class Store {
                 }
             }
         } else if c.participants.count > 2, let myProfile = _selfProfile { //group or channel
-            if let userId = c.participants.first(where: {$0 != myProfile.id}) {//переделай этот блок так чтобы для каждого участника чата кроме меня самого его имя (созданное через displayName() добавлялось через запятую в title AI!
-                if let user = getContact(userId) {
-                    title = displayName(fName: user.firstname, lName: user.lastname)
+            let otherParticipantsIds = c.participants.filter { $0 != myProfile.id }
+            var participantNames: [String] = []
+            
+            for participantId in otherParticipantsIds {
+                var name: String?
+                if let user = getContact(participantId) {
+                    name = displayName(fName: user.firstname, lName: user.lastname)
                 } else {
-                    if let user = await fetchRemoteContact(userId) {
-                        title = displayName(fName: user.firstname, lName: user.lastname)
+                    if let user = await fetchRemoteContact(participantId) {
+                        name = displayName(fName: user.firstname, lName: user.lastname)
                     }
                 }
+                if let name = name {
+                    participantNames.append(name)
+                }
+            }
+            
+            if !participantNames.isEmpty {
+                title = participantNames.joined(separator: ", ")
             }
         }
         return title ?? c.id
