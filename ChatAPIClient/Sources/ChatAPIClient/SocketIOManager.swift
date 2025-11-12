@@ -146,36 +146,39 @@ public class SocketIOManager: ObservableObject {
         
         let edited:String = eventName(.edited)
         socket?.on(edited) { [weak self] data, _ in
-            guard let dict = data.first as? [String: Any],
+            guard let self = self,
+                  let dict = data.first as? [String: Any],
                   let messageId = dict["messageId"] as? String else { return }
             let newText = dict["newText"] as? String
             
             // Notify all registered handlers
-            for handler in self?.messageEditedHandlers.values ?? [:] {
+            for handler in self.messageEditedHandlers.values {
                 handler(messageId, newText)
             }
         }
         
         let deleted = eventName(.deleted)
         socket?.on(deleted) { [weak self] data, _ in
-            guard let dict = data.first as? [String: Any],
+            guard let self = self,
+                  let dict = data.first as? [String: Any],
                   let messageId = dict["messageId"] as? String else { return }
 
             // Notify all registered handlers
-            for handler in self?.messageDeletedHandlers.values ?? [:] {
+            for handler in self.messageDeletedHandlers.values {
                 handler(messageId)
             }
         }
         
         let batchAssigned = eventName(.batchAssigned)
         socket?.on(batchAssigned) { [weak self] data, ack in
-            guard let dict = data.first as? [String: Any],
+            guard let self = self,
+                  let dict = data.first as? [String: Any],
                   let batchId = dict["batchId"] as? String else { return }
 
             let conversationId = dict["conversationId"] as? String
             
             // Notify all registered handlers
-            for handler in self?.batchAssignedHandlers.values ?? [:] {
+            for handler in self.batchAssignedHandlers.values {
                 handler(batchId, conversationId)
             }
         }
@@ -183,18 +186,20 @@ public class SocketIOManager: ObservableObject {
         let convAssigned = eventName(.conversationAssigned)
         
         socket?.on(convAssigned) { [weak self] data, ack in
-            guard let dict = data.first as? [String: Any],
+            guard let self = self,
+                  let dict = data.first as? [String: Any],
                   let conversationId = dict["conversationId"] as? String else { return }
 
             // Notify all registered handlers
-            for handler in self?.conversationAssignedHandlers.values ?? [:] {
+            for handler in self.conversationAssignedHandlers.values {
                 handler(conversationId)
             }
         }
         
         let unread = eventName(.unreadBatches)
         socket?.on(unread) { [weak self] data, ack in
-            guard let dict = data.first as? [String: Any],
+            guard let self = self,
+                  let dict = data.first as? [String: Any],
                   let items = dict["items"] as? [[String: Any]] else { return }
                   
             let cId = dict["conversationId"] as? String
@@ -202,19 +207,20 @@ public class SocketIOManager: ObservableObject {
             let batches = items.compactMap { ServerBatchDocument(from: $0) }
             
             // Notify all registered handlers
-            for handler in self?.unreadBatchesHandlers.values ?? [:] {
+            for handler in self.unreadBatchesHandlers.values {
                 handler(batches, cId)
             }
         }
         
         let errEv = eventName(.error)
         socket?.on(errEv) { [weak self] data, ack in
-            guard let dict = data.first as? [String: Any],
+            guard let self = self,
+                  let dict = data.first as? [String: Any],
                   let code = dict["code"] as? String,
                   let message = dict["message"] as? String else { return }
 
             // Notify all registered handlers
-            for handler in self?.errorHandlers.values ?? [:] {
+            for handler in self.errorHandlers.values {
                 handler(code, message)
             }
         }
