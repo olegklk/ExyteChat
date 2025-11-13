@@ -122,7 +122,7 @@ public actor ChatAPIClient {
         
         let items = try await makeRequest(urlComponents: urlComponents, method: "GET") as? [[String: Any]]
         return items?.compactMap { ServerConversationListItem(from: $0) } ?? []
-    }
+    }//перепиши этот класс используя Alamofire и подскажи как его импортировать через swift package  в проект AI!
     
     private func makeRequest(urlComponents: URLComponents, method: String, body: [String: Any]? = nil) async throws -> Any {
         guard let url = urlComponents.url else {
