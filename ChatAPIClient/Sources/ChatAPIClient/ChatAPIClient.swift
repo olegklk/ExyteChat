@@ -1,5 +1,6 @@
 import Foundation
 import os
+import Alamofire
 
 public enum ChatAPIError: Error, LocalizedError, Sendable {
     case server(statusCode: Int, message: String)
@@ -20,8 +21,12 @@ public actor ChatAPIClient {
     private var tokenProvider: (() -> String?)?
     public func setTokenProvider(_ provider: @escaping () -> String?) {
         self.tokenProvider = provider
+        // Re-create the session with the new provider
+        self.session = Session(interceptor: APIRequestInterceptor(tokenProvider: provider), eventMonitors: [APIEventMonitor()])
     }
     
+    private var session: Session = Session() // default session initially
+
     public enum Endpoint {
         case openBatch(type: String, batchId: String)
         case closeBatch(batchId: String)
@@ -59,7 +64,7 @@ public actor ChatAPIClient {
     }
     
     public func openBatch(type: ServerBatchDocument.BatchType, batchId: String, participants: [String], conversationId: String? = nil) async throws {
-        var urlComponents = URLComponents(string: baseURL + Endpoint.openBatch(type: type.rawValue, batchId: batchId).path)!
+        let urlComponents = URLComponents(string: baseURL + Endpoint.openBatch(type: type.rawValue, batchId: batchId).path)!
         
         var body: [String: Any] = [
             "participants": participants
@@ -84,10 +89,9 @@ public actor ChatAPIClient {
             "messageId": messageId
         ]
         if let newText { body["newText"] = newText }
-        let payload = try await makeRequest(urlComponents: urlComponents, method: "PATCH", body: body)
-        let dict = payload as? [String: Any] ?? [:]
-        let matched = dict["matched"] as? Int ?? 0
-        let modified = dict["modified"] as? Int ?? 0
+        let payload = try await makeRequest(urlComponents: urlComponents, method: "PATCH", body: body) as? [String: Any] ?? [:]
+        let matched = payload["matched"] as? Int ?? 0
+        let modified = payload["modified"] as? Int ?? 0
         return PatchResult(matched: matched, modified: modified)
     }
     
@@ -122,85 +126,133 @@ public actor ChatAPIClient {
         
         let items = try await makeRequest(urlComponents: urlComponents, method: "GET") as? [[String: Any]]
         return items?.compactMap { ServerConversationListItem(from: $0) } ?? []
-    }//перепиши этот класс используя Alamofire и подскажи как его импортировать через swift package  в проект AI!
+    }
     
     private func makeRequest(urlComponents: URLComponents, method: String, body: [String: Any]? = nil) async throws -> Any {
         guard let url = urlComponents.url else {
             throw URLError(.badURL)
         }
-        var request = URLRequest(url: url)
-        request.httpMethod = method
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        if let token = tokenProvider?(), !token.isEmpty {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+
+        return try await withCheckedThrowingContinuation { continuation in
+            let alamofireMethod = HTTPMethod(rawValue: method)
+            
+            session.request(
+                url,
+                method: alamofireMethod,
+                parameters: body,
+                encoding: JSONEncoding.default
+            )
+            .validate()
+            .responseJSON { response in
+                switch response.result {
+                case .success(let value):
+                    continuation.resume(returning: value)
+                case .failure(let error):
+                    if let afError = error.asAFError {
+                        switch afError {
+                        case .responseValidationFailed(let reason):
+                            if case .unacceptableStatusCode(let code) = reason {
+                                var message: String?
+                                if let data = response.data,
+                                   let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                                    message = (json["message"] as? String) ?? (json["error"] as? String)
+                                }
+                                continuation.resume(throwing: ChatAPIError.server(statusCode: code, message: message ?? HTTPURLResponse.localizedString(forStatusCode: code)))
+                            } else {
+                                continuation.resume(throwing: ChatAPIError.server(statusCode: -1, message: afError.localizedDescription))
+                            }
+                        default:
+                            continuation.resume(throwing: ChatAPIError.server(statusCode: -1, message: afError.localizedDescription))
+                        }
+                    } else {
+                        continuation.resume(throwing: error)
+                    }
+                }
+            }
         }
-        if let body = body {
-            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+    }
+}
+
+// MARK: - Alamofire Interceptors
+
+private final class APIRequestInterceptor: RequestInterceptor {
+    private let tokenProvider: (() -> String?)?
+
+    init(tokenProvider: @escaping () -> String?) {
+        self.tokenProvider = tokenProvider
+    }
+
+    func adapt(_ urlRequest: URLRequest, for session: Session, completion: @escaping (Result<URLRequest, Error>) -> Void) {
+        var urlRequest = urlRequest
+        
+        if urlRequest.value(forHTTPHeaderField: "Content-Type") == nil {
+            urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
         }
         
+        if let token = tokenProvider?(), !token.isEmpty {
+            urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        
+        completion(.success(urlRequest))
+    }
+}
+
+private final class APIEventMonitor: EventMonitor {
+    #if DEBUG
+    let logger = Logger(subsystem: "ExyteChat.ChatAPIClient", category: "network")
+    #endif
+    
+    func requestDidResume(_ request: Request) {
         #if DEBUG
-        let logger = Logger(subsystem: "ExyteChat.ChatAPIClient", category: "network")
+        guard let urlRequest = request.request else { return }
+        
         let redactedHeaders: [String: String] = {
-            var h = request.allHTTPHeaderFields ?? [:]
+            var h = urlRequest.allHTTPHeaderFields ?? [:]
             if h.keys.contains("Authorization") { h["Authorization"] = "Bearer <redacted>" }
             return h
         }()
-        let requestBodyString: String = {
-            guard let data = request.httpBody, !data.isEmpty else { return "<empty>" }
-            if let obj = try? JSONSerialization.jsonObject(with: data),
-               let pretty = try? JSONSerialization.data(withJSONObject: obj, options: [.prettyPrinted]),
-               let str = String(data: pretty, encoding: .utf8) {
-                return str
-            } else {
-                return String(data: data, encoding: .utf8) ?? "<\(data.count) bytes>"
-            }
-        }()
-        logger.debug("➡️ Request: \(request.httpMethod ?? "") \(request.url?.absoluteString ?? "")")
+        
+        let httpMethod = urlRequest.httpMethod ?? "UNKNOWN"
+        let url = urlRequest.url?.absoluteString ?? "UNKNOWN"
+        
+        logger.debug("➡️ Request: \(httpMethod) \(url)")
         logger.debug("Headers: \(String(describing: redactedHeaders))")
-        logger.debug("Body: \(requestBodyString)")
+        
+        if let parameters = request.request?.httpBody,
+           let jsonObject = try? JSONSerialization.jsonObject(with: parameters),
+           let prettyData = try? JSONSerialization.data(withJSONObject: jsonObject, options: [.prettyPrinted]),
+           let prettyString = String(data: prettyData, encoding: .utf8) {
+            logger.debug("Body: \(prettyString)")
+        } else {
+            logger.debug("Body: <empty or binary>")
+        }
         #endif
-        
-        let (data, response) = try await URLSession.shared.data(for: request)
-        
+    }
+    
+    func requestDidComplete(_ request: Request) {
         #if DEBUG
-        do {
-            let logger = Logger(subsystem: "ExyteChat.ChatAPIClient", category: "network")
-            if let httpResponse = response as? HTTPURLResponse {
-                let responseBodyString: String = {
-                    if data.isEmpty { return "<empty>" }
-                    if let obj = try? JSONSerialization.jsonObject(with: data),
-                       let pretty = try? JSONSerialization.data(withJSONObject: obj, options: [.prettyPrinted]),
-                       let str = String(data: pretty, encoding: .utf8) {
-                        return str
-                    }
-                    return String(data: data, encoding: .utf8) ?? "<\(data.count) bytes>"
-                }()
-                logger.debug("⬅️ Response: \(httpResponse.statusCode) \(request.httpMethod ?? "") \(request.url?.absoluteString ?? "")")
-                logger.debug("Body: \(responseBodyString)")
+        guard let response = request.response else { return }
+        
+        let httpMethod = request.request?.httpMethod ?? "UNKNOWN"
+        let url = request.request?.url?.absoluteString ?? "UNKNOWN"
+        
+        logger.debug("⬅️ Response: \(response.statusCode) \(httpMethod) \(url)")
+        
+        if let data = request.data {
+            let responseBodyString: String
+            if data.isEmpty {
+                responseBodyString = "<empty>"
+            } else if let obj = try? JSONSerialization.jsonObject(with: data),
+                      let pretty = try? JSONSerialization.data(withJSONObject: obj, options: [.prettyPrinted]),
+                      let str = String(data: pretty, encoding: .utf8) {
+                responseBodyString = str
+            } else {
+                responseBodyString = String(data: data, encoding: .utf8) ?? "<\(data.count) bytes>"
             }
+            logger.debug("Body: \(responseBodyString)")
+        } else {
+            logger.debug("Body: <unavailable>")
         }
         #endif
-        
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw URLError(.badServerResponse)
-        }
-        
-        if !(200...299).contains(httpResponse.statusCode) {
-            var message: String?
-            if !data.isEmpty {
-                if let obj = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
-                    message = (obj["message"] as? String) ?? (obj["error"] as? String)
-                } else {
-                    message = String(data: data, encoding: .utf8)
-                }
-            }
-            throw ChatAPIError.server(
-                statusCode: httpResponse.statusCode,
-                message: message ?? HTTPURLResponse.localizedString(forStatusCode: httpResponse.statusCode)
-            )
-        }
-        
-        if data.isEmpty { return NSNull() }
-        return try JSONSerialization.jsonObject(with: data, options: [])
     }
 }
