@@ -66,7 +66,7 @@ public actor ChatAPIClient {
     public func openBatch(type: ServerBatchDocument.BatchType, batchId: String, participants: [String], conversationId: String? = nil) async throws {
         let urlComponents = URLComponents(string: baseURL + Endpoint.openBatch(type: type.rawValue, batchId: batchId).path)!
         
-        var body: [String: Any] = [
+        var body: Parameters = [
             "participants": participants
         ]
         
@@ -84,7 +84,7 @@ public actor ChatAPIClient {
     
     public func patchMessage(batchId: String, messageId: String, newText: String?) async throws -> PatchResult {
         let urlComponents = URLComponents(string: baseURL + Endpoint.patchMessage.path)!
-        var body: [String: Any] = [
+        var body: Parameters = [
             "batchId": batchId,
             "messageId": messageId
         ]
@@ -128,7 +128,7 @@ public actor ChatAPIClient {
         return items?.compactMap { ServerConversationListItem(from: $0) } ?? []
     }
     
-    private func makeRequest(urlComponents: URLComponents, method: String, body: [String: Any]? = nil) async throws -> Any {
+    private func makeRequest(urlComponents: URLComponents, method: String, body: Parameters? = nil) async throws -> Any {
         guard let url = urlComponents.url else {
             throw URLError(.badURL)
         }
@@ -143,7 +143,7 @@ public actor ChatAPIClient {
                 encoding: JSONEncoding.default
             )
             .validate()
-            .responseJSON { response in
+            .responseJSON { response in //сделай проверку этого блока учитывая что мы используем версию Alamofire 5.10.2, сейчас компилятор ругается на response "Type 'Any' does not conform to the 'Sendable' protocol" AI!
                 switch response.result {
                 case .success(let value):
                     continuation.resume(returning: value)
