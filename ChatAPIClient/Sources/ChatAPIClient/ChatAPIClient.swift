@@ -89,10 +89,7 @@ public actor ChatAPIClient {
             "messageId": messageId
         ]
         if let newText { body["newText"] = newText }
-        let payload = try await makeRequest(urlComponents: urlComponents, method: "PATCH", body: body) as? [String: Any] ?? [:]
-        let matched = payload["matched"] as? Int ?? 0
-        let modified = payload["modified"] as? Int ?? 0
-        return PatchResult(matched: matched, modified: modified)
+        return try await makeRequest(urlComponents: urlComponents, method: "PATCH", body: body)
     }
     
     //month - string($YYYY-MM)
@@ -101,10 +98,7 @@ public actor ChatAPIClient {
         var q: [URLQueryItem] = []
         if let month { q.append(URLQueryItem(name: "month", value: month)) }
         urlComponents.queryItems = q.isEmpty ? nil : q
-        let items = try await makeRequest(urlComponents: urlComponents, method: "GET") as? [[String: Any]]
-        
-        return items?.compactMap { ServerBatchDocument(from: $0) } ?? []
-      
+        return try await makeRequest(urlComponents: urlComponents, method: "GET")
     }
     
     public func getUnreadConversations(userId: String, limit: Int?, perConv: Int?) async throws -> [ServerUnreadConversationListItem] {
@@ -113,8 +107,7 @@ public actor ChatAPIClient {
         if let limit { q.append(URLQueryItem(name: "limit", value: String(limit))) }
         if let perConv { q.append(URLQueryItem(name: "perConv", value: String(perConv))) }
         urlComponents.queryItems = q.isEmpty ? nil : q
-        let items = try await makeRequest(urlComponents: urlComponents, method: "GET") as? [[String: Any]]
-        return items?.compactMap { ServerUnreadConversationListItem(from: $0) } ?? []
+        return try await makeRequest(urlComponents: urlComponents, method: "GET")
     }
     
     public func getAllConversations(limit: Int?, perConv: Int?) async throws -> [ServerConversationListItem] {
@@ -124,11 +117,10 @@ public actor ChatAPIClient {
         if let perConv { q.append(URLQueryItem(name: "perConv", value: String(perConv))) }
         urlComponents.queryItems = q.isEmpty ? nil : q
         
-        let items = try await makeRequest(urlComponents: urlComponents, method: "GET") as? [[String: Any]]
-        return items?.compactMap { ServerConversationListItem(from: $0) } ?? []
+        return try await makeRequest(urlComponents: urlComponents, method: "GET")
     }
     
-    private func makeRequest(urlComponents: URLComponents, method: String, body: Parameters? = nil) async throws -> Any {
+    private func makeRequest<T: Codable & Sendable>(urlComponents: URLComponents, method: String, body: Parameters? = nil) async throws -> T {
         guard let url = urlComponents.url else {
             throw URLError(.badURL)
         }
@@ -143,7 +135,7 @@ public actor ChatAPIClient {
                 encoding: JSONEncoding.default
             )
             .validate()
-            .responseJSON { response in //сделай проверку этого блока учитывая что мы используем версию Alamofire 5.10.2, сейчас компилятор ругается на response "Type 'Any' does not conform to the 'Sendable' protocol" AI!
+            .responseDecodable(of: T.self) { response in
                 switch response.result {
                 case .success(let value):
                     continuation.resume(returning: value)
