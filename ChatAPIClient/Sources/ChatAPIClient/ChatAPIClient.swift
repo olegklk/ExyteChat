@@ -63,24 +63,24 @@ public actor ChatAPIClient {
         public let modified: Int
     }
     
-    public func openBatch(type: ServerBatchDocument.BatchType, batchId: String, participants: [String], conversationId: String? = nil) async throws {
-        let urlComponents = URLComponents(string: baseURL + Endpoint.openBatch(type: type.rawValue, batchId: batchId).path)!
-        
-        var body: Parameters = [
-            "participants": participants
-        ]
-        
-        if let conversationId = conversationId {
-            body["conversationId"] = conversationId
-        }
-        
-        try await makeRequest(urlComponents: urlComponents, method: "POST", body: body)
-    }
+//    public func openBatch(type: ServerBatchDocument.BatchType, batchId: String, participants: [String], conversationId: String? = nil) async throws {
+//        let urlComponents = URLComponents(string: baseURL + Endpoint.openBatch(type: type.rawValue, batchId: batchId).path)!
+//        
+//        var body: Parameters = [
+//            "participants": participants
+//        ]
+//        
+//        if let conversationId = conversationId {
+//            body["conversationId"] = conversationId
+//        }
+//        
+//        try await makeRequest(urlComponents: urlComponents, method: "POST", body: body)
+//    }
     
-    public func closeBatch(batchId: String) async throws {
-        let urlComponents = URLComponents(string: baseURL + Endpoint.closeBatch(batchId: batchId).path)!
-        try await makeRequest(urlComponents: urlComponents, method: "POST")
-    }
+//    public func closeBatch(batchId: String) async throws {
+//        let urlComponents = URLComponents(string: baseURL + Endpoint.closeBatch(batchId: batchId).path)!
+//        try await makeRequest(urlComponents: urlComponents, method: "POST")
+//    }
     
     public func patchMessage(batchId: String, messageId: String, newText: String?) async throws -> PatchResult {
         let urlComponents = URLComponents(string: baseURL + Endpoint.patchMessage.path)!
