@@ -168,9 +168,9 @@ public actor ChatAPIClient {
 // MARK: - Alamofire Interceptors
 
 private final class APIRequestInterceptor: RequestInterceptor {
-    private let tokenProvider: (() -> String?)?
+    private let tokenProvider: (@Sendable () -> String?)?
 
-    init(tokenProvider: @escaping () -> String?) {
+    init(tokenProvider: @escaping @Sendable () -> String?) {
         self.tokenProvider = tokenProvider
     }
 
