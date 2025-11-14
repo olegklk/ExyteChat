@@ -18,8 +18,8 @@ public actor ChatAPIClient {
     private var baseURL = "https://chat-back.gramatune.com"
     public func setBaseURL(_ url: String) { self.baseURL = url }
     
-    private var tokenProvider: (() -> String?)?
-    public func setTokenProvider(_ provider: @escaping () -> String?) {
+    private var tokenProvider: (@Sendable () -> String?)?
+    public func setTokenProvider(_ provider: @escaping @Sendable () -> String?) {
         self.tokenProvider = provider
         // Re-create the session with the new provider
         self.session = Session(interceptor: APIRequestInterceptor(tokenProvider: provider), eventMonitors: [APIEventMonitor()])
