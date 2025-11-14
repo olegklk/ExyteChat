@@ -221,16 +221,18 @@ private final class APIEventMonitor: EventMonitor {
         #endif
     }
     
-    func requestDidComplete(_ request: Request) {
+    func request(_ request: Request, didParseResponse response: DataResponse<Data?, AFError>) {
         #if DEBUG
-        guard let response = request.response else { return }
-        
         let httpMethod = request.request?.httpMethod ?? "UNKNOWN"
         let url = request.request?.url?.absoluteString ?? "UNKNOWN"
         
-        logger.debug("⬅️ Response: \(response.statusCode) \(httpMethod) \(url)")
+        if let httpResponse = response.response {
+            logger.debug("⬅️ Response: \(httpResponse.statusCode) \(httpMethod) \(url)")
+        } else {
+            logger.debug("⬅️ Response: No HTTP Status Code \(httpMethod) \(url)")
+        }
         
-        if let data = request.data {
+        if let data = response.data {
             let responseBodyString: String
             if data.isEmpty {
                 responseBodyString = "<empty>"
