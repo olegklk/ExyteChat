@@ -54,7 +54,7 @@ class ConversationListViewModel: ObservableObject {
     
     func populateConversation(_ item: ServerConversationListItem) async {
                 
-        switch await findNonEmptyBatchRecurcively(for:item, month:0) {
+        switch await findNonEmptyBatchRecurcively(for:item, monthDelta:0) {
             case .success(let (batch,participants)):
                 var conversation = await Store.ensureConversation(item.conversationId)
                 if let batch = batch {
@@ -80,18 +80,18 @@ class ConversationListViewModel: ObservableObject {
         
     }
     
-    func findNonEmptyBatchRecurcively(for c: ServerConversationListItem, month: Int) async -> Result<(batch:ServerBatchDocument?,participants:[String]),Error>{
+    func findNonEmptyBatchRecurcively(for c: ServerConversationListItem, monthDelta: Int) async -> Result<(batch:ServerBatchDocument?,participants:[String]),Error>{
         
-        guard month < 12 else { //maximum scan for year ago
+        guard monthDelta < 12 else { //maximum scan for year ago
             return .failure(ConversationInitError.emptyConversation)
         }
         
         do {
-            var batches = try await ChatAPIClient.shared.getHistory(conversationId: c.conversationId, month: Date.yyyyMM(monthsAgo: month))
+            var batches = try await ChatAPIClient.shared.getHistory(conversationId: c.conversationId, month: Date.yyyyMM(monthsAgo: monthDelta))
                         
             if batches.isEmpty {
 //                try await Task.sleep(until: .now + .seconds(2), clock: .suspending)
-                return await findNonEmptyBatchRecurcively(for: c, month: month+1)
+                return await findNonEmptyBatchRecurcively(for: c, monthDelta: monthDelta+1)
             }
             
             batches = batches.sorted { $0.startedAt > $1.startedAt }

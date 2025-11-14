@@ -13,13 +13,15 @@ let package = Package(
             targets: ["ChatAPIClient"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/socketio/socket.io-client-swift", from: "16.0.0")
+        .package(url: "https://github.com/socketio/socket.io-client-swift", from: "16.0.0"),
+        .package(url: "https://github.com/Alamofire/Alamofire.git", from: "5.10.0")
     ],
     targets: [
         .target(
 			name: "ChatAPIClient",
 			dependencies: [
-				.product(name: "SocketIO", package: "socket.io-client-swift")
+				.product(name: "SocketIO", package: "socket.io-client-swift"),
+                .product(name: "Alamofire", package: "Alamofire")
 			]
 		),
     ]
