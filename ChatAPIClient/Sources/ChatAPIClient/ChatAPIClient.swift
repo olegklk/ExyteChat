@@ -189,7 +189,7 @@ private final class APIRequestInterceptor: RequestInterceptor {
     }
 }
 
-private final class APIEventMonitor: EventMonitor {
+private final class APIEventMonitor: EventMonitor, Sendable {
     #if DEBUG
     let logger = Logger(subsystem: "ExyteChat.ChatAPIClient", category: "network")
     #endif
