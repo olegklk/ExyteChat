@@ -124,6 +124,9 @@ public actor ChatAPIClient {
         guard let url = urlComponents.url else {
             throw URLError(.badURL)
         }
+        
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
 
         return try await withCheckedThrowingContinuation { continuation in
             let alamofireMethod = HTTPMethod(rawValue: method)
@@ -135,7 +138,7 @@ public actor ChatAPIClient {
                 encoding: JSONEncoding.default
             )
             .validate()
-            .responseDecodable(of: T.self) { response in //почему здесь возникает ошибка связанная с неверным форматом данных если приходит вот такой body: [{"conversationId":"52a383cf-7877-4af2-ba7f-70447b43a02d","batchIds":["37e45117-07c3-4033-ac66-b168268d222f"],"totalBatches":1,"unreadCount":1,"latestStartedAt":"2025-11-12T15:06:15.160Z"},{"conversationId":"cc693cc0-821c-4d53-9d4c-d868c22e15d7","batchIds":["7893c08a-6555-4656-a192-3d7cdfcff13a"],"totalBatches":1,"unreadCount":1,"latestStartedAt":"2025-11-12T13:21:42.113Z"},{"conversationId":"38d8290f-f99c-453e-b442-fa578056169c","batchIds":["f9930805-2d59-4b5c-9f1a-1844cbffe086"],"totalBatches":1,"unreadCount":1,"latestStartedAt":"2025-11-12T13:21:16.706Z"},{"conversationId":"5537238a-5242-4d19-bc8c-0701a3219057","batchIds":["5dd0e60a-a57f-4a19-860c-42b25a9a1a91"],"totalBatches":1,"unreadCount":1,"latestStartedAt":"2025-11-12T11:20:26.817Z"},{"conversationId":"606b1e62-c224-4437-bbc5-a574bb9d2cc9","batchIds":["b71e1e60-d195-4b70-9811-34acf7c9910d"],"totalBatches":1,"unreadCount":1,"latestStartedAt":"2025-11-11T09:36:02.492Z"},{"conversationId":"3839e0c2-c201-4e18-b5b4-2ba4eae289de","batchIds":["67caab07-45be-4dab-b12f-658c5e58fc84"],"totalBatches":1,"unreadCount":1,"latestStartedAt":"2025-11-11T09:36:00.883Z"},{"conversationId":"c:9264b4a0-d15b-11e4-ae7e-4109879f609b:f5a53f40-d69b-11e4-b69a-e365c4562176","batchIds":["0fb08554-1bab-4fbf-8ecf-ee5bf5f720c7"],"totalBatches":2,"unreadCount":2,"latestStartedAt":"2025-11-10T12:39:42.982Z"},{"conversationId":"c:d5c78030-fd50-11e4-8f87-e365c4562176:f5a53f40-d69b-11e4-b69a-e365c4562176","batchIds":["585a2c6a-f8cc-40e3-9d69-9b90003c9bdb"],"totalBatches":2,"unreadCount":2,"latestStartedAt":"2025-11-10T10:45:17.023Z"},{"conversationId":"c:3ca964a0-a6ae-11f0-b554-4920a23d4278:f5a53f40-d69b-11e4-b69a-e365c4562176","batchIds":["e5e06b99-b2b2-4cc0-88c9-562097e28fe6"],"totalBatches":1,"unreadCount":1,"latestStartedAt":"2025-11-08T20:49:11.820Z"}] и T в данном случае это ServerConversationListItem AI!
+            .responseDecodable(of: T.self, decoder: decoder) { response in
                 switch response.result {
                 case .success(let value):
                     continuation.resume(returning: value)
