@@ -170,7 +170,7 @@ struct MessageMenu<MainButton: View, ActionEnum: MessageMenuAction>: View {
             // The message and menu view
             messageMenuView()
                 .frameGetter($messageMenuFrame)
-                .position(x: chatViewFrame.width / 2 + horizontalOffset, y: verticalOffset)
+                .position(x: chatViewFrame.width / 2 + horizontalOffset, y: verticalOffset - chatViewFrame.height/3) //- chatViewFrame.height/3 added as a magic fix until we find out what's wrong with this offset calculation
                 .opacity(messageMenuOpacity)
             
         }
@@ -354,9 +354,9 @@ struct MessageMenu<MainButton: View, ActionEnum: MessageMenuAction>: View {
             /// Otherwise, calculate our offsets and move to our target
             let rHeight: CGFloat = reactionSelectionIsVisible ? calculateMessageMenuHeight(including: [.reactionSelection]) : 0
             let mHeight: CGFloat = menuIsVisible ? calculateMessageMenuHeight(including: [.menu]) : 0
-            let rOHeight: CGFloat = reactionOverviewIsVisible ? reactionOverviewHeight : 0
-
-            var ty: CGFloat = messageFrame.midY - (messageTopPadding / 2)
+            let rOHeight: CGFloat = reactionOverviewIsVisible ? reactionOverviewHeight : 0                
+                
+            var ty: CGFloat = messageFrame.midY - (messageTopPadding / 2) + (mHeight / 2) - (rHeight / 2)
 
             if (messageFrame.minY - rHeight) < UIApplication.safeArea.top + rOHeight {
                 let off = (UIApplication.safeArea.top + rOHeight) - (messageFrame.minY - rHeight)
@@ -368,7 +368,7 @@ struct MessageMenu<MainButton: View, ActionEnum: MessageMenuAction>: View {
                 ty -= off
             }
             
-            return ty - (mHeight / 2) + (rHeight / 2)
+            return ty
             
         case .keyboard:
             /// Store our vertical offset
