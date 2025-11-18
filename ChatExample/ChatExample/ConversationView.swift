@@ -19,10 +19,12 @@ struct ConversationView: View {
     @Binding var navigationPath: NavigationPath
     
     @StateObject private var viewModel: ConversationViewModel
+    @StateObject private var reactionDelegate: ConversationReactionDelegate
     
     init(viewModel: ConversationViewModel, path: Binding<NavigationPath>) {
         _viewModel = StateObject(wrappedValue: viewModel)
         self._navigationPath = path
+        self._reactionDelegate = StateObject(wrappedValue: ConversationReactionDelegate(viewModel: viewModel))
     }
     
     var body: some View {
@@ -33,7 +35,7 @@ struct ConversationView: View {
                       didSendMessage: { draft in
                             Task { await viewModel.handleSend(draft) }
                         },
-                      reactionDelegate: nil,
+                      reactionDelegate: reactionDelegate,
 //                      messageBuilder: {
 //                message, positionInGroup, positionInMessagesSection, positionInCommentsGroup,
 //                showContextMenuClosure, messageActionClosure, showAttachmentClosure in

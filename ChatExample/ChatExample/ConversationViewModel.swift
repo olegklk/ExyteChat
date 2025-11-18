@@ -241,7 +241,7 @@ class ConversationViewModel: ObservableObject {
             return
         }
 
-        // Создаем аттачмент типа "reaction"
+        // Создаем аттачмент типа "reaction". Используем новый инициализатор.
         let reactionAttachment = Attachment(reactionEmoji: reaction.type.toString)
 
         // Создаем серверное сообщение-ответ с этим аттачментом
@@ -312,7 +312,7 @@ class ConversationViewModel: ObservableObject {
             guard let self = self else { return }
             
             DispatchQueue.main.async {
-                self.updateMessages([serverMessage])
+                self.handleIncomingMessage(serverMessage)
             }
         }
         
@@ -329,7 +329,9 @@ class ConversationViewModel: ObservableObject {
                     self.conversationURL = self.conversation.url()
                 }
                 if isHistoryLoaded {
-                    self.updateMessages(newMessages)
+                    for serverMessage in newMessages {
+                        self.handleIncomingMessage(serverMessage)
+                    }
                 }
                 else {
                     Task {
@@ -358,6 +360,55 @@ class ConversationViewModel: ObservableObject {
             }
         }
     }
+
+    /// Обрабатывает входящее сообщение, определяя, является ли оно реакцией.
+    private func handleIncomingMessage(_ serverMessage: ServerMessage) {
+        // Проверяем, является ли это сообщением-реакцией.
+        // Условие: есть поле replyTo и первый аттачмент имеет тип .reaction
+        if let replyToId = serverMessage.replyTo,
+           let reactionAttachment = serverMessage.attachments.first,
+           reactionAttachment.type == .reaction {
+            
+            // Это сообщение-реакция. Не нужно добавлять его в общий список.
+            // Вместо этого, найдем оригинальное сообщение и добавим к нему реакцию.
+            
+            guard let originalMessageIndex = messages.firstIndex(where: { $0.id == replyToId }) else {
+                // Если оригинальное сообщение не найдено (например, оно старое и не загружено),
+                // просто игнорируем реакцию.
+                print("Warning: Received a reaction for a message not in the local list: \(replyToId)")
+                return
+            }
+            
+            // Создаем объект User для реакции
+            guard let reactionUser = selfProfile else { return }
+            let reactionSenderUser = User(
+                id: serverMessage.sender.userId,
+                name: serverMessage.sender.displayName,
+                avatarURL: URL(string: serverMessage.sender.avatarUrl ?? ""),
+                isCurrentUser: serverMessage.sender.userId == reactionUser.id
+            )
+            
+            // Создаем объект Reaction
+            // Извлекаем эмодзи из URL аттачмента
+            let emojiString = reactionAttachment.url.absoluteString.replacingOccurrences(of: "data://reaction/", with: "")
+            let newReaction = Reaction(
+                id: serverMessage.id, // Используем ID сообщения-реакции как ID реакции
+                user: reactionSenderUser,
+                createdAt: serverMessage.createdAt,
+                type: .emoji(emojiString),
+                status: .sent
+            )
+            
+            // Добавляем реакцию к оригинальному сообщению
+            var originalMessage = messages[originalMessageIndex]
+            originalMessage.reactions.append(newReaction)
+            messages[originalMessageIndex] = originalMessage
+            
+        } else {
+            // Это обычное сообщение. Добавляем его стандартным способом.
+            self.updateMessages([serverMessage])
+        }
+    }
     
     private func convertServerMessageToChatMessage(_ serverMessage: ServerMessage) -> Message {
         
@@ -379,15 +430,16 @@ class ConversationViewModel: ObservableObject {
             }
         }
         
-        
         // Convert ServerAttachment to Attachment
         let attachments: [Attachment] = serverMessage.attachments.compactMap { sa in
             guard let url = sa.url, let urlObj = URL(string: url) else { return nil }
+            // Используем новый инициализатор AttachmentType для корректного создания
+            let type = AttachmentType(serverAttachmentKind: sa.type)
             return Attachment(
                 id: UUID().uuidString,
                 thumbnail: urlObj,
                 full: urlObj,
-                type: .image,
+                type: type,
                 status: .uploaded,
                 thumbnailCacheKey: nil,
                 fullCacheKey: nil
