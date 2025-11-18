@@ -32,7 +32,7 @@ public class SocketIOManager: ObservableObject {
     }
     
     private enum EventKey {
-        case append, appended, edit, edited, delete, deleted, seen
+        case append, appended, edit, edited, delete, deleted, seen, react // Added react
         case batchAssigned, conversationAssigned, unreadBatches, error
     }
     
@@ -45,6 +45,7 @@ public class SocketIOManager: ObservableObject {
         case .delete: return "chat:delete"
         case .deleted: return "chat:deleted"
         case .seen: return "chat:seen"
+        case .react: return "chat:react" // Added react event name
         case .batchAssigned: return "chat:batch-assigned"
         case .conversationAssigned: return "chat:conversation-assigned"
         case .unreadBatches: return "chat:unread-batches"
@@ -59,6 +60,7 @@ public class SocketIOManager: ObservableObject {
     private var messageAppendedHandlers: [UUID: (ServerMessage) -> Void] = [:]
     private var messageEditedHandlers: [UUID: (String, String?) -> Void] = [:]
     private var messageDeletedHandlers: [UUID: (String) -> Void] = [:]
+    private var messageReactedHandlers: [UUID: (String, String, String) -> Void] = [:] // Added handler for reactions
     private var batchAssignedHandlers: [UUID: (String, String?) -> Void] = [:]
     private var conversationAssignedHandlers: [UUID: (String) -> Void] = [:]
     private var unreadBatchesHandlers: [UUID: ([ServerBatchDocument], String?) -> Void] = [:]
@@ -94,6 +96,7 @@ public class SocketIOManager: ObservableObject {
         messageAppendedHandlers.removeAll()
         messageEditedHandlers.removeAll()
         messageDeletedHandlers.removeAll()
+        messageReactedHandlers.removeAll() // Clear reaction handlers
         batchAssignedHandlers.removeAll()
         conversationAssignedHandlers.removeAll()
         unreadBatchesHandlers.removeAll()
@@ -169,6 +172,20 @@ public class SocketIOManager: ObservableObject {
             // Notify all registered handlers
             for handler in self.messageDeletedHandlers.values {
                 handler(messageId)
+            }
+        }
+
+        let reacted = eventName(.react) // Added listener for reaction event
+        socket?.on(reacted) { [weak self] data, _ in
+            guard let self = self,
+                  let dict = data.first as? [String: Any],
+                  let messageId = dict["messageId"] as? String,
+                  let userId = dict["userId"] as? String,
+                  let reaction = dict["reaction"] as? String else { return }
+
+            // Notify all registered handlers
+            for handler in self.messageReactedHandlers.values {
+                handler(messageId, userId, reaction)
             }
         }
         
@@ -270,6 +287,18 @@ public class SocketIOManager: ObservableObject {
         
         socket?.emit(eventName(.delete), payload)
     }
+
+    public func sendReaction(conversationId: String, batchId: String, messageId: String, reaction: String, userId: String) {
+        let payload: [String: Any] = [
+            "conversationId": conversationId,
+            "batchId": batchId,
+            "messageId": messageId,
+            "reaction": reaction,
+            "userId": userId
+        ]
+        
+        socket?.emit(eventName(.react), payload)
+    }
     
     public func markAsSeen(conversationId: String, batchId: String, userId: String) {
         let payload: [String: Any] = [
@@ -311,6 +340,16 @@ public class SocketIOManager: ObservableObject {
     
     public func offMessageDeleted(id: UUID) {
         messageDeletedHandlers.removeValue(forKey: id)
+    }
+
+    public func onMessageReacted(handler: @escaping (String, String, String) -> Void) -> UUID { // Added public listener for reaction
+        let id = UUID()
+        messageReactedHandlers[id] = handler
+        return id
+    }
+    
+    public func offMessageReacted(id: UUID) { // Added public off listener for reaction
+        messageReactedHandlers.removeValue(forKey: id)
     }
     
     public func onBatchAssigned(handler: @escaping (String, String?) -> Void) -> UUID {

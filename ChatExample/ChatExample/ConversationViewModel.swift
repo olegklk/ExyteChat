@@ -227,6 +227,30 @@ class ConversationViewModel: ObservableObject {
         SocketIOManager.shared.deleteMessage(conversationId: conversationId, batchId: batchId, messageId: message.id)
     }
 
+    /// Обрабатывает отправку реакции на сообщение.
+    /// - Parameters:
+    ///   - reaction: Объект `DraftReaction`, описывающий реакцию.
+    ///   - messageId: ID сообщения, на которое ставится реакция.
+    func handleReaction(reaction: DraftReaction, for messageId: String) {
+        guard let batchId = conversation.batchId else {
+            print("Error: Cannot send reaction, batchId is missing.")
+            return
+        }
+        guard let selfProfile = selfProfile else {
+            print("Error: Cannot send reaction, user profile is missing.")
+            return
+        }
+
+        // Вызываем новый метод в SocketIOManager для отправки реакции на сервер.
+        SocketIOManager.shared.sendReaction(
+            conversationId: conversationId,
+            batchId: batchId,
+            messageId: messageId,
+            reaction: reaction.type.toString,
+            userId: selfProfile.id
+        )
+    }
+
 
     func onAppear() {
         
@@ -388,4 +412,3 @@ class ConversationViewModel: ObservableObject {
         return ref.toReplyMessage()
     }
 }
-
