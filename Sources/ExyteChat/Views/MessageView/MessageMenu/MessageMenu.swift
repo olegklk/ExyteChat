@@ -170,7 +170,7 @@ struct MessageMenu<MainButton: View, ActionEnum: MessageMenuAction>: View {
             // The message and menu view
             messageMenuView()
                 .frameGetter($messageMenuFrame)
-                .position(x: chatViewFrame.width / 2 + horizontalOffset, y: verticalOffset - chatViewFrame.height/3) //- chatViewFrame.height/3 added as a magic fix until we find out what's wrong with this offset calculation
+                .position(x: chatViewFrame.width / 2 + horizontalOffset, y: verticalOffset)
                 .opacity(messageMenuOpacity)
             
         }
@@ -258,9 +258,14 @@ struct MessageMenu<MainButton: View, ActionEnum: MessageMenuAction>: View {
                     horizontalOffset = -UIApplication.safeArea.trailing
                 }
             }
+
+            // FIX: Correctly calculate the absolute message frame by adding the origins of the cell frame and the bubble frame.
+            // `cellFrame` is the absolute frame of the cell on screen.
+            // `viewModel.messageFrame` is the frame of the bubble relative to the cell's origin.
+            // Summing their origins gives the correct absolute position of the bubble.
             messageFrame = .init(
-                x: viewModel.messageFrame.origin.x + horizontalOffset,
-                y: cellFrame.maxY - (viewModel.messageFrame.height),
+                x: cellFrame.origin.x + viewModel.messageFrame.origin.x + horizontalOffset,
+                y: cellFrame.origin.y + viewModel.messageFrame.origin.y,
                 width: viewModel.messageFrame.width,
                 height: viewModel.messageFrame.height
             )
@@ -333,6 +338,7 @@ struct MessageMenu<MainButton: View, ActionEnum: MessageMenuAction>: View {
             return .greatestFiniteMagnitude
         case .original:
             return messageFrame.midY - (messageTopPadding / 2)
+            
         case .ready:
             if case .keyboard = previousState {
                 if case .scrollView = messageMenuStyle {
@@ -354,7 +360,7 @@ struct MessageMenu<MainButton: View, ActionEnum: MessageMenuAction>: View {
             /// Otherwise, calculate our offsets and move to our target
             let rHeight: CGFloat = reactionSelectionIsVisible ? calculateMessageMenuHeight(including: [.reactionSelection]) : 0
             let mHeight: CGFloat = menuIsVisible ? calculateMessageMenuHeight(including: [.menu]) : 0
-            let rOHeight: CGFloat = reactionOverviewIsVisible ? reactionOverviewHeight : 0                
+            let rOHeight: CGFloat = reactionOverviewIsVisible ? reactionOverviewHeight : 0
                 
             var ty: CGFloat = messageFrame.midY - (messageTopPadding / 2) + (mHeight / 2) - (rHeight / 2)
 

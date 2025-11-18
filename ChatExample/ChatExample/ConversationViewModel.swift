@@ -227,7 +227,7 @@ class ConversationViewModel: ObservableObject {
         SocketIOManager.shared.deleteMessage(conversationId: conversationId, batchId: batchId, messageId: message.id)
     }
 
-    /// Обрабатывает отправку реакции на сообщение.
+    /// Обрабатывает отправку реакции на сообщение, создавая сообщение-ответ с аттачментом.
     /// - Parameters:
     ///   - reaction: Объект `DraftReaction`, описывающий реакцию.
     ///   - messageId: ID сообщения, на которое ставится реакция.
@@ -241,14 +241,21 @@ class ConversationViewModel: ObservableObject {
             return
         }
 
-        // Вызываем новый метод в SocketIOManager для отправки реакции на сервер.
-        SocketIOManager.shared.sendReaction(
-            conversationId: conversationId,
-            batchId: batchId,
-            messageId: messageId,
-            reaction: reaction.type.toString,
-            userId: selfProfile.id
+        // Создаем аттачмент типа "reaction"
+        let reactionAttachment = Attachment(reactionEmoji: reaction.type.toString)
+
+        // Создаем серверное сообщение-ответ с этим аттачментом
+        let reactionServerMessage = ServerMessage(
+            id: UUID().uuidString,
+            sender: ServerSenderRef(userId: selfProfile.id, displayName: Store.selfDisplayName()),
+            text: nil, // Текст пустой, вся информация в аттачменте
+            attachments: [reactionAttachment],
+            replyTo: messageId, // Указываем, что это ответ на сообщение
+            createdAt: Date()
         )
+
+        // Отправляем как обычное сообщение через существующий механизм
+        SocketIOManager.shared.sendMessage(conversationId: conversationId, batchId: batchId, message: reactionServerMessage)
     }
 
 
