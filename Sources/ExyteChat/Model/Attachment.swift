@@ -8,6 +8,7 @@ import ExyteMediaPicker
 public enum AttachmentType: String, Codable, Sendable {
     case image
     case video
+    case reaction
 
     public var title: String {
         switch self {
@@ -15,6 +16,8 @@ public enum AttachmentType: String, Codable, Sendable {
             return "Image"
         case .video:
             return "Video"
+        case .reaction:
+            return "reaction"
         }
     }
 
@@ -39,6 +42,8 @@ public enum AttachmentType: String, Codable, Sendable {
             self = .image // Treat GIFs as images
         case "file":
             self = .image // Treat files as images for now
+        case "reaction":
+            self = .reaction 
         case "location":
             self = .image // Treat locations as images for now
         default:
