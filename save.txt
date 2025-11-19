@@ -1,0 +1,9 @@
+/drop
+/add       ChatAPIClient/Sources/ChatAPIClient/Models/ServerMessage.swift
+/add       ChatAPIClient/Sources/ChatAPIClient/SocketIOManager.swift
+/add       ChatExample/ChatExample/ConversationView.swift
+/add       ChatExample/ChatExample/ConversationViewModel.swift
+/add       Sources/ExyteChat/Managers/ReactionDelegate.swift
+/add       Sources/ExyteChat/Model/Attachment.swift
+/add       Sources/ExyteChat/Views/MessageView/MessageMenu/MessageMenu.swift
+/add       Sources/ExyteChat/Views/MessageView/MessageView.swift
