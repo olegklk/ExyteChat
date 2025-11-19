@@ -10,7 +10,7 @@ public struct ServerMessage: Codable, Identifiable, Hashable, Sendable {
     public let createdAt: Date
     public let editedAt: Date?
     public let deletedAt: Date?
-    //создай новый класс ServerReaction по аналогии с этим который нужен для представления объекта Reaction из библиотеки ExyteChat при отправке его в составе аттачмента в в reply на сообщение. Нужен простой способ получить ServerReaction из Reaction и messageId а также простой способ получить Reaction из ServerReaction AI!
+
     enum CodingKeys: String, CodingKey {
         case id = "_id"
         case sender
@@ -107,5 +107,100 @@ extension SenderRef {
         }
 
         self.init(userId: userId, displayName: displayName)
+    }
+}
+
+public struct ServerReaction: Codable, Hashable, Sendable {
+    public let id: String
+    public let messageID: String
+    public let content: String // Эмодзи или тип реакции
+    public let createdAt: Date
+    public let senderId: String
+    public let senderName: String
+    
+    public init(id: String = UUID().uuidString,
+                messageID: String,
+                content: String,
+                createdAt: Date = Date(),
+                senderId: String,
+                senderName: String) {
+        self.id = id
+        self.messageID = messageID
+        self.content = content
+        self.createdAt = createdAt
+        self.senderId = senderId
+        self.senderName = senderName
+    }
+    
+    /// Создаёт ServerMessage для отправки на сервер
+    public func toServerMessage() -> ServerMessage {
+        let meta: [String: JSONValue] = [
+            "id": .string(id),
+            "type": .string(content),
+            "createdAt": .string(ISO8601DateFormatter().string(from: createdAt)),
+            "messageID": .string(messageID)
+        ]
+        
+        let attachment = ServerAttachment(
+            id: id,
+            kind: .reaction,
+            href: nil,
+            lat: nil,
+            lng: nil,
+            meta: meta
+        )
+        
+        return ServerMessage(
+            id: UUID().uuidString,
+            sender: SenderRef(userId: senderId, displayName: senderName),
+            text: nil,
+            attachments: [attachment],
+            replyTo: messageID,
+            expiresAt: nil,
+            createdAt: createdAt,
+            editedAt: nil,
+            deletedAt: nil
+        )
+    }
+    
+    /// Извлекает ServerReaction из входящего ServerMessage
+    public static func from(serverMessage: ServerMessage) -> ServerReaction? {
+        // Реакция должна быть ответом (replyTo) и иметь аттачмент типа .reaction
+        guard let replyTo = serverMessage.replyTo,
+              let attachment = serverMessage.attachments.first(where: { $0.kind == .reaction }),
+              let meta = attachment.meta else {
+            return nil
+        }
+        
+        // Извлекаем данные из meta
+        guard let content = meta["type"]?.stringValue,
+              let messageID = meta["messageID"]?.stringValue ?? Optional(replyTo)
+        else { return nil }
+        
+        let id = meta["id"]?.stringValue ?? serverMessage.id
+        
+        // Пытаемся распарсить дату из meta, иначе берем дату сообщения
+        var date = serverMessage.createdAt
+        if let dateStr = meta["createdAt"]?.stringValue,
+           let parsed = Date.parseDate(dateStr) {
+            date = parsed
+        }
+
+        return ServerReaction(
+            id: id,
+            messageID: messageID,
+            content: content,
+            createdAt: date,
+            senderId: serverMessage.sender.userId,
+            senderName: serverMessage.sender.displayName
+        )
+    }
+}
+
+// Вспомогательное расширение для извлечения строки из JSONValue
+fileprivate extension JSONValue {
+    var stringValue: String? {
+        if case .string(let s) = self { return s }
+        return nil
     }
 }
