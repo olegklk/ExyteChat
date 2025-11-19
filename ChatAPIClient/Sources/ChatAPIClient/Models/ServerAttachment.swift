@@ -18,6 +18,7 @@ public struct ServerAttachment: Codable, Hashable, Sendable {
         case location
         case file
         case image
+        case reaction
     }
 
     public let id: String
@@ -73,6 +74,7 @@ public struct ServerAttachment: Codable, Hashable, Sendable {
         try container.encodeIfPresent(lng, forKey: .lng)
         try container.encodeIfPresent(meta, forKey: .meta)
     }
+        
 }
 
 
