@@ -129,12 +129,12 @@ public class SocketIOManager: ObservableObject {
                   let dict = data.first as? [String: Any] else { return }
 
             var m = dict
-            // нормализуем id/sender
+            // normalize id/sender
             if m["_id"] == nil, let mid = m["messageId"] { m["_id"] = mid }
             if m["sender"] == nil, let sid = m["senderId"] as? String {
                 m["sender"] = ["userId": sid, "displayName": (m["senderName"] as? String) ?? ""]
             }
-            // нормализуем createdAt в ISO (если придёт epoch/отсутствует)
+            // normalize createdAt to ISO (if epoch arrives/missing)
             if m["createdAt"] == nil {
                 m["createdAt"] = ISO8601DateFormatter().string(from: Date())
             }
@@ -246,7 +246,7 @@ public class SocketIOManager: ObservableObject {
         if let expiresAt = message.expiresAt {
             payload["expiresAt"] = ISO8601DateFormatter().string(from: expiresAt)
         }
-        // По спецификации messageId опционален; если есть — отправим
+        // According to spec messageId is optional; if present - send it
         payload["messageId"] = message.id
         socket?.emit(eventName(.append), payload)
     }

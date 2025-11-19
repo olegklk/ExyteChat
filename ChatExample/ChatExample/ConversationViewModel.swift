@@ -227,10 +227,10 @@ class ConversationViewModel: ObservableObject, ReactionDelegate {
         SocketIOManager.shared.deleteMessage(conversationId: conversationId, batchId: batchId, messageId: message.id)
     }
 
-    /// Обрабатывает отправку реакции на сообщение, создавая сообщение-ответ с аттачментом.
+    /// Handles sending a reaction to a message by creating a reply message with an attachment.
     /// - Parameters:
-    ///   - reaction: Объект `DraftReaction`, описывающий реакцию.
-    ///   - messageId: ID сообщения, на которое ставится реакция.
+    ///   - reaction: DraftReaction object describing the reaction.
+    ///   - messageId: ID of the message being reacted to.
     func handleReaction(reaction: DraftReaction, for messageId: String) async {
         guard let batchId = conversation.batchId else {
             print("Error: Cannot send reaction, batchId is missing.")
@@ -241,7 +241,7 @@ class ConversationViewModel: ObservableObject, ReactionDelegate {
             return
         }
 
-        // Создаем аттачмент типа "reaction". Используем новый инициализатор.
+        // Create attachment of type "reaction". Use new initializer.
 //        let reactionAttachment = ServerAttachment(reactionEmoji: reaction.type.toString)
         let reactionAttachment = ServerAttachment(
             id: reaction.id,
@@ -255,20 +255,20 @@ class ConversationViewModel: ObservableObject, ReactionDelegate {
                     "messageID":JSONValue.from(any:reaction.messageID)!]
         )
 
-        // Создаем серверное сообщение-ответ с этим аттачментом
+        // Create server reply message with this attachment
         let reactionServerMessage = ServerMessage(
             id: UUID().uuidString,
             sender: SenderRef(userId: selfProfile.id, displayName: Store.selfDisplayName()),
-            text: nil, // Текст пустой, вся информация в аттачменте
+            text: nil, // Text is empty, all info is in the attachment
             attachments: [reactionAttachment],
-            replyTo: messageId, // Указываем, что это ответ на сообщение
+            replyTo: messageId, // Indicate that this is a reply to a message
             expiresAt: nil,
             createdAt: Date(),
             editedAt: nil,
             deletedAt: nil
         )
 
-        // Отправляем как обычное сообщение через существующий механизм
+        // Send as a regular message via existing mechanism
         SocketIOManager.shared.sendMessage(conversationId: conversationId, batchId: batchId, message: reactionServerMessage)
     }
 
@@ -375,25 +375,25 @@ class ConversationViewModel: ObservableObject, ReactionDelegate {
         }
     }
 
-    /// Обрабатывает входящее сообщение, определяя, является ли оно реакцией.
+    /// Handles incoming message, determining if it is a reaction.
     private func handleIncomingMessage(_ serverMessage: ServerMessage) {
-        // Проверяем, является ли это сообщением-реакцией.
-        // Условие: есть поле replyTo и первый аттачмент имеет тип .reaction
+        // Check if this is a reaction message.
+        // Condition: has replyTo field and the first attachment has type .reaction
         if let replyToId = serverMessage.replyTo,
            let reactionAttachment = serverMessage.attachments.first,
            reactionAttachment.kind == .reaction {
             
-            // Это сообщение-реакция. Не нужно добавлять его в общий список.
-            // Вместо этого, найдем оригинальное сообщение и добавим к нему реакцию.
+            // This is a reaction message. No need to add it to the general list.
+            // Instead, find the original message and add the reaction to it.
             
             guard let originalMessageIndex = messages.firstIndex(where: { $0.id == replyToId }) else {
-                // Если оригинальное сообщение не найдено (например, оно старое и не загружено),
-                // просто игнорируем реакцию.
+                // If original message is not found (e.g. it's old and not loaded),
+                // just ignore the reaction.
                 print("Warning: Received a reaction for a message not in the local list: \(replyToId)")
                 return
             }
             
-            // Создаем объект User для реакции
+            // Create User object for reaction
             guard let selfUser = selfProfile else { return }
             let reactionSenderUser = User(
                 id: serverMessage.sender.userId,
@@ -402,24 +402,24 @@ class ConversationViewModel: ObservableObject, ReactionDelegate {
                 isCurrentUser: serverMessage.sender.userId == selfUser.id
             )
             
-            // Создаем объект Reaction
-            // Извлекаем эмодзи из URL аттачмента
+            // Create Reaction object
+            // Extract emoji from attachment URL
             let emojiString = reactionAttachment.meta!["type"]
             let newReaction = Reaction(
-                id: serverMessage.id, // Используем ID сообщения-реакции как ID реакции
+                id: serverMessage.id, // Use reaction message ID as reaction ID
                 user: reactionSenderUser,
                 createdAt: serverMessage.createdAt,
                 type: .emoji(emojiString),
                 status: .sent
             )
             
-            // Добавляем реакцию к оригинальному сообщению
+            // Add reaction to the original message
             var originalMessage = messages[originalMessageIndex]
             originalMessage.reactions.append(newReaction)
             messages[originalMessageIndex] = originalMessage
             
         } else {
-            // Это обычное сообщение. Добавляем его стандартным способом.
+            // This is a regular message. Add it in the standard way.
             self.updateMessages([serverMessage])
         }
     }
@@ -447,7 +447,7 @@ class ConversationViewModel: ObservableObject, ReactionDelegate {
         // Convert ServerAttachment to Attachment
         let attachments: [Attachment] = serverMessage.attachments.compactMap { sa in
             guard let url = sa.url, let urlObj = URL(string: url) else { return nil }
-            // Используем новый инициализатор AttachmentType для корректного создания
+            // Use new AttachmentType initializer for correct creation
             let type = AttachmentType(serverAttachmentKind: sa.type)
             return Attachment(
                 id: UUID().uuidString,
@@ -486,38 +486,38 @@ class ConversationViewModel: ObservableObject, ReactionDelegate {
     }
     
     //REACtIONS
-    /// Вызывается, когда пользователь выбирает реакцию для сообщения.
+    /// Called when user selects a reaction for a message.
     /// - Parameters:
-    ///   - message: Сообщение, на которое отреагировали.
-    ///   - reaction: Созданный черновик реакции для отправки на сервер.
+    ///   - message: The message that was reacted to.
+    ///   - reaction: Created draft reaction to send to server.
     nonisolated func didReact(to message: Message, reaction: DraftReaction) {
         Task {
             await handleReaction(reaction: reaction, for: message.id)
         }
     }
 
-    /// Определяет, можно ли ставить реакции на данное сообщение.
+    /// Determines if reactions can be added to this message.
 //    func canReact(to message: Message) -> Bool {
-//        // Пока разрешаем реагировать на любые сообщения.
-//        // Здесь можно добавить сложную логику (например, запрет на старые сообщения).
+//        // Allow reacting to any messages for now.
+//        // Complex logic can be added here (e.g., forbidding old messages).
 //        return true
 //    }
 //
-//    /// Определяет, нужно ли показывать список реакций под сообщением.
+//    /// Determines if reaction list should be shown under the message.
 //    func shouldShowOverview(for message: Message) -> Bool {
-//        // Показываем обзор, если у сообщения есть хотя бы одна реакция.
+//        // Show overview if message has at least one reaction.
 //        return !message.reactions.isEmpty
 //    }
 //
-//    /// Определяет, доступен ли поиск по эмодзи при выборе реакции.
+//    /// Determines if emoji search is available when selecting reaction.
 //    func allowEmojiSearch(for message: Message) -> Bool {
-//        // Разрешаем поиск по эмодзи.
+//        // Allow emoji search.
 //        return true
 //    }
 //
-//    /// Предоставляет набор быстрых реакций, которые будут показаны пользователю.
+//    /// Provides a set of quick reactions to be shown to the user.
 //    func reactions(for message: Message) -> [ReactionType]? {
-//        // Стандартный набор эмодзи для быстрых реакций.
+//        // Standard set of emojis for quick reactions.
 //        return [
 //            .emoji("👍"),
 //            .emoji("❤️"),

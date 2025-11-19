@@ -113,7 +113,7 @@ extension SenderRef {
 public struct ServerReaction: Codable, Hashable, Sendable {
     public let id: String
     public let messageID: String
-    public let content: String // Эмодзи или тип реакции
+    public let content: String // Emoji or reaction type
     public let createdAt: Date
     public let senderId: String
     public let senderName: String
@@ -132,7 +132,7 @@ public struct ServerReaction: Codable, Hashable, Sendable {
         self.senderName = senderName
     }
     
-    /// Создаёт ServerMessage для отправки на сервер
+    /// Creates ServerMessage for sending to the server
     public func toServerMessage() -> ServerMessage {
         let meta: [String: JSONValue] = [
             "id": .string(id),
@@ -163,23 +163,23 @@ public struct ServerReaction: Codable, Hashable, Sendable {
         )
     }
     
-    /// Извлекает ServerReaction из входящего ServerMessage
+    /// Extracts ServerReaction from incoming ServerMessage
     public static func from(serverMessage: ServerMessage) -> ServerReaction? {
-        // Реакция должна быть ответом (replyTo) и иметь аттачмент типа .reaction
+        // Reaction must be a reply (replyTo) and have an attachment of type .reaction
         guard let replyTo = serverMessage.replyTo,
               let attachment = serverMessage.attachments.first(where: { $0.kind == .reaction }),
               let meta = attachment.meta else {
             return nil
         }
         
-        // Извлекаем данные из meta
+        // Extract data from meta
         guard let content = meta["type"]?.stringValue,
               let messageID = meta["messageID"]?.stringValue ?? Optional(replyTo)
         else { return nil }
         
         let id = meta["id"]?.stringValue ?? serverMessage.id
         
-        // Пытаемся распарсить дату из meta, иначе берем дату сообщения
+        // Try to parse date from meta, otherwise use message date
         var date = serverMessage.createdAt
         if let dateStr = meta["createdAt"]?.stringValue,
            let parsed = Date.parseDate(dateStr) {
@@ -197,7 +197,7 @@ public struct ServerReaction: Codable, Hashable, Sendable {
     }
 }
 
-// Вспомогательное расширение для извлечения строки из JSONValue
+// Helper extension to extract string from JSONValue
 fileprivate extension JSONValue {
     var stringValue: String? {
         if case .string(let s) = self { return s }
