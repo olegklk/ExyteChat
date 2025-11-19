@@ -11,7 +11,7 @@ import ExyteMediaPicker
 import ChatAPIClient
 
 @MainActor
-class ConversationViewModel: ObservableObject {
+class ConversationViewModel: ObservableObject, ReactionDelegate {
     @Published var messages: [Message] = []
     @Published var conversationURL: String?
     
@@ -231,7 +231,7 @@ class ConversationViewModel: ObservableObject {
     /// - Parameters:
     ///   - reaction: Объект `DraftReaction`, описывающий реакцию.
     ///   - messageId: ID сообщения, на которое ставится реакция.
-    func handleReaction(reaction: DraftReaction, for messageId: String) {
+    func handleReaction(reaction: DraftReaction, for messageId: String) async {
         guard let batchId = conversation.batchId else {
             print("Error: Cannot send reaction, batchId is missing.")
             return
@@ -242,16 +242,30 @@ class ConversationViewModel: ObservableObject {
         }
 
         // Создаем аттачмент типа "reaction". Используем новый инициализатор.
-        let reactionAttachment = Attachment(reactionEmoji: reaction.type.toString)
+//        let reactionAttachment = ServerAttachment(reactionEmoji: reaction.type.toString)
+        let reactionAttachment = ServerAttachment(
+            id: reaction.id,
+            kind: .reaction,
+            href: nil,
+            lat: nil,
+            lng: nil,
+            meta:  ["id":.string(reaction.id),
+                    "type":JSONValue.from(any:reaction.type.toString)!,
+                    "createdAt":JSONValue.from(any:ISO8601DateFormatter().string(from: reaction.createdAt))!,
+                    "messageID":JSONValue.from(any:reaction.messageID)!]
+        )
 
         // Создаем серверное сообщение-ответ с этим аттачментом
         let reactionServerMessage = ServerMessage(
             id: UUID().uuidString,
-            sender: ServerSenderRef(userId: selfProfile.id, displayName: Store.selfDisplayName()),
+            sender: SenderRef(userId: selfProfile.id, displayName: Store.selfDisplayName()),
             text: nil, // Текст пустой, вся информация в аттачменте
             attachments: [reactionAttachment],
             replyTo: messageId, // Указываем, что это ответ на сообщение
-            createdAt: Date()
+            expiresAt: nil,
+            createdAt: Date(),
+            editedAt: nil,
+            deletedAt: nil
         )
 
         // Отправляем как обычное сообщение через существующий механизм
@@ -367,7 +381,7 @@ class ConversationViewModel: ObservableObject {
         // Условие: есть поле replyTo и первый аттачмент имеет тип .reaction
         if let replyToId = serverMessage.replyTo,
            let reactionAttachment = serverMessage.attachments.first,
-           reactionAttachment.type == .reaction {
+           reactionAttachment.kind == .reaction {
             
             // Это сообщение-реакция. Не нужно добавлять его в общий список.
             // Вместо этого, найдем оригинальное сообщение и добавим к нему реакцию.
@@ -380,17 +394,17 @@ class ConversationViewModel: ObservableObject {
             }
             
             // Создаем объект User для реакции
-            guard let reactionUser = selfProfile else { return }
+            guard let selfUser = selfProfile else { return }
             let reactionSenderUser = User(
                 id: serverMessage.sender.userId,
                 name: serverMessage.sender.displayName,
-                avatarURL: URL(string: serverMessage.sender.avatarUrl ?? ""),
-                isCurrentUser: serverMessage.sender.userId == reactionUser.id
+                avatarURL: nil,
+                isCurrentUser: serverMessage.sender.userId == selfUser.id
             )
             
             // Создаем объект Reaction
             // Извлекаем эмодзи из URL аттачмента
-            let emojiString = reactionAttachment.url.absoluteString.replacingOccurrences(of: "data://reaction/", with: "")
+            let emojiString = reactionAttachment.meta!["type"]
             let newReaction = Reaction(
                 id: serverMessage.id, // Используем ID сообщения-реакции как ID реакции
                 user: reactionSenderUser,
@@ -470,4 +484,47 @@ class ConversationViewModel: ObservableObject {
         }
         return ref.toReplyMessage()
     }
+    
+    //REACtIONS
+    /// Вызывается, когда пользователь выбирает реакцию для сообщения.
+    /// - Parameters:
+    ///   - message: Сообщение, на которое отреагировали.
+    ///   - reaction: Созданный черновик реакции для отправки на сервер.
+    nonisolated func didReact(to message: Message, reaction: DraftReaction) {
+        Task {
+            await handleReaction(reaction: reaction, for: message.id)
+        }
+    }
+
+    /// Определяет, можно ли ставить реакции на данное сообщение.
+//    func canReact(to message: Message) -> Bool {
+//        // Пока разрешаем реагировать на любые сообщения.
+//        // Здесь можно добавить сложную логику (например, запрет на старые сообщения).
+//        return true
+//    }
+//
+//    /// Определяет, нужно ли показывать список реакций под сообщением.
+//    func shouldShowOverview(for message: Message) -> Bool {
+//        // Показываем обзор, если у сообщения есть хотя бы одна реакция.
+//        return !message.reactions.isEmpty
+//    }
+//
+//    /// Определяет, доступен ли поиск по эмодзи при выборе реакции.
+//    func allowEmojiSearch(for message: Message) -> Bool {
+//        // Разрешаем поиск по эмодзи.
+//        return true
+//    }
+//
+//    /// Предоставляет набор быстрых реакций, которые будут показаны пользователю.
+//    func reactions(for message: Message) -> [ReactionType]? {
+//        // Стандартный набор эмодзи для быстрых реакций.
+//        return [
+//            .emoji("👍"),
+//            .emoji("❤️"),
+//            .emoji("😂"),
+//            .emoji("😮"),
+//            .emoji("😢"),
+//            .emoji("😡")
+//        ]
+//    }
 }
