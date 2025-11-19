@@ -37,7 +37,7 @@ public struct ServerConversationListItem: Codable, Hashable, Sendable {
         }
         self.totalBatches = (dict["totalBatches"] as? Int) ?? 0
         self.unreadCount = (dict["unreadCount"] as? Int) ?? 0
-        self.latestStartedAt = JSONValue.parseDate(dict["latestStartedAt"]) ?? Date()
+        self.latestStartedAt = Date.parseDate(dict["latestStartedAt"]) ?? Date()
         
     }
     

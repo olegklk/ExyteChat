@@ -32,7 +32,7 @@ public struct ServerUnreadConversationListItem: Codable, Hashable, Sendable {
             self.unreadBatchIds = []
         }
         self.unreadCount = (dict["unreadCount"] as? Int) ?? 0
-        self.latestUnreadStartedAt = JSONValue.parseDate(dict["latestUnreadStartedAt"]) ?? Date()
+        self.latestUnreadStartedAt = Date.parseDate(dict["latestUnreadStartedAt"]) ?? Date()
         
     }
     

@@ -51,8 +51,8 @@ public struct ServerBatchDocument: Codable, Identifiable, Sendable {
         self.conversationId = (dict["conversationId"] as? String) ?? ""
         self.type = BatchType(rawValue: (dict["type"] as? String) ?? "direct") ?? .direct
         self.participants = (dict["participants"] as? [String]) ?? []
-        self.startedAt = JSONValue.parseDate(dict["startedAt"]) ?? Date()
-        self.closedAt = JSONValue.parseDate(dict["closedAt"])
+        self.startedAt = Date.parseDate(dict["startedAt"]) ?? Date()
+        self.closedAt = Date.parseDate(dict["closedAt"])
         self.seenBy = (dict["seenBy"] as? [String]) ?? []
         if let msgs = dict["messages"] as? [[String: Any]] {
             self.messages = msgs.compactMap { ServerMessage(from: $0) }

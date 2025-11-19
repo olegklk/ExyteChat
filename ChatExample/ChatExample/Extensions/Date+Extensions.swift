@@ -4,6 +4,11 @@
 
 import Foundation
 
+@MainActor
+class DateFormatting {
+    static let agoFormatter = RelativeDateTimeFormatter()
+}
+
 extension Date {
     func randomTime() -> Date {
         var hour = Int.random(min: 0, max: 23)
@@ -29,14 +34,7 @@ extension Date {
         components.second = second
         return Calendar.current.date(from: components)!
     }
-}
 
-@MainActor
-class DateFormatting {
-    static let agoFormatter = RelativeDateTimeFormatter()
-}
-
-extension Date {
     // 1 hour ago, 2 days ago...
     @MainActor func formatAgo() -> String {
         let result = DateFormatting.agoFormatter.localizedString(for: self, relativeTo: Date())
@@ -45,24 +43,5 @@ extension Date {
         }
         return result
     }
-    
-    private static let yyyyMMFormatter: DateFormatter = {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "yyyy-MM"
-            formatter.locale = Locale(identifier: "en_US_POSIX")
-            formatter.timeZone = TimeZone(secondsFromGMT: 0) // optional: fixing UTC
-            return formatter
-        }()
-        
-    /// returns YYYY-MM for a date at monthsAgo back in time
-    static func yyyyMM(monthsAgo: Int) -> String {
-        let calendar = Calendar.current
-        let today = Date()
-        
-        guard let pastDate = calendar.date(byAdding: .month, value: -monthsAgo, to: today) else {
-            return "Invalid Date"
-        }
-        
-        return yyyyMMFormatter.string(from: pastDate)
-    }
+            
 }

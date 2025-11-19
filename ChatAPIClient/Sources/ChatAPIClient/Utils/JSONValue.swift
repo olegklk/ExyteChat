@@ -31,26 +31,7 @@ public enum JSONValue: Codable, Hashable, Sendable {
         }
     }
 
-    // thread-local formatters to avoid shared mutable state across concurrency domains
-    private static var iso8601WithFractionalSeconds: ISO8601DateFormatter {
-        let key = "JSONValue.iso8601WithFractionalSeconds"
-        if let f = Thread.current.threadDictionary[key] as? ISO8601DateFormatter { return f }
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        Thread.current.threadDictionary[key] = f
-        return f
-    }
-
-    private static var iso8601NoFraction: ISO8601DateFormatter {
-        let key = "JSONValue.iso8601NoFraction"
-        if let f = Thread.current.threadDictionary[key] as? ISO8601DateFormatter { return f }
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime]
-        Thread.current.threadDictionary[key] = f
-        return f
-    }
-
-    static func from(any: Any) -> JSONValue? {
+    public static func from(any: Any) -> JSONValue? {
         switch any {
         case let v as String: return .string(v)
         case let v as Int:    return .number(Double(v))
@@ -81,19 +62,5 @@ public enum JSONValue: Codable, Hashable, Sendable {
         }
     }
     
-    static func parseDate(_ any: Any?) -> Date? {
-        switch any {
-        case let s as String:
-            if let t = TimeInterval(s) { return Date(timeIntervalSince1970: t) }
-            if let d = Self.iso8601WithFractionalSeconds.date(from: s) { return d }
-            if let d = Self.iso8601NoFraction.date(from: s) { return d }
-            return nil
-        case let d as Double:
-            return Date(timeIntervalSince1970: d)
-        case let i as Int:
-            return Date(timeIntervalSince1970: TimeInterval(i))
-        default:
-            return nil
-        }
-    }
+    
 }
