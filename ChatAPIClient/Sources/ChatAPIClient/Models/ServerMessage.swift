@@ -10,7 +10,7 @@ public struct ServerMessage: Codable, Identifiable, Hashable, Sendable {
     public let createdAt: Date
     public let editedAt: Date?
     public let deletedAt: Date?
-    
+    //создай новый класс ServerReaction по аналогии с этим который нужен для представления объекта Reaction из библиотеки ExyteChat при отправке его в составе аттачмента в в reply на сообщение. Нужен простой способ получить ServerReaction из Reaction и messageId а также простой способ получить Reaction из ServerReaction AI!
     enum CodingKeys: String, CodingKey {
         case id = "_id"
         case sender
@@ -80,16 +80,16 @@ public struct ServerMessage: Codable, Identifiable, Hashable, Sendable {
         }
         guard let sender = senderRef else { return nil }
 
-        guard let createdAt = JSONValue.parseDate(dict["createdAt"]) else { return nil }
+        guard let createdAt = Date.parseDate(dict["createdAt"]) else { return nil }
 
         self.id = id
         self.sender = sender
         self.text = dict["text"] as? String
         self.replyTo = dict["replyTo"] as? String
-        self.expiresAt = JSONValue.parseDate(dict["expiresAt"])
+        self.expiresAt = Date.parseDate(dict["expiresAt"])
         self.createdAt = createdAt
-        self.editedAt = JSONValue.parseDate(dict["editedAt"])
-        self.deletedAt = JSONValue.parseDate(dict["deletedAt"])
+        self.editedAt = Date.parseDate(dict["editedAt"])
+        self.deletedAt = Date.parseDate(dict["deletedAt"])
 
         if let attachmentsArray = dict["attachments"] as? [[String: Any]] {
             self.attachments = attachmentsArray.compactMap { ServerAttachment(dict: $0) }
