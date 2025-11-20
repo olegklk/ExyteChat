@@ -165,7 +165,7 @@ struct MessageMenu<MainButton: View, ActionEnum: MessageMenuAction>: View {
             }
             
             // Some views to help debug layout and animations
-            //debugViews()
+//            debugViews()
             
             // The message and menu view
             messageMenuView()
@@ -474,7 +474,7 @@ struct MessageMenu<MainButton: View, ActionEnum: MessageMenuAction>: View {
                 .zIndex(2)
             }
             
-            mainButton()
+            mainButton()                
                 .frame(maxWidth: chatViewFrame.width - UIApplication.safeArea.leading - UIApplication.safeArea.trailing)
                 .offset(x: (alignment == .right) ? UIApplication.safeArea.trailing : -UIApplication.safeArea.leading)
                 .allowsHitTesting(false)
