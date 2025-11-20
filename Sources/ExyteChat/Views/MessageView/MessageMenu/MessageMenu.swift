@@ -170,7 +170,7 @@ struct MessageMenu<MainButton: View, ActionEnum: MessageMenuAction>: View {
             // The message and menu view
             messageMenuView()
                 .frameGetter($messageMenuFrame)
-                .position(x: chatViewFrame.width / 2 + horizontalOffset, y: messageFrame.minY/*verticalOffset*/)
+                .position(x: chatViewFrame.width / 2 + horizontalOffset, y: verticalOffset)
                 .opacity(messageMenuOpacity)
             
         }
