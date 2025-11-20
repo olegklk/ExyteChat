@@ -94,9 +94,6 @@ struct MessageMenu<MainButton: View, ActionEnum: MessageMenuAction>: View {
     @State private var reactionOverviewWidth: CGFloat = .zero
     @State private var menuHeight: CGFloat = .zero
     
-    /// The size of the rendered MainButton (MessageView row)
-    @State private var mainButtonSize: CGSize = .zero
-    
     /// Controls whether or not the reaction selection view is rendered
     @State private var reactionSelectionIsVisible: Bool = true
     /// Controls whether or not the reaction overview is rendered
@@ -168,7 +165,7 @@ struct MessageMenu<MainButton: View, ActionEnum: MessageMenuAction>: View {
             }
             
             // Some views to help debug layout and animations
-            debugViews()
+            //debugViews()
             
             // The message and menu view
             messageMenuView()
@@ -263,7 +260,7 @@ struct MessageMenu<MainButton: View, ActionEnum: MessageMenuAction>: View {
             }
             messageFrame = .init(
                 x: viewModel.messageFrame.origin.x + horizontalOffset,
-                y: viewModel.messageFrame.minY,
+                y: cellFrame.maxY - (viewModel.messageFrame.height),
                 width: viewModel.messageFrame.width,
                 height: viewModel.messageFrame.height
             )
@@ -335,8 +332,7 @@ struct MessageMenu<MainButton: View, ActionEnum: MessageMenuAction>: View {
         case .initial, .prepare:
             return .greatestFiniteMagnitude
         case .original:
-            return messageFrame.midY
-            
+            return messageFrame.midY - (messageTopPadding / 2)
         case .ready:
             if case .keyboard = previousState {
                 if case .scrollView = messageMenuStyle {
@@ -359,35 +355,20 @@ struct MessageMenu<MainButton: View, ActionEnum: MessageMenuAction>: View {
             let rHeight: CGFloat = reactionSelectionIsVisible ? calculateMessageMenuHeight(including: [.reactionSelection]) : 0
             let mHeight: CGFloat = menuIsVisible ? calculateMessageMenuHeight(including: [.menu]) : 0
             let rOHeight: CGFloat = reactionOverviewIsVisible ? reactionOverviewHeight : 0
-            
-            // Use the standard message frame (the bubble) as the anchor.
-            // Calculate centering offset based on the extra elements (Reaction above, Menu below).
-            // Offset = (Menu Height - Reaction Height) / 2
-            var ty: CGFloat = messageFrame.midY + (mHeight / 2) - (rHeight / 2)
-            
-            // Calculate the total height of the content being displayed
-            // We use mainButtonSize for the message row height if available, otherwise fallback
-            let messageRowHeight = mainButtonSize.height > 0 ? mainButtonSize.height : messageFrame.height
-            let totalContentHeight = rHeight + messageRowHeight + mHeight
-            
-            // Boundary Checks
-            let topOfStack = ty - (totalContentHeight / 2)
-            let bottomOfStack = ty + (totalContentHeight / 2)
-            
-            let safeTop = UIApplication.safeArea.top + rOHeight
-            let safeBottom = chatViewFrame.height - UIApplication.safeArea.bottom
-            
-            if topOfStack < safeTop {
-                // If the top of the content is above the safe area, push it down
-                let difference = safeTop - topOfStack
-                ty += difference
-            } else if bottomOfStack > safeBottom {
-                // If the bottom of the content is below the safe area, push it up
-                let difference = bottomOfStack - safeBottom
-                ty -= difference
+
+            var ty: CGFloat = messageFrame.midY - (messageTopPadding / 2)
+
+            if (messageFrame.minY - rHeight) < UIApplication.safeArea.top + rOHeight {
+                let off = (UIApplication.safeArea.top + rOHeight) - (messageFrame.minY - rHeight)
+                /// We need to move the message down to make room for the views above it
+                ty += off
+            } else if messageFrame.maxY + mHeight > chatViewFrame.height - UIApplication.safeArea.bottom {
+                let off = messageFrame.maxY + mHeight + UIApplication.safeArea.bottom - chatViewFrame.height
+                /// We need to move the message up to make room for the menu buttons below it
+                ty -= off
             }
             
-            return ty
+            return ty + (mHeight / 2) - (rHeight / 2)
             
         case .keyboard:
             /// Store our vertical offset
@@ -449,8 +430,7 @@ struct MessageMenu<MainButton: View, ActionEnum: MessageMenuAction>: View {
         for view in Set(views) {
             switch view {
             case .message:
-                // Use the actual row size if available, otherwise fallback to bubble height
-                height += (mainButtonSize.height > 0 ? mainButtonSize.height : messageFrame.height)
+                height += messageFrame.height + messageTopPadding
             case .menu:
                 height += menuStyle.height(menuHeight) + verticalSpacing
                 if case .scrollView = menuStyle { height += 8 }
@@ -495,7 +475,6 @@ struct MessageMenu<MainButton: View, ActionEnum: MessageMenuAction>: View {
             }
             
             mainButton()
-                .sizeGetter($mainButtonSize) // Capture full row size
                 .frame(maxWidth: chatViewFrame.width - UIApplication.safeArea.leading - UIApplication.safeArea.trailing)
                 .offset(x: (alignment == .right) ? UIApplication.safeArea.trailing : -UIApplication.safeArea.leading)
                 .allowsHitTesting(false)
@@ -505,6 +484,7 @@ struct MessageMenu<MainButton: View, ActionEnum: MessageMenuAction>: View {
                     .transition(defaultTransition)
             }
         }
+        .fixedSize(horizontal: false, vertical: true) //fixes the issue where VStack occupied all real estate vertically and made mainButton() too large
         .overflowContainer(messageMenuStyle, viewState: viewState, onTap: {
             if viewState == .keyboard {
                 keyboardState.resignFirstResponder()
