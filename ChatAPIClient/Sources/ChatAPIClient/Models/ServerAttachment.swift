@@ -18,7 +18,7 @@ public struct ServerAttachment: Codable, Hashable, Sendable {
         case location
         case file
         case image
-        case reaction
+        case reaction                
     }
 
     public let id: String

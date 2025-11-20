@@ -51,7 +51,7 @@ public enum JSONValue: Codable, Hashable, Sendable {
         }
     }
 
-    var anyValue: Any {
+    public var anyValue: Any {
         switch self {
         case .string(let s): return s
         case .number(let d): return d
@@ -61,6 +61,5 @@ public enum JSONValue: Codable, Hashable, Sendable {
         case .null:          return NSNull()
         }
     }
-    
-    
+        
 }

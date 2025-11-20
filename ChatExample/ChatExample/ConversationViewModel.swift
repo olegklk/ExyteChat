@@ -241,19 +241,14 @@ class ConversationViewModel: ObservableObject, ReactionDelegate {
             return
         }
 
-        // Create attachment of type "reaction". Use new initializer.
-//        let reactionAttachment = ServerAttachment(reactionEmoji: reaction.type.toString)
-        let reactionAttachment = ServerAttachment(
-            id: reaction.id,
-            kind: .reaction,
-            href: nil,
-            lat: nil,
-            lng: nil,
-            meta:  ["id":.string(reaction.id),
-                    "type":JSONValue.from(any:reaction.type.toString)!,
-                    "createdAt":JSONValue.from(any:ISO8601DateFormatter().string(from: reaction.createdAt))!,
-                    "messageID":JSONValue.from(any:reaction.messageID)!]
-        )
+        let type = reaction.type.toString
+        var content = ""
+        switch reaction.type {
+            case .emoji(let emoji): content = emoji
+            case .sticker(let url): content = url
+        }
+        
+        let reactionAttachment = ServerReaction(id:reaction.id, type: type, content: content).toServerAttachment()
 
         // Create server reply message with this attachment
         let reactionServerMessage = ServerMessage(
@@ -402,20 +397,26 @@ class ConversationViewModel: ObservableObject, ReactionDelegate {
                 isCurrentUser: serverMessage.sender.userId == selfUser.id
             )
             
-            // Create Reaction object
-            // Extract emoji from attachment URL
-            let emojiString = reactionAttachment.meta!["type"]
-            let newReaction = Reaction(
-                id: serverMessage.id, // Use reaction message ID as reaction ID
-                user: reactionSenderUser,
-                createdAt: serverMessage.createdAt,
-                type: .emoji(emojiString),
-                status: .sent
-            )
-            
             // Add reaction to the original message
             var originalMessage = messages[originalMessageIndex]
-            originalMessage.reactions.append(newReaction)
+            
+            // Create Reaction object
+            if let serverReaction =  ServerReaction.from(serverMessage: serverMessage) {
+                var type = ReactionType.emoji(serverReaction.content)
+                if serverReaction.type == "sticker" {
+                    type = ReactionType.sticker(serverReaction.content)
+                }
+                let newReaction = Reaction(
+                    id: serverReaction.id,
+                    user: reactionSenderUser,
+                    createdAt: serverMessage.createdAt,
+                    type: type,
+                    status: .sent
+                )
+                
+                originalMessage.reactions.append(newReaction)
+            }
+            
             messages[originalMessageIndex] = originalMessage
             
         } else {
@@ -447,8 +448,8 @@ class ConversationViewModel: ObservableObject, ReactionDelegate {
         // Convert ServerAttachment to Attachment
         let attachments: [Attachment] = serverMessage.attachments.compactMap { sa in
             guard let url = sa.url, let urlObj = URL(string: url) else { return nil }
-            // Use new AttachmentType initializer for correct creation
-            let type = AttachmentType(serverAttachmentKind: sa.type)
+            
+            let type = AttachmentType(serverAttachmentKind: sa.kind.rawValue)
             return Attachment(
                 id: UUID().uuidString,
                 thumbnail: urlObj,

@@ -15,7 +15,7 @@ extension Date {
         }()
         
     /// returns YYYY-MM for a date at monthsAgo back in time
-    static func yyyyMM(monthsAgo: Int) -> String {
+    public static func yyyyMM(monthsAgo: Int) -> String {
         let calendar = Calendar.current
         let today = Date()
         

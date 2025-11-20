@@ -7,13 +7,17 @@ import Foundation
 
 public enum ReactionType: Codable, Equatable, Hashable, Sendable {
     case emoji(String)
+    case sticker(String)
     //case sticker(Image / Giphy / Memoji)
     //case other...
     
     public var toString:String {
         switch self {
         case .emoji(let emoji):
-            return emoji
+//            return emoji
+            return "emoji"
+        case .sticker(let url):
+            return "sticker"
         }
     }
 }
@@ -33,9 +37,17 @@ public struct Reaction: Codable, Identifiable, Hashable, Sendable {
         self.status = status
     }
     
-    var emoji: String? {
+    public var emoji: String? {
         switch self.type {
-        case .emoji(let emoji): return emoji
+            case .emoji(let emoji): return emoji
+            case .sticker(let url): return ""
+        }
+    }
+    
+    public var content: String? {
+        switch self.type {
+            case .emoji(let emoji): return emoji
+            case .sticker(let url): return url
         }
     }
 }
