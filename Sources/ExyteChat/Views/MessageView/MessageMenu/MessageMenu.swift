@@ -94,6 +94,9 @@ struct MessageMenu<MainButton: View, ActionEnum: MessageMenuAction>: View {
     @State private var reactionOverviewWidth: CGFloat = .zero
     @State private var menuHeight: CGFloat = .zero
     
+    /// The size of the rendered MainButton (MessageView row)
+    @State private var mainButtonSize: CGSize = .zero
+    
     /// Controls whether or not the reaction selection view is rendered
     @State private var reactionSelectionIsVisible: Bool = true
     /// Controls whether or not the reaction overview is rendered
@@ -260,7 +263,7 @@ struct MessageMenu<MainButton: View, ActionEnum: MessageMenuAction>: View {
             }
             messageFrame = .init(
                 x: viewModel.messageFrame.origin.x + horizontalOffset,
-                y: cellFrame.maxY - (viewModel.messageFrame.height),
+                y: viewModel.messageFrame.minY,
                 width: viewModel.messageFrame.width,
                 height: viewModel.messageFrame.height
             )
@@ -332,7 +335,11 @@ struct MessageMenu<MainButton: View, ActionEnum: MessageMenuAction>: View {
         case .initial, .prepare:
             return .greatestFiniteMagnitude
         case .original:
-            return messageFrame.midY - (messageTopPadding / 2)
+            // Initial centering adjustment
+            let rowHeight = mainButtonSize.height > 0 ? mainButtonSize.height : messageFrame.height
+            let bubbleOffset = (rowHeight - messageFrame.height) / 2
+            return messageFrame.midY - bubbleOffset
+            
         case .ready:
             if case .keyboard = previousState {
                 if case .scrollView = messageMenuStyle {
@@ -355,20 +362,51 @@ struct MessageMenu<MainButton: View, ActionEnum: MessageMenuAction>: View {
             let rHeight: CGFloat = reactionSelectionIsVisible ? calculateMessageMenuHeight(including: [.reactionSelection]) : 0
             let mHeight: CGFloat = menuIsVisible ? calculateMessageMenuHeight(including: [.menu]) : 0
             let rOHeight: CGFloat = reactionOverviewIsVisible ? reactionOverviewHeight : 0
-
-            var ty: CGFloat = messageFrame.midY - (messageTopPadding / 2)
-
-            if (messageFrame.minY - rHeight) < UIApplication.safeArea.top + rOHeight {
-                let off = (UIApplication.safeArea.top + rOHeight) - (messageFrame.minY - rHeight)
-                /// We need to move the message down to make room for the views above it
+            
+            // Center alignment logic
+            // We need to align the BUBBLE (messageFrame) to its original Screen Y.
+            // The View Stack contains: [Reaction] + [Row (MainButton)] + [Menu]
+            // The Row contains the Bubble at approximately the bottom (minus bottom padding?)
+            // Since we don't know exact padding, we assume Row is somewhat centered or use mainButtonSize to offset.
+            
+            let rowHeight = mainButtonSize.height > 0 ? mainButtonSize.height : messageFrame.height
+            
+            // The "Center" of the stack is at:
+            // Y_StackCenter = Y_Top + rHeight + rowHeight/2 + mHeight/2 ??? No
+            // Stack Height = rHeight + rowHeight + mHeight.
+            // Center = Y_Top + StackHeight/2.
+            
+            // We want the Bubble Center to be at messageFrame.midY.
+            // Bubble Center relative to Row Top?
+            // Assume Bubble is centered vertially in the Row for safety, OR offset it.
+            // If "Ghost is lower", it means Row Center is higher than Bubble Center.
+            // Bubble Y = Row Y + (RowH - BubbleH) (If bottom aligned).
+            // Bubble Center = Row Y + (RowH - BubbleH) + BubbleH/2 = Row Y + RowH - BubbleH/2.
+            
+            // Global Calculation:
+            // Stack Top Y = verticalOffset - (rHeight + rowHeight + mHeight)/2
+            // Bubble Center Y = Stack Top Y + rHeight + (RowH - BubbleH/2)  <-- Assuming bottom alignment
+            
+            // Target: Bubble Center Y = messageFrame.midY
+            // messageFrame.midY = (verticalOffset - (rHeight + rowHeight + mHeight)/2) + rHeight + rowHeight - messageFrame.height/2
+            // Solve for verticalOffset:
+            // verticalOffset = messageFrame.midY - rHeight - rowHeight + messageFrame.height/2 + (rHeight + rowHeight + mHeight)/2
+            // verticalOffset = messageFrame.midY + messageFrame.height/2 + mHeight/2 - rHeight/2 - rowHeight/2
+            
+            var ty: CGFloat = messageFrame.midY + (messageFrame.height / 2) + (mHeight / 2) - (rHeight / 2) - (rowHeight / 2)
+            
+            // Boundary checks need to be adjusted for total height
+            let topOfStack = ty - calculateMessageMenuHeight(including: [.message, .reactionSelection, .menu])/2
+            
+            if topOfStack < UIApplication.safeArea.top + rOHeight {
+                let off = (UIApplication.safeArea.top + rOHeight) - topOfStack
                 ty += off
-            } else if messageFrame.maxY + mHeight > chatViewFrame.height - UIApplication.safeArea.bottom {
-                let off = messageFrame.maxY + mHeight + UIApplication.safeArea.bottom - chatViewFrame.height
-                /// We need to move the message up to make room for the menu buttons below it
+            } else if (ty + calculateMessageMenuHeight(including: [.message, .reactionSelection, .menu])/2) > chatViewFrame.height - UIApplication.safeArea.bottom {
+                let off = (ty + calculateMessageMenuHeight(including: [.message, .reactionSelection, .menu])/2) + UIApplication.safeArea.bottom - chatViewFrame.height
                 ty -= off
             }
             
-            return ty + (mHeight / 2) - (rHeight / 2)
+            return ty
             
         case .keyboard:
             /// Store our vertical offset
@@ -430,7 +468,8 @@ struct MessageMenu<MainButton: View, ActionEnum: MessageMenuAction>: View {
         for view in Set(views) {
             switch view {
             case .message:
-                height += messageFrame.height + messageTopPadding
+                // Use the actual row size if available, otherwise fallback to bubble height
+                height += (mainButtonSize.height > 0 ? mainButtonSize.height : messageFrame.height)
             case .menu:
                 height += menuStyle.height(menuHeight) + verticalSpacing
                 if case .scrollView = menuStyle { height += 8 }
@@ -476,6 +515,7 @@ struct MessageMenu<MainButton: View, ActionEnum: MessageMenuAction>: View {
             }
             
             mainButton()
+                .sizeGetter($mainButtonSize) // Capture full row size
                 .background(Color.blue.opacity(0.5)) // DEBUG: Blue background for Message Ghost
                 .frame(maxWidth: chatViewFrame.width - UIApplication.safeArea.leading - UIApplication.safeArea.trailing)
                 .offset(x: (alignment == .right) ? UIApplication.safeArea.trailing : -UIApplication.safeArea.leading)
