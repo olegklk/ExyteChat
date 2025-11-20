@@ -335,10 +335,7 @@ struct MessageMenu<MainButton: View, ActionEnum: MessageMenuAction>: View {
         case .initial, .prepare:
             return .greatestFiniteMagnitude
         case .original:
-            // Initial centering adjustment
-            let rowHeight = mainButtonSize.height > 0 ? mainButtonSize.height : messageFrame.height
-            let bubbleOffset = (rowHeight - messageFrame.height) / 2
-            return messageFrame.midY - bubbleOffset
+            return messageFrame.midY
             
         case .ready:
             if case .keyboard = previousState {
@@ -363,47 +360,31 @@ struct MessageMenu<MainButton: View, ActionEnum: MessageMenuAction>: View {
             let mHeight: CGFloat = menuIsVisible ? calculateMessageMenuHeight(including: [.menu]) : 0
             let rOHeight: CGFloat = reactionOverviewIsVisible ? reactionOverviewHeight : 0
             
-            // Center alignment logic
-            // We need to align the BUBBLE (messageFrame) to its original Screen Y.
-            // The View Stack contains: [Reaction] + [Row (MainButton)] + [Menu]
-            // The Row contains the Bubble at approximately the bottom (minus bottom padding?)
-            // Since we don't know exact padding, we assume Row is somewhat centered or use mainButtonSize to offset.
+            // Use the standard message frame (the bubble) as the anchor.
+            // Calculate centering offset based on the extra elements (Reaction above, Menu below).
+            // Offset = (Menu Height - Reaction Height) / 2
+            var ty: CGFloat = messageFrame.midY + (mHeight / 2) - (rHeight / 2)
             
-            let rowHeight = mainButtonSize.height > 0 ? mainButtonSize.height : messageFrame.height
+            // Calculate the total height of the content being displayed
+            // We use mainButtonSize for the message row height if available, otherwise fallback
+            let messageRowHeight = mainButtonSize.height > 0 ? mainButtonSize.height : messageFrame.height
+            let totalContentHeight = rHeight + messageRowHeight + mHeight
             
-            // The "Center" of the stack is at:
-            // Y_StackCenter = Y_Top + rHeight + rowHeight/2 + mHeight/2 ??? No
-            // Stack Height = rHeight + rowHeight + mHeight.
-            // Center = Y_Top + StackHeight/2.
+            // Boundary Checks
+            let topOfStack = ty - (totalContentHeight / 2)
+            let bottomOfStack = ty + (totalContentHeight / 2)
             
-            // We want the Bubble Center to be at messageFrame.midY.
-            // Bubble Center relative to Row Top?
-            // Assume Bubble is centered vertially in the Row for safety, OR offset it.
-            // If "Ghost is lower", it means Row Center is higher than Bubble Center.
-            // Bubble Y = Row Y + (RowH - BubbleH) (If bottom aligned).
-            // Bubble Center = Row Y + (RowH - BubbleH) + BubbleH/2 = Row Y + RowH - BubbleH/2.
+            let safeTop = UIApplication.safeArea.top + rOHeight
+            let safeBottom = chatViewFrame.height - UIApplication.safeArea.bottom
             
-            // Global Calculation:
-            // Stack Top Y = verticalOffset - (rHeight + rowHeight + mHeight)/2
-            // Bubble Center Y = Stack Top Y + rHeight + (RowH - BubbleH/2)  <-- Assuming bottom alignment
-            
-            // Target: Bubble Center Y = messageFrame.midY
-            // messageFrame.midY = (verticalOffset - (rHeight + rowHeight + mHeight)/2) + rHeight + rowHeight - messageFrame.height/2
-            // Solve for verticalOffset:
-            // verticalOffset = messageFrame.midY - rHeight - rowHeight + messageFrame.height/2 + (rHeight + rowHeight + mHeight)/2
-            // verticalOffset = messageFrame.midY + messageFrame.height/2 + mHeight/2 - rHeight/2 - rowHeight/2
-            
-            var ty: CGFloat = messageFrame.midY + (messageFrame.height / 2) + (mHeight / 2) - (rHeight / 2) - (rowHeight / 2)
-            
-            // Boundary checks need to be adjusted for total height
-            let topOfStack = ty - calculateMessageMenuHeight(including: [.message, .reactionSelection, .menu])/2
-            
-            if topOfStack < UIApplication.safeArea.top + rOHeight {
-                let off = (UIApplication.safeArea.top + rOHeight) - topOfStack
-                ty += off
-            } else if (ty + calculateMessageMenuHeight(including: [.message, .reactionSelection, .menu])/2) > chatViewFrame.height - UIApplication.safeArea.bottom {
-                let off = (ty + calculateMessageMenuHeight(including: [.message, .reactionSelection, .menu])/2) + UIApplication.safeArea.bottom - chatViewFrame.height
-                ty -= off
+            if topOfStack < safeTop {
+                // If the top of the content is above the safe area, push it down
+                let difference = safeTop - topOfStack
+                ty += difference
+            } else if bottomOfStack > safeBottom {
+                // If the bottom of the content is below the safe area, push it up
+                let difference = bottomOfStack - safeBottom
+                ty -= difference
             }
             
             return ty
@@ -507,7 +488,6 @@ struct MessageMenu<MainButton: View, ActionEnum: MessageMenuAction>: View {
                     trailingPadding: trailingPadding,
                     reactionClosure: handleOnReaction
                 )
-                .background(Color.green.opacity(0.5)) // DEBUG: Green background for Reaction Selection
                 .maxHeightGetter($reactionSelectionHeight)
                 .padding(.bottom, reactionSelectionBottomPadding)
                 .transition(defaultTransition)
@@ -516,18 +496,15 @@ struct MessageMenu<MainButton: View, ActionEnum: MessageMenuAction>: View {
             
             mainButton()
                 .sizeGetter($mainButtonSize) // Capture full row size
-                .background(Color.blue.opacity(0.5)) // DEBUG: Blue background for Message Ghost
                 .frame(maxWidth: chatViewFrame.width - UIApplication.safeArea.leading - UIApplication.safeArea.trailing)
                 .offset(x: (alignment == .right) ? UIApplication.safeArea.trailing : -UIApplication.safeArea.leading)
                 .allowsHitTesting(false)
             
             if menuIsVisible {
                 menuView()
-                    .background(Color.red.opacity(0.5)) // DEBUG: Red background for Menu Actions
                     .transition(defaultTransition)
             }
         }
-        .background(Color.yellow.opacity(0.5)) // DEBUG: Yellow background for entire VStack container
         .overflowContainer(messageMenuStyle, viewState: viewState, onTap: {
             if viewState == .keyboard {
                 keyboardState.resignFirstResponder()
