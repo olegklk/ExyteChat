@@ -468,6 +468,7 @@ struct MessageMenu<MainButton: View, ActionEnum: MessageMenuAction>: View {
                     trailingPadding: trailingPadding,
                     reactionClosure: handleOnReaction
                 )
+                .background(Color.green.opacity(0.5)) // DEBUG: Green background for Reaction Selection
                 .maxHeightGetter($reactionSelectionHeight)
                 .padding(.bottom, reactionSelectionBottomPadding)
                 .transition(defaultTransition)
@@ -475,15 +476,18 @@ struct MessageMenu<MainButton: View, ActionEnum: MessageMenuAction>: View {
             }
             
             mainButton()
+                .background(Color.blue.opacity(0.5)) // DEBUG: Blue background for Message Ghost
                 .frame(maxWidth: chatViewFrame.width - UIApplication.safeArea.leading - UIApplication.safeArea.trailing)
                 .offset(x: (alignment == .right) ? UIApplication.safeArea.trailing : -UIApplication.safeArea.leading)
                 .allowsHitTesting(false)
             
             if menuIsVisible {
                 menuView()
+                    .background(Color.red.opacity(0.5)) // DEBUG: Red background for Menu Actions
                     .transition(defaultTransition)
             }
         }
+        .background(Color.yellow.opacity(0.5)) // DEBUG: Yellow background for entire VStack container
         .overflowContainer(messageMenuStyle, viewState: viewState, onTap: {
             if viewState == .keyboard {
                 keyboardState.resignFirstResponder()
