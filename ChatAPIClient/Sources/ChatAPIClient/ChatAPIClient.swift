@@ -224,7 +224,7 @@ private final class APIEventMonitor: EventMonitor, Sendable {
         #endif
     }
     
-    func request(_ request: Request, didParseResponse response: DataResponse<Data?, AFError>) { //я получаю результат запроса от сервера успешно, судя по поведению приложения, но странное дело - почему-то этот метод никогда не вызывается, может есть другой делегированный метод который нужно реализовать чтобы увидеть вывод ответа сервера в логах AI!
+    func request<Value>(_ request: DataRequest, didParseResponse response: DataResponse<Value, AFError>) {
         #if DEBUG
         let httpMethod = request.request?.httpMethod ?? "UNKNOWN"
         let url = request.request?.url?.absoluteString ?? "UNKNOWN"
