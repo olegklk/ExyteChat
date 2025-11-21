@@ -521,10 +521,16 @@ class ConversationViewModel: ObservableObject, ReactionDelegate {
     ///   - message: The message that was reacted to.
     ///   - reaction: Created draft reaction to send to server.
     nonisolated func didReact(to message: Message, reaction: DraftReaction) {
-        let isUnreact = true //вычисли свойство isUnreact которое будет true только если выполнятся следующие условия: message.reactions содержит элемент у которого type совпадает с переданным параметром reaction.type и при этом свойство user.isCurrentUser = true AI!
+        
+        let existingReaction = message.reactions.first { $0.type == reaction.type && $0.user.isCurrentUser }
+        let isUnreact = existingReaction != nil
+        
         Task {
-            if isUnreact {
-                await removeReaction(reaction: reaction, for: message.id)
+            if isUnreact, let existingReaction {
+                // To remove a reaction we need to construct a DraftReaction that points to the original ID
+                // because removeReaction uses the ID to find the attachment/message to delete.
+                let reactionToRemove = DraftReaction(id: existingReaction.id, messageID: message.id, createdAt: Date(), type: reaction.type)
+                await removeReaction(reaction: reactionToRemove, for: message.id)
             }
             else {
                 await addReaction(reaction: reaction, for: message.id)
