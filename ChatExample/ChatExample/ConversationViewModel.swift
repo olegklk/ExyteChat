@@ -277,7 +277,11 @@ class ConversationViewModel: ObservableObject, ReactionDelegate {
             return
         }
 
-        //создай let messageId со значением равным id сообщенияимеющего свойство replyTo причем такое у которого есть attachment с ID равным reaction.id AI!
+        guard let foundMessage = conversation.messages.first(where: {
+            $0.replyTo != nil &&
+            $0.attachments.contains(where: { $0.id == reaction.id })
+        }) else { return }
+        let messageId = foundMessage.id
 
         // Send as a regular message via existing mechanism
         SocketIOManager.shared.deleteMessage(conversationId: conversationId, batchId: batchId, messageId: messageId)
