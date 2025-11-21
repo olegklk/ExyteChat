@@ -82,19 +82,16 @@ class ConversationViewModel: ObservableObject, ReactionDelegate {
         }
     }
     
-    private func updateMessages(_ serverMessages: [ServerMessage]) {
+    private func updateMessages(_ serverMessages: [ServerMessage]?) {
         
-        conversation.mergeMessages(serverMessages)
+        if let ms = serverMessages { conversation.mergeMessages(ms) }
         
-        var msgs : [Message] = conversation.messages.map(self.convertServerMessageToChatMessage)
+        self.messages = conversation.messages.compactMap(self.convertToMessage) //skips reactions, hence compactMap
         
-        // Re-init empty reply bodies
-        for i in msgs.indices {
-            if let reply = msgs[i].replyMessage, reply.text.isEmpty {
-                msgs[i].replyMessage = self.makeReplyMessage(for: reply.id)
-            }
-        }
-        self.messages = msgs
+        processRepliesIfAny()
+        
+        conversation.messages.forEach(self.processReactionIfAny)
+        
         
     }
     
@@ -236,13 +233,13 @@ class ConversationViewModel: ObservableObject, ReactionDelegate {
             print("Error: Cannot send reaction, batchId is missing.")
             return
         }
-        guard let selfProfile = selfProfile else {
+        guard let selfProfile else {
             print("Error: Cannot send reaction, user profile is missing.")
             return
         }
 
         let type = reaction.type.toString
-        var content = reaction.type.content
+        let content = reaction.type.content
         
         let reactionAttachment = ServerReaction(id:reaction.id, type: type, content: content).toServerAttachment()
 
@@ -272,26 +269,20 @@ class ConversationViewModel: ObservableObject, ReactionDelegate {
             print("Error: Cannot send reaction, batchId is missing.")
             return
         }
-        guard let selfProfile = selfProfile else {
-            print("Error: Cannot send reaction, user profile is missing.")
-            return
-        }
 
-        guard let foundMessage = conversation.messages.first(where: {
-            $0.replyTo != nil &&
+        guard let replyMessage = conversation.messages.first(where: {
+            $0.replyTo == messageId &&
             $0.attachments.contains(where: { $0.id == reaction.id })
         }) else { return }
-        let messageId = foundMessage.id
 
         // Send as a regular message via existing mechanism
-        SocketIOManager.shared.deleteMessage(conversationId: conversationId, batchId: batchId, messageId: messageId)
+        SocketIOManager.shared.deleteMessage(conversationId: conversationId, batchId: batchId, messageId: replyMessage.id)
     }
 
 
     func onAppear() {
         
-        let msgs : [Message] = conversation.messages.map(self.convertServerMessageToChatMessage)
-        self.messages = msgs
+        self.updateMessages([])
         
         self.conversationURL = self.conversation.url()
         
@@ -299,8 +290,6 @@ class ConversationViewModel: ObservableObject, ReactionDelegate {
         
         SocketIOManager.shared.setAuthData( participants: conversation.participants, chatType: conversation.type, conversationId: conversationId)
         SocketIOManager.shared.connect()
-                
-//        Task { await loadChatHistory() }
         
     }
     
@@ -392,61 +381,17 @@ class ConversationViewModel: ObservableObject, ReactionDelegate {
 
     /// Handles incoming message, determining if it is a reaction.
     private func handleIncomingMessage(_ serverMessage: ServerMessage) {
-        // Check if this is a reaction message.
-        // Condition: has replyTo field and the first attachment has type .reaction
-        if let replyToId = serverMessage.replyTo,
-           let reactionAttachment = serverMessage.attachments.first,
-           reactionAttachment.kind == .reaction {
-            
-            // This is a reaction message. No need to add it to the general list.
-            // Instead, find the original message and add the reaction to it.
-            
-            guard let originalMessageIndex = messages.firstIndex(where: { $0.id == replyToId }) else {
-                // If original message is not found (e.g. it's old and not loaded),
-                // just ignore the reaction.
-                print("Warning: Received a reaction for a message not in the local list: \(replyToId)")
-                return
-            }
-            
-            // Create User object for reaction
-            guard let selfUser = selfProfile else { return }
-            let reactionSenderUser = User(
-                id: serverMessage.sender.userId,
-                name: serverMessage.sender.displayName,
-                avatarURL: nil,
-                isCurrentUser: serverMessage.sender.userId == selfUser.id
-            )
-            
-            // Add reaction to the original message
-            var originalMessage = messages[originalMessageIndex]
-            
-            // Create Reaction object
-            if let serverReaction =  ServerReaction.from(serverMessage: serverMessage) {
-                var type = ReactionType.emoji(serverReaction.content)
-                if serverReaction.type == "sticker" {
-                    type = ReactionType.sticker(serverReaction.content)
-                }
-                let newReaction = Reaction(
-                    id: serverReaction.id,
-                    user: reactionSenderUser,
-                    createdAt: serverMessage.createdAt,
-                    type: type,
-                    status: .sent
-                )
-                
-                originalMessage.reactions.append(newReaction)
-            }
-            
-            messages[originalMessageIndex] = originalMessage
-            
-        } else {
-            // This is a regular message. Add it in the standard way.
-            self.updateMessages([serverMessage])
-        }
+        self.updateMessages([serverMessage])
     }
     
-    private func convertServerMessageToChatMessage(_ serverMessage: ServerMessage) -> Message {
+    private func convertToMessage(_ serverMessage: ServerMessage) -> Message? {
         
+        // Check if this is not a reaction message.
+        guard serverMessage.reactionTo() == nil else {
+            // This is a reaction message. No need to add it to the general list.
+            return nil
+        }
+                
         // Convert SenderRef to User
         var user = User(
             id: serverMessage.sender.userId,
@@ -480,7 +425,7 @@ class ConversationViewModel: ObservableObject, ReactionDelegate {
                 fullCacheKey: nil
             )
         }
-
+        
         return Message(
             id: serverMessage.id,
             user: user,
@@ -492,7 +437,71 @@ class ConversationViewModel: ObservableObject, ReactionDelegate {
             replyMessage: makeReplyMessage(for: serverMessage.replyTo)
         )
     }
+    
+    //needs self.messages [Message] already created from conversation.messages [ServerMessage]
+    private func processReactionIfAny(_ serverMessage: ServerMessage) {
+        guard let selfProfile else { return }
+        
+        // Check if this is a reaction message.
+        guard let reactsToId = serverMessage.reactionTo() else { return }
+            
+        // This is a reaction message, find the original message and add the reaction to it.
+        
+        guard let serverReaction =  ServerReaction.from(serverMessage: serverMessage) else { return }
+                
+        guard let targetMessageIndex = messages.firstIndex(where: { $0.id == reactsToId }) else {
+            // If original message is not found (e.g. it's old and not loaded),
+            // just ignore the reaction.
+            return
+        }
+        
+        // Add reaction to the target message
+        var targetMessage = messages[targetMessageIndex]
+        
+        var type = ReactionType.emoji(serverReaction.content)
+        if serverReaction.type == "sticker" {
+            type = ReactionType.sticker(serverReaction.content)
+        }
+                
+        let newReaction = Reaction(
+            id: serverReaction.id,
+            user: User(
+                id: serverMessage.sender.userId,
+                name: serverMessage.sender.displayName,
+                avatarURL: nil,
+                type: (serverMessage.sender.userId == selfProfile.id) ? .current : .other
+            ),
+            createdAt: serverMessage.createdAt,
+            type: type,
+            status: .sent
+        )
+        
+        targetMessage.reactions.append(newReaction)
+        messages[targetMessageIndex] = targetMessage
+        
+    }
 
+    // Fills empty reply references
+    /////////////////////
+    // Chat:
+    //  messageA
+    //    || messageB.replyMessage ref. to messageA (as ReplyMessage)  messageB.replyMessage.text = messageA.text
+    //       messageB.text = its own text
+    /////////////////////
+    private func processRepliesIfAny() {
+        var msgs = self.messages
+        
+        for i in msgs.indices {
+            if let reply = msgs[i].replyMessage, reply.text.isEmpty {
+                msgs[i].replyMessage = self.makeReplyMessage(for: reply.id)
+            }
+        }
+        self.messages = msgs
+    }
+
+    //among loaded messages finds target message referenced in replyTo and returns it as ReplyMessage
+    //if the target message is not found (not loaded because user didn't scroll up that far)
+    //then an empty ReplyMessage is returned and will be processed later on every call to updateMessages()
     private func makeReplyMessage(for replyTo: String?) -> ReplyMessage? {
         guard let replyId = replyTo else { return nil }
         guard let ref = messages.first(where: { $0.id == replyId }) else {
@@ -512,8 +521,14 @@ class ConversationViewModel: ObservableObject, ReactionDelegate {
     ///   - message: The message that was reacted to.
     ///   - reaction: Created draft reaction to send to server.
     nonisolated func didReact(to message: Message, reaction: DraftReaction) {
+        let isUnreact = true //вычисли свойство isUnreact которое будет true только если выполнятся следующие условия: message.reactions содержит элемент у которого type совпадает с переданным параметром reaction.type и при этом свойство user.isCurrentUser = true AI!
         Task {
-            await addReaction(reaction: reaction, for: message.id)
+            if isUnreact {
+                await removeReaction(reaction: reaction, for: message.id)
+            }
+            else {
+                await addReaction(reaction: reaction, for: message.id)
+            }
         }
     }
 
@@ -525,10 +540,10 @@ class ConversationViewModel: ObservableObject, ReactionDelegate {
 //    }
 //
 //    /// Determines if reaction list should be shown under the message.
-    nonisolated func shouldShowOverview(for message: Message) -> Bool {
-        // Show overview if message has at least one reaction.
-        return !message.reactions.isEmpty
-    }
+//    nonisolated func shouldShowOverview(for message: Message) -> Bool {
+//        // Show overview if message has at least one reaction.
+//        return !message.reactions.isEmpty
+//    }
 
     /// Determines if emoji search is available when selecting reaction.
     nonisolated func allowEmojiSearch(for message: Message) -> Bool {
