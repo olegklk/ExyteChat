@@ -8,6 +8,7 @@ import SwiftUI
 struct ReactionSelectionView: View {
     
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.chatTheme) var theme
     
     static let maxSelectionRowWidth: CGFloat = 400
 
@@ -144,7 +145,7 @@ struct ReactionSelectionView: View {
                 ZStack {
                     Image(systemName: "face.smiling")
                         .imageScale(.large)
-                        .foregroundStyle(selectedEmoji.isEmpty ? Color.secondary.opacity(0.35) : Color.clear)
+                        .foregroundStyle(selectedEmoji.isEmpty ? theme.colors.mainBG.opacity(0.35) : Color.clear)
                 }
             )
             .frame(width: bubbleDiameter, height: bubbleDiameter)
@@ -258,7 +259,7 @@ struct ReactionSelectionView: View {
     }
     
     private func getEmojis() -> [String] {
-        if let customReactions, !customReactions.isEmpty { return customReactions.map { $0.toString } }
+        if let customReactions, !customReactions.isEmpty { return customReactions.map { $0.content } }
         return defaultEmojis()
     }
     

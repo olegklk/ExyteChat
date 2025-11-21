@@ -52,10 +52,7 @@ public struct Reaction: Codable, Identifiable, Hashable, Sendable {
     }
     
     public var content: String? {
-        switch self.type {
-            case .emoji(let emoji): return emoji
-            case .sticker(let url): return url
-        }
+        return self.type.content
     }
 }
 

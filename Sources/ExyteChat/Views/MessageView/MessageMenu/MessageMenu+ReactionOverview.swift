@@ -16,7 +16,7 @@ struct ReactionOverview: View {
     let inScrollView: Bool
 
     struct SortedReaction: Identifiable {
-        var id: String { reaction.toString }
+        var id: String { reaction.content }
         let reaction: ReactionType
         let users: [User]
     }
@@ -49,7 +49,7 @@ struct ReactionOverview: View {
     @ViewBuilder
     func reactionUserView(reaction: SortedReaction) -> some View {
         VStack {
-            Text(reaction.reaction.toString)
+            Text(reaction.reaction.content)
                 .font(.title3)
                 .background(
                     emojiBackgroundView()
