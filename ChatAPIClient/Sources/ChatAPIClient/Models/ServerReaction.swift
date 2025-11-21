@@ -15,7 +15,6 @@ public struct ServerReaction: Codable, Hashable, Sendable {
     /// Creates ServerMessage for sending to the server
     public func toServerAttachment() -> ServerAttachment {
         let meta: [String: JSONValue] = [
-            "id": .string(id),
             "type": .string(type),
             "content": .string(content)
         ]
