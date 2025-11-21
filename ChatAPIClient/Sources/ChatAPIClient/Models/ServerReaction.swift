@@ -44,7 +44,7 @@ public struct ServerReaction: Codable, Hashable, Sendable {
               let content = meta["content"]?.anyValue as? String
         else { return nil }
         
-        let id = meta["id"]?.anyValue as? String ?? serverMessage.id
+        let id = attachment.id
         var date = serverMessage.createdAt
 
         return ServerReaction(
