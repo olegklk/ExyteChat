@@ -20,6 +20,13 @@ public enum ReactionType: Codable, Equatable, Hashable, Sendable {
             return "sticker"
         }
     }
+    
+    public var content:String {
+        switch self {
+            case .emoji(let emoji): return emoji
+            case .sticker(let url): return url
+        }
+    }
 }
 
 public struct Reaction: Codable, Identifiable, Hashable, Sendable {
