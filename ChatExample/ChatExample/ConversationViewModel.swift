@@ -510,11 +510,11 @@ class ConversationViewModel: ObservableObject, ReactionDelegate {
 //        return !message.reactions.isEmpty
 //    }
 //
-//    /// Determines if emoji search is available when selecting reaction.
-//    func allowEmojiSearch(for message: Message) -> Bool {
-//        // Allow emoji search.
-//        return true
-//    }
+    /// Determines if emoji search is available when selecting reaction.
+    nonisolated func allowEmojiSearch(for message: Message) -> Bool {
+        // Allow emoji search.
+        return true
+    }
 //
 //    /// Provides a set of quick reactions to be shown to the user.
 //    func reactions(for message: Message) -> [ReactionType]? {
