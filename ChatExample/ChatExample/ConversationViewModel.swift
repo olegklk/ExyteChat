@@ -86,7 +86,7 @@ class ConversationViewModel: ObservableObject, ReactionDelegate {
         
         if let ms = serverMessages { conversation.mergeMessages(ms) }
         
-        self.messages = conversation.messages.compactMap(self.convertToMessage) //skips reactions, hence compactMap
+        self.messages = conversation.messages.compactMap(self.convertToChatMessage) //skips reactions, hence compactMap
         
         processRepliesIfAny()
         
@@ -262,9 +262,9 @@ class ConversationViewModel: ObservableObject, ReactionDelegate {
     
     /// Handles removing a reaction to a message by deleting a reply message
     /// - Parameters:
-    ///   - reaction: DraftReaction object describing the reaction.
+    ///   - reactionId: the reactionId to delete.
     ///   - messageId: ID of the message being reacted to.
-    func removeReaction(reaction: DraftReaction, for messageId: String) async {
+    func removeReaction(reactionId: String, for messageId: String) async {
         guard let batchId = conversation.batchId else {
             print("Error: Cannot send reaction, batchId is missing.")
             return
@@ -272,7 +272,7 @@ class ConversationViewModel: ObservableObject, ReactionDelegate {
 
         guard let replyMessage = conversation.messages.first(where: {
             $0.replyTo == messageId &&
-            $0.attachments.contains(where: { $0.id == reaction.id })
+            $0.attachments.contains(where: { $0.id == reactionId })
         }) else { return }
 
         // Send as a regular message via existing mechanism
@@ -330,7 +330,7 @@ class ConversationViewModel: ObservableObject, ReactionDelegate {
             guard let self = self else { return }
             
             DispatchQueue.main.async {
-                self.handleIncomingMessage(serverMessage)
+                self.updateMessages([serverMessage])
             }
         }
         
@@ -347,9 +347,7 @@ class ConversationViewModel: ObservableObject, ReactionDelegate {
                     self.conversationURL = self.conversation.url()
                 }
                 if isHistoryLoaded {
-                    for serverMessage in newMessages {
-                        self.handleIncomingMessage(serverMessage)
-                    }
+                    self.updateMessages(newMessages)
                 }
                 else {
                     Task {
@@ -363,32 +361,34 @@ class ConversationViewModel: ObservableObject, ReactionDelegate {
         SocketIOManager.shared.onMessageEdited { [weak self] messageId, newText in
             guard let self = self else { return }
             DispatchQueue.main.async {
-                if let idx = self.messages.firstIndex(where: { $0.id == messageId }) {
-                    var msg = self.messages[idx]
-                    msg.text = newText ?? msg.text
-                    self.messages[idx] = msg
+                if var msg = self.conversation.messages.first(where: { $0.id == messageId }) {
+                    msg.text = newText
+                    self.updateMessages([msg])
                 }
             }
         }
         
         // Listen for deleted messages
         SocketIOManager.shared.onMessageDeleted { [weak self] messageId in
+            guard let self = self else { return }
+            //could be deletion of a reaction message, hence needs processing of all stored messages
             DispatchQueue.main.async {
-                self?.messages.removeAll { $0.id == messageId }
+                self.conversation.removeMessageById(messageId)
+                self.updateMessages([])
             }
         }
     }
 
-    /// Handles incoming message, determining if it is a reaction.
-    private func handleIncomingMessage(_ serverMessage: ServerMessage) {
-        self.updateMessages([serverMessage])
-    }
-    
-    private func convertToMessage(_ serverMessage: ServerMessage) -> Message? {
+    private func convertToChatMessage(_ serverMessage: ServerMessage) -> Message? {
         
         // Check if this is not a reaction message.
         guard serverMessage.reactionTo() == nil else {
             // This is a reaction message. No need to add it to the general list.
+            return nil
+        }
+        
+        guard !serverMessage.isSoftDeleted() else {
+            // For now backend does not filter out deleted messages adding deletedAt attribute only
             return nil
         }
                 
@@ -440,6 +440,12 @@ class ConversationViewModel: ObservableObject, ReactionDelegate {
     
     //needs self.messages [Message] already created from conversation.messages [ServerMessage]
     private func processReactionIfAny(_ serverMessage: ServerMessage) {
+        
+        guard !serverMessage.isSoftDeleted() else {
+            // For now backend does not filter out deleted messages adding deletedAt attribute only ("soft delete")
+            return
+        }
+        
         guard let selfProfile else { return }
         
         // Check if this is a reaction message.
@@ -523,14 +529,10 @@ class ConversationViewModel: ObservableObject, ReactionDelegate {
     nonisolated func didReact(to message: Message, reaction: DraftReaction) {
         
         let existingReaction = message.reactions.first { $0.type == reaction.type && $0.user.isCurrentUser }
-        let isUnreact = existingReaction != nil
         
         Task {
-            if isUnreact, let existingReaction {
-                // To remove a reaction we need to construct a DraftReaction that points to the original ID
-                // because removeReaction uses the ID to find the attachment/message to delete.
-                let reactionToRemove = DraftReaction(id: existingReaction.id, messageID: message.id, createdAt: Date(), type: reaction.type)
-                await removeReaction(reaction: reactionToRemove, for: message.id)
+            if  let existingReaction {
+                await removeReaction(reactionId: existingReaction.id, for: message.id)
             }
             else {
                 await addReaction(reaction: reaction, for: message.id)

@@ -38,6 +38,12 @@ public struct Conversation: Codable, Identifiable, Hashable, Sendable {
         self.messages = messages.sorted { $0.createdAt < $1.createdAt }
     }
     
+    public mutating func removeMessageById(_ messageId: String) {
+        if let idx = self.messages.firstIndex(where: { $0.id == messageId }) {
+            self.messages.remove(at: idx)
+        }
+    }
+    
     public mutating func mergeMessages(_ messages: [ServerMessage]) {
         var byId = Dictionary(uniqueKeysWithValues: self.messages.map { ($0.id, $0) })
         for m in messages {

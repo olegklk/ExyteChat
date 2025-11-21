@@ -3,7 +3,7 @@ import Foundation
 public struct ServerMessage: Codable, Identifiable, Hashable, Sendable {
     public let id: String
     public let sender: SenderRef
-    public let text: String?
+    public var text: String?
     public let attachments: [ServerAttachment]
     public let replyTo: String?
     public let expiresAt: Date?
@@ -96,6 +96,21 @@ public struct ServerMessage: Codable, Identifiable, Hashable, Sendable {
         } else {
             self.attachments = []
         }
+    }
+    
+    //return messageId this message is reacting to if any
+    // Condition: has replyTo field and the first attachment has type .reaction
+    public func reactionTo() -> String? {
+        guard let replyToId = replyTo,
+           let reactionAttachment = attachments.first,
+              reactionAttachment.kind == .reaction else { return nil}
+        
+        return replyToId
+    }
+    //return true if message marked as softDelete on backend
+    // Condition: has deletedAt field
+    public func isSoftDeleted() -> Bool {
+        return deletedAt != nil
     }
 }
 
