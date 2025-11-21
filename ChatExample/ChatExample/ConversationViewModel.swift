@@ -231,7 +231,7 @@ class ConversationViewModel: ObservableObject, ReactionDelegate {
     /// - Parameters:
     ///   - reaction: DraftReaction object describing the reaction.
     ///   - messageId: ID of the message being reacted to.
-    func handleReaction(reaction: DraftReaction, for messageId: String) async {
+    func addReaction(reaction: DraftReaction, for messageId: String) async {
         guard let batchId = conversation.batchId else {
             print("Error: Cannot send reaction, batchId is missing.")
             return
@@ -242,11 +242,7 @@ class ConversationViewModel: ObservableObject, ReactionDelegate {
         }
 
         let type = reaction.type.toString
-        var content = ""
-        switch reaction.type {
-            case .emoji(let emoji): content = emoji
-            case .sticker(let url): content = url
-        }
+        var content = reaction.type.content
         
         let reactionAttachment = ServerReaction(id:reaction.id, type: type, content: content).toServerAttachment()
 
@@ -265,6 +261,26 @@ class ConversationViewModel: ObservableObject, ReactionDelegate {
 
         // Send as a regular message via existing mechanism
         SocketIOManager.shared.sendMessage(conversationId: conversationId, batchId: batchId, message: reactionServerMessage)
+    }
+    
+    /// Handles removing a reaction to a message by deleting a reply message
+    /// - Parameters:
+    ///   - reaction: DraftReaction object describing the reaction.
+    ///   - messageId: ID of the message being reacted to.
+    func removeReaction(reaction: DraftReaction, for messageId: String) async {
+        guard let batchId = conversation.batchId else {
+            print("Error: Cannot send reaction, batchId is missing.")
+            return
+        }
+        guard let selfProfile = selfProfile else {
+            print("Error: Cannot send reaction, user profile is missing.")
+            return
+        }
+
+        //создай let messageId со значением равным id сообщенияимеющего свойство replyTo причем такое у которого есть attachment с ID равным reaction.id AI!
+
+        // Send as a regular message via existing mechanism
+        SocketIOManager.shared.deleteMessage(conversationId: conversationId, batchId: batchId, messageId: messageId)
     }
 
 
@@ -493,39 +509,47 @@ class ConversationViewModel: ObservableObject, ReactionDelegate {
     ///   - reaction: Created draft reaction to send to server.
     nonisolated func didReact(to message: Message, reaction: DraftReaction) {
         Task {
-            await handleReaction(reaction: reaction, for: message.id)
+            await addReaction(reaction: reaction, for: message.id)
         }
     }
 
     /// Determines if reactions can be added to this message.
-//    func canReact(to message: Message) -> Bool {
+//    nonisolated func canReact(to message: Message) -> Bool {
 //        // Allow reacting to any messages for now.
 //        // Complex logic can be added here (e.g., forbidding old messages).
 //        return true
 //    }
 //
 //    /// Determines if reaction list should be shown under the message.
-//    func shouldShowOverview(for message: Message) -> Bool {
-//        // Show overview if message has at least one reaction.
-//        return !message.reactions.isEmpty
-//    }
-//
+    nonisolated func shouldShowOverview(for message: Message) -> Bool {
+        // Show overview if message has at least one reaction.
+        return !message.reactions.isEmpty
+    }
+
     /// Determines if emoji search is available when selecting reaction.
     nonisolated func allowEmojiSearch(for message: Message) -> Bool {
         // Allow emoji search.
         return true
     }
-//
-//    /// Provides a set of quick reactions to be shown to the user.
-//    func reactions(for message: Message) -> [ReactionType]? {
-//        // Standard set of emojis for quick reactions.
-//        return [
-//            .emoji("👍"),
-//            .emoji("❤️"),
-//            .emoji("😂"),
-//            .emoji("😮"),
-//            .emoji("😢"),
-//            .emoji("😡")
-//        ]
-//    }
+
+    /// Provides a set of quick reactions to be shown to the user.
+    nonisolated func reactions(for message: Message) -> [ReactionType]? {
+        // Standard set of emojis for quick reactions.
+        let currentReactions = message.reactions.filter({ $0.user.isCurrentUser })
+        let currentEmojiReactions = currentReactions.compactMap(\.emoji)
+        var myEmojis = ["👍", "👎"]
+        let current = currentEmojiReactions.filter {
+            !myEmojis.contains($0)
+        }
+        myEmojis.insert(contentsOf: current, at: 2)
+        var extra = [ "❤️", "🤣", "😮", "😢", "🥳", "🔥", "💔", "😡"] //TODO - implement adding here emojis which user searched for using emoji search icon
+        while !extra.isEmpty, myEmojis.count < max(10, current.count + 2) {
+            if let new = extra.firstIndex(where: { !myEmojis.contains($0) }) {
+                myEmojis.append( extra.remove(at: new) )
+            } else {
+                break
+            }
+        }
+        return myEmojis.map { ReactionType.emoji($0) }
+    }
 }
