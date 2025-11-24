@@ -484,6 +484,7 @@ struct MessageMenu<MainButton: View, ActionEnum: MessageMenuAction>: View {
                     .transition(defaultTransition)
             }
         }
+        .fixedSize(horizontal: false, vertical: true) //fixes the issue where VStack occupies all real estate vertically and makes mainButton() too tall (with reactionSelectionView and contextMenu displayed with offset above and below the "ghost" message bubble)
         .overflowContainer(messageMenuStyle, viewState: viewState, onTap: {
             if viewState == .keyboard {
                 keyboardState.resignFirstResponder()
